@@ -60,9 +60,16 @@ describe("catalogues", () => {
       (text, i) =>
         text === fr[i] &&
         // Identical in both languages on purpose.
-        !["Navigation", "Organisations", "Français", "English"].includes(
-          text,
-        ) &&
+        ![
+          "Navigation",
+          "Organisations",
+          "Organisation",
+          "Notifications",
+          "Agenda",
+          "Site",
+          "Français",
+          "English",
+        ].includes(text) &&
         !/^\d+ sites?$/u.test(text),
     );
     expect(untranslated).toEqual([]);

@@ -33,6 +33,29 @@ pub fn french(app: &AppHandle) -> bool {
         .language;
     is_french(language)
 }
+/// Local shell views a menu, the tray or the shell itself may show instead of a Moodle view.
+/// `quick-open` is the ⌘L palette, which also needs the Moodle view out of the way.
+pub const LOCAL_VIEWS: [&str; 7] = [
+    "onboarding",
+    "settings",
+    "downloads",
+    "inbox",
+    "courses",
+    "agenda",
+    "quick-open",
+];
+/// Hides the Moodle views and asks the shell to show one of its local views.
+pub fn show_local_view(app: &AppHandle, view: &str) {
+    let _ = crate::windows::hide_sites(app);
+    if let Ok(mut active) = app.state::<crate::AppState>().active.lock() {
+        *active = None;
+    }
+    // A Moodle view may hold keyboard focus; the local view (and Quick Open's field) needs it.
+    if let Some(shell) = app.get_webview("shell") {
+        let _ = shell.set_focus();
+    }
+    let _ = app.emit_to("shell", "shell://navigate", view);
+}
 pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<()> {
     let fr = is_french(language);
     let text = |en, fr_text| if fr { fr_text } else { en };
@@ -48,8 +71,22 @@ pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<(
     let home = MenuItemBuilder::with_id("home", text("Moodle Home", "Accueil Moodle"))
         .accelerator("CmdOrCtrl+Shift+H")
         .build(app)?;
-    let downloads =
-        MenuItemBuilder::with_id("downloads", text("Downloads", "Téléchargements")).build(app)?;
+    let downloads = MenuItemBuilder::with_id("downloads", text("Downloads", "Téléchargements"))
+        .accelerator("CmdOrCtrl+Alt+L")
+        .build(app)?;
+    let inbox = MenuItemBuilder::with_id("inbox", text("Inbox", "Boîte de réception"))
+        .accelerator("CmdOrCtrl+1")
+        .build(app)?;
+    let courses = MenuItemBuilder::with_id("courses", text("Courses", "Cours"))
+        .accelerator("CmdOrCtrl+2")
+        .build(app)?;
+    let agenda = MenuItemBuilder::with_id("agenda", text("Agenda", "Agenda"))
+        .accelerator("CmdOrCtrl+3")
+        .build(app)?;
+    let quick_open =
+        MenuItemBuilder::with_id("quick-open", text("Quick Open…", "Ouverture rapide…"))
+            .accelerator("CmdOrCtrl+L")
+            .build(app)?;
     let reload = MenuItemBuilder::with_id("reload", text("Reload Page", "Recharger la page"))
         .accelerator("CmdOrCtrl+R")
         .build(app)?;
@@ -91,11 +128,17 @@ pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<(
         .select_all_with_text(text("Select All", "Tout sélectionner"))
         .build()?;
     let view = SubmenuBuilder::new(app, text("View", "Présentation"))
-        .item(&reload)
+        .item(&inbox)
+        .item(&courses)
+        .item(&agenda)
         .item(&downloads)
+        .separator()
+        .item(&reload)
         .fullscreen_with_text(text("Enter Full Screen", "Activer le plein écran"))
         .build()?;
     let go = SubmenuBuilder::new(app, text("Go", "Aller"))
+        .item(&quick_open)
+        .separator()
         .item(&home)
         .item(&back)
         .item(&forward)
@@ -125,13 +168,9 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
     rebuild(app, language)?;
     app.on_menu_event(|app, event| {
         let id = event.id().as_ref();
-        if matches!(id, "settings" | "add-site" | "downloads") {
-            let _ = crate::windows::hide_sites(app);
-            if let Ok(mut active) = app.state::<crate::AppState>().active.lock() {
-                *active = None;
-            }
-            let view = if id == "add-site" { "onboarding" } else { id };
-            let _ = app.emit_to("shell", "shell://navigate", view);
+        let view = if id == "add-site" { "onboarding" } else { id };
+        if LOCAL_VIEWS.contains(&view) {
+            show_local_view(app, view);
         } else if matches!(
             id,
             "home" | "back" | "forward" | "reload" | "open_in_browser"

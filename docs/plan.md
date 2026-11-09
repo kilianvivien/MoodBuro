@@ -12,7 +12,7 @@ This is the working checklist for project advancement. The [PRD](prd.md) defines
 | --- | --- | --- |
 | M0 — architecture and sign-in spike | In progress | Repeatable three-site login/SSO tests, platform/security validation and D1–D5 decisions |
 | M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, course download routing and installed-app validation |
-| Expanded Alpha features — A1–A5 | Planned; not implemented | Inbox/download controls, course quick-open, selected offline files, agenda/reminders and manual ICS export |
+| Expanded Alpha features — A1–A5 | A1, A2 and the read-only A4 agenda partly implemented against fixtures; A3, A5 and reminders not started | Live/native validation of the built parts; remaining A1/A2 items, selected offline files, reminders and manual ICS export |
 | First tester Alpha | Not ready for distribution | All Alpha exit criteria, universal packaging and private distribution setup |
 
 The INSP dashboard has been observed authenticated in the app. This is a successful real-site observation; it does not close the complete SSO, session-restoration or security test matrix.
@@ -63,7 +63,7 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 - [x] Grant privileged IPC only to the local shell, with explicit command permissions and caller checks.
 - [x] Enforce origin-based navigation policy; capture managed downloads and isolate controlled same-origin popups behind separate local toolbar permissions.
 - [x] Add unit/contract tests for callback and URL policies, HTTP behavior, metadata/settings/lifecycle and localization.
-- [x] Pass the latest local frontend build, lint/format checks, **46 UI tests**, **34 Rust tests**, workspace Clippy and shell-capability regression checks.
+- [x] Pass the latest local frontend build, lint/format checks, **70 UI tests**, **42 Rust tests**, workspace Clippy and shell-capability regression checks.
 - [x] Build a local ad-hoc-signed macOS app bundle; this is not a notarized distribution release.
 - [x] Review available dev logs and metadata schema without exposing credentials; record findings in the [auth review](auth-review.md).
 
@@ -87,14 +87,14 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 
 ### 2. Finish multi-site behavior and build background notifications
 
-- [ ] Add site reorder and explicit offline/re-auth/unread indicators.
+- [ ] Add site reorder. (Offline/re-auth/unread indicators exist in the sidebar; reorder does not.)
 - [x] Add typed popup notification and unread-conversation count wrappers plus a mark-notification-read API (not yet exposed in the shell).
 - [x] Implement cancellable per-site polling, silent first-poll seeding, restart deduplication and capped backoff.
 - [ ] Verify sleep/wake and add explicit OS lifecycle hooks if needed (relative sleeps currently avoid catch-up bursts).
 - [x] Persist notification checkpoints/counts and a bounded subject/read-state cache; emit unread/status updates to the shell.
 - [x] Wire native notifications (five plus a summary per poll), aggregate dock badge and menu-bar unread state; installed-app delivery remains a QA gate.
 - [x] Implement tray open/settings/quit/check-now controls and per-site counts/status; wire notification clicks to the saved site’s notifications page.
-- [ ] Qualify notification click delivery (D4), tray behavior and the latest-unread menu on installed macOS builds.
+- [ ] Qualify notification click delivery (D4), tray behavior (including the new Inbox entry) and the latest-unread menu on installed macOS builds.
 - [x] Hide the main window on close, retain background polling, and reopen through the tray or Dock.
 - [ ] Add menu-bar-only activation preference and window-state persistence.
 - [ ] Verify resource usage, accessibility and three-site behavior with the background services running.
@@ -112,18 +112,25 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 
 ### 4. Build the expanded user-facing Alpha (planned A1–A5)
 
-The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies and acceptance criteria. All items below remain unchecked until implementation and relevant verification exist; partial PRD coverage must not be reported as the full v1.0 feature.
+The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies and acceptance criteria. The original bullets were split on 9 November 2026 so that built parts can be checked without implying the rest. A checked item here means implemented with passing automated checks against synthetic data; live-site and installed-app validation is tracked separately at the end of this section. Partial PRD coverage must not be reported as the full v1.0 feature.
 
 - [ ] Stabilize PDF saving, native history and popup parent return; add a public-API save fallback before extending file workflows.
-- [ ] **A1:** notification inbox with safe Open/Mark Read and authoritative unread-count reconciliation; latest-unread tray access.
-- [ ] **A1:** paginated/searchable download history, site/state filters, Copy Path, confirmed Clear History without deleting files, safe retry/fallback and PDF/image handling preferences.
-- [ ] **A2:** account-bound course browser and local pins, metadata refresh/stale states and reliable course/context mapping for downloads.
-- [ ] **A2:** Cmd+L quick-open for courses/cached activities across sites; optional global Cmd+Shift+M with conflict handling.
+- [x] **A1:** notification inbox across sites (day groups, organisation and unread filters) with safe Open, Mark as Read and Mark All as Read; the server is asked first and the poller then reconciles badge, Dock and menu-bar counts.
+- [x] **A1:** state unread conversations separately from notifications, with a fixed link to Moodle's Messages page.
+- [ ] **A1:** latest unread items in the tray. (A tray Inbox entry with the count exists; individual items are not listed.)
+- [x] **A1:** paginated/searchable download history with site/state filters, Copy Path (pasteboard written from Rust) and confirmed Clear History that keeps files and active transfers.
+- [ ] **A1:** safe retry/fallback for failed downloads, course filter with an Unknown Course bucket, and the PDF/image handling preference.
+- [x] **A2:** account-bound course cache and browser with search and local pins, refresh/stale/error states per organisation, and rejection of late responses for a replaced account.
+- [ ] **A2:** reliable course/context mapping for downloads and course-folder routing.
+- [x] **A2:** ⌘L Quick Open over saved course names, organisations and shell views, from the Go menu, the toolbar and the keyboard.
+- [ ] **A2:** cached activities in Quick Open; optional global Cmd+Shift+M with conflict handling.
 - [ ] **A3:** choose course files to save offline, with known sizes, bounded transfers and safe course/section folders.
 - [ ] **A3:** browse/open saved files offline and manually refresh selected files without overwriting local edits or propagating server deletions.
-- [ ] **A4:** read-only upcoming agenda across sites, with safe Moodle links and explicit time-zone/stale-state handling.
+- [x] **A4:** read-only upcoming agenda across sites, grouped by day, with fixed Moodle calendar links, the Mac's time zone stated and last-refresh/stale state.
 - [ ] **A4:** opt-in local due-date reminders, deduplication and rescheduling after event changes/wake; no delivery promise while quit.
 - [ ] **A5:** manually export the selected agenda to a token-free ICS snapshot; validate/import it in Apple Calendar. Live subscriptions remain later.
+- [ ] Validate the built A1/A2/A4 parts against a real account and the 4.5/5.3 rigs: `core_enrol_get_users_courses`, `core_calendar_get_calendar_upcoming_view`, `core_message_mark_notification_read` / `mark_all_notifications_as_read`, access-denied responses, and count reconciliation after Mark as Read.
+- [ ] Check natively with `pnpm tauri dev`: the ⌘1/⌘2/⌘3/⌘L/⌥⌘L menu commands, the tray Inbox entry, hiding and restoring the Moodle view around Quick Open, keyboard focus landing in its field when ⌘L is pressed from a Moodle page, warm and cold opening of a course/calendar/notifications page, Copy Path, and the new motion under Reduce Motion and Increase Contrast.
 - [ ] Verify the combined A1–A5 acceptance cases, access-denied behavior, account replacement/cleanup, FR/EN and keyboard paths.
 
 ### 5. Prepare the tester Alpha
@@ -189,3 +196,12 @@ Verification: 46 UI tests and 34 Rust tests, frontend production build/lint/form
 - [x] Route PDFKit Save bytes through managed download history using a bounded macOS delegate compatibility adapter.
 - [x] Shorten menu-bar site rows and group site actions/recent files in native submenus.
 - [ ] Validate native PDF Save, popup/opener/close/history, blob PDFs and menu sizing in real sessions on the supported macOS matrix. The PDF save-data callback is a WebKit-private API and remains an explicit compatibility gate.
+
+## Inbox, courses, agenda and motion slice
+
+Implemented on 9 November 2026, at the product owner's choice of "A1 + A2 + agenda (A4)", sidebar icons for the new destinations and "native and fluid" motion.
+
+- **Backend.** Moodle wrappers for enrolled courses, the upcoming calendar view and mark-all-read; a `Page` type that builds the only Moodle pages the shell may open; plain-text reduction of server names. SQLite schema v5 adds `courses`, `course_pins`, `events` and `sync_state`, all removed with the account and purged when a different Moodle user reconnects; course and event writes are refused for a replaced user. Download history gains paging, literal filename search, per-site clearing and lookup by id (items beyond the newest 20 can now be opened). Eleven shell-only commands replace `downloads_recent`; the capability/caller regression script passes unchanged.
+- **Shell.** Inbox, Courses and Agenda views, a ⌘L Quick Open panel, a rebuilt Downloads view, shared list components, a sliding segmented control and the motion tokens. Menu: Inbox ⌘1, Courses ⌘2, Agenda ⌘3, Downloads ⌥⌘L, Quick Open… ⌘L. The design guidelines' motion, typography, component and pattern sections were revised to match.
+- **Scope decisions.** Not built in this pass and left unchecked above: tray list of unread items, failed-download retry, PDF/image preference, download-to-course mapping, cached activities in Quick Open, the global shortcut, reminders, A3 and A5. Agenda items open their calendar day rather than the activity page, because the activity URL comes from the server.
+- **Verification.** 70 UI tests and 42 Rust tests, frontend build/lint/format, workspace Clippy and the IPC check pass. The UI was exercised in the browser preview (`?mac&demo`) in light and dark with sample data: view switching, Mark as Read, pinning, filters, Quick Open keyboard use. **Not verified:** anything native (menus, tray, Moodle-view hiding, pasteboard) and every live Moodle call; contract tests use synthetic stock-shaped responses. No acceptance criterion in the amendment is claimed.

@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Segmented } from "../components/ui";
 import {
   CircleAlert,
   CircleCheck,
@@ -34,41 +35,6 @@ const appearanceIcons: Record<Appearance, typeof Sun> = {
   dark: Moon,
 };
 const languageOptions: readonly Language[] = ["system", "fr", "en"];
-
-function Segmented<T extends string>({
-  name,
-  legend,
-  options,
-  value,
-  disabled,
-  onChange,
-}: {
-  name: string;
-  legend: string;
-  options: readonly { value: T; label: ReactNode; lang?: string }[];
-  value: T;
-  disabled: boolean;
-  onChange: (value: T) => void;
-}) {
-  // Native radios give arrow-key selection and one tab stop for free.
-  return (
-    <fieldset className="segmented" disabled={disabled}>
-      <legend className="visually-hidden">{legend}</legend>
-      {options.map((option) => (
-        <label key={option.value} className="segment">
-          <input
-            type="radio"
-            name={name}
-            value={option.value}
-            checked={value === option.value}
-            onChange={() => onChange(option.value)}
-          />
-          <span lang={option.lang}>{option.label}</span>
-        </label>
-      ))}
-    </fieldset>
-  );
-}
 
 function RemoveConfirmation({
   site,

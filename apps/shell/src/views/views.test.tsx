@@ -315,6 +315,24 @@ it("blocks incomplete downloads and shows explicit risky-file confirmation", () 
     />,
   );
   expect(pending.match(/disabled=""/g)).toHaveLength(2);
+  // Copy Path follows the same availability, and the path itself never renders.
+  const copyable = inLocale(
+    "en",
+    <DownloadList
+      {...props}
+      items={[{ ...items[0], state: "downloading" }]}
+      confirming={null}
+      onCopy={vi.fn()}
+    />,
+  );
+  expect(copyable).toContain('aria-label="Copy the path of installer.dmg"');
+  expect(copyable.match(/disabled=""/g)).toHaveLength(3);
+  expect(
+    inLocale(
+      "fr",
+      <DownloadList {...props} items={[]} confirming={null} filtered />,
+    ),
+  ).toContain("Aucun téléchargement ne correspond");
 });
 
 it("provides a Home button and a popup escape path independent of PDF JavaScript", () => {

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-download-copy-path"
+description = "Enables the download_copy_path command without any pre-configured scope."
+commands.allow = ["download_copy_path"]
+
+[[permission]]
+identifier = "deny-download-copy-path"
+description = "Denies the download_copy_path command without any pre-configured scope."
+commands.deny = ["download_copy_path"]

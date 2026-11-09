@@ -4,13 +4,23 @@ import {
   desktop,
   ipc,
   message,
+  type MoodlePage,
   type NavAction,
   type UnreadStatus,
 } from "./ipc";
 import { useSites } from "./stores/sites";
 import { useSettings } from "./stores/settings";
 import { connection as reduce, idle } from "./lib/connection";
-import { Sidebar, type View } from "./components/Sidebar";
+import {
+  isLocal,
+  Sidebar,
+  type Destination,
+  type View,
+} from "./components/Sidebar";
+import { QuickOpen, type QuickTarget } from "./components/QuickOpen";
+import { Inbox } from "./views/Inbox";
+import { Courses } from "./views/Courses";
+import { Agenda } from "./views/Agenda";
 import { Toolbar } from "./components/Toolbar";
 import { Downloads } from "./views/Downloads";
 import { AddSite } from "./views/AddSite";
@@ -32,6 +42,8 @@ export default function App() {
   const [view, setView] = useState<View>("onboarding");
   const [unread, setUnread] = useState<UnreadStatus[]>([]);
   const [ready, setReady] = useState(false);
+  // ⌘L palette, shown over whatever view is current.
+  const [palette, setPalette] = useState(false);
   const [connection, dispatch] = useReducer(reduce, idle);
   // Raw backend messages: translated when rendered, so a language switch
   // also translates what is already on screen.
@@ -53,6 +65,7 @@ export default function App() {
 
   async function openSite(id: string) {
     setError(null);
+    setPalette(false);
     try {
       await ipc.switchSite(id);
       select(id);
@@ -64,6 +77,7 @@ export default function App() {
 
   async function showOnboarding() {
     setError(null);
+    setPalette(false);
     dispatch({ type: "dismiss" });
     try {
       await ipc.onboarding();
@@ -75,6 +89,7 @@ export default function App() {
 
   async function showSettings() {
     setError(null);
+    setPalette(false);
     setRemoved(null);
     dispatch({ type: "dismiss" });
     try {
@@ -86,14 +101,54 @@ export default function App() {
     }
   }
 
-  async function showDownloads() {
+  /** Inbox, Courses, Agenda or Downloads: hide the Moodle view, then render. */
+  async function showLocal(target: Destination | "downloads") {
     setError(null);
+    setPalette(false);
     try {
-      await ipc.shellView("downloads");
-      setView("downloads");
+      await ipc.shellView(target);
+      setView(target);
     } catch (cause) {
       failed(cause);
     }
+  }
+  const showDownloads = () => showLocal("downloads");
+
+  /** Opens one of the fixed Moodle pages in the organisation's own view. */
+  async function openPage(id: string, page: MoodlePage, value?: number) {
+    setError(null);
+    setPalette(false);
+    try {
+      await ipc.openPage(id, page, value ?? null);
+      select(id);
+      setView("site");
+    } catch (cause) {
+      failed(cause);
+    }
+  }
+
+  async function openPalette() {
+    if (sites.length === 0) return;
+    setError(null);
+    try {
+      // The Moodle view sits above the shell; hide it while the palette is open.
+      await ipc.shellView("quick-open");
+      setPalette(true);
+    } catch (cause) {
+      failed(cause);
+    }
+  }
+  /** Dismissed without a choice: bring back the Moodle view that was hidden. */
+  function closePalette() {
+    setPalette(false);
+    if (view === "site" && site) void ipc.switchSite(site.id).catch(failed);
+  }
+  function choose(target: QuickTarget) {
+    if (target.kind === "site") void openSite(target.siteId);
+    else if (target.kind === "course")
+      void openPage(target.siteId, "course", target.courseId);
+    else if (target.view === "settings") void showSettings();
+    else void showLocal(target.view);
   }
 
   /** Done/Cancel/Escape: back to the last site, else the onboarding view. */
@@ -150,6 +205,7 @@ export default function App() {
       if (!result) return false;
       setError(null);
       dispatch({ type: "dismiss" });
+      setPalette(false);
       if (result.kind === "site") {
         select(result.siteId);
         setView("site");
@@ -184,24 +240,36 @@ export default function App() {
   const onSitesChanged = useEffectEvent((id: string) => {
     void refresh().catch(failed);
     setLinkRequest((revision) => revision + 1);
-    if (view === "settings" || view === "downloads") {
-      // Rust may have revealed the site; keep Settings on top.
+    if (isLocal(view) && view !== "onboarding") {
+      // Rust may have revealed the site; keep the local view on top.
       void ipc.shellView(view).catch(failed);
       return;
     }
+    setPalette(false);
     select(id);
     setView("site");
   });
   const onSiteRemoved = useEffectEvent(() => {
     void refresh().catch(failed);
     // Rust hid every site view; Settings stays, anything else falls back.
-    if (view !== "settings" && view !== "downloads") setView("onboarding");
+    setPalette(false);
+    if (!isLocal(view)) setView("onboarding");
   });
   /** App-menu commands (Settings…, Add Organisation…); Rust already hid sites. */
   const onNavigate = useEffectEvent((target: string) => {
     if (target === "settings") void showSettings();
     else if (target === "onboarding") void showOnboarding();
-    else if (target === "downloads") void showDownloads();
+    else if (
+      target === "downloads" ||
+      target === "inbox" ||
+      target === "courses" ||
+      target === "agenda"
+    )
+      void showLocal(target);
+    else if (target === "quick-open") {
+      if (sites.length > 0) setPalette(true);
+      else leave();
+    }
   });
   const onAuthFinished = useEffectEvent((result: string | null) =>
     dispatch({ type: "finished", error: result }),
@@ -223,12 +291,20 @@ export default function App() {
     if (!cancelled()) setReady(true);
   });
   const onKey = useEffectEvent((event: KeyboardEvent) => {
-    if (event.key !== "Escape" || event.defaultPrevented) return;
+    // The native menu owns ⌘L in the app; the browser preview needs its own.
     if (
-      view === "settings" ||
-      view === "downloads" ||
-      (view === "onboarding" && sites.length > 0)
-    )
+      !desktop &&
+      (event.metaKey || event.ctrlKey) &&
+      event.key.toLowerCase() === "k"
+    ) {
+      event.preventDefault();
+      if (palette) closePalette();
+      else void openPalette();
+      return;
+    }
+    if (event.key !== "Escape" || event.defaultPrevented) return;
+    if (palette) closePalette();
+    else if (isLocal(view) && (view !== "onboarding" || sites.length > 0))
       leave();
   });
 
@@ -245,14 +321,15 @@ export default function App() {
       window.removeEventListener("keydown", keydown);
       window.removeEventListener("languagechange", languagechange);
     };
-    if (!desktop) return stop;
     void ipc.unread().then(setUnread).catch(failed);
+    if (!desktop) return stop;
     const listeners = [
       listen("deep-link://pending", () =>
         setLinkRequest((revision) => revision + 1),
       ),
       listen<UnreadStatus[]>("unread://changed", (e) => setUnread(e.payload)),
       listen<string>("navigation://site-opened", (e) => {
+        setPalette(false);
         select(e.payload);
         setView("site");
         void refresh().catch(failed);
@@ -306,6 +383,7 @@ export default function App() {
           active={active}
           view={view}
           onSite={(id) => void openSite(id)}
+          onView={(target) => void showLocal(target)}
           onAdd={() => void showOnboarding()}
           onSettings={() => void showSettings()}
         />
@@ -313,15 +391,42 @@ export default function App() {
           view={view}
           site={site}
           error={error}
-          canLeave={
-            view === "settings" || view === "downloads" || sites.length > 0
-          }
+          canLeave={view !== "onboarding" || sites.length > 0}
           onNav={(action: NavAction) => void ipc.nav(action).catch(failed)}
           onDismissError={() => setError(null)}
           onLeave={leave}
           onDownloads={() => void showDownloads()}
+          paused={palette}
+          onQuickOpen={
+            sites.length > 0
+              ? () => (palette ? closePalette() : void openPalette())
+              : undefined
+          }
         />
-        <main className="content" aria-busy={!ready}>
+        <main className="content" aria-busy={!ready} data-view={view}>
+          {ready && palette && (
+            <QuickOpen sites={sites} onChoose={choose} onClose={closePalette} />
+          )}
+          {ready && view === "inbox" && (
+            <Inbox
+              sites={sites}
+              statuses={unread}
+              onOpenPage={(id, page) => void openPage(id, page)}
+              onChanged={() => void ipc.unread().then(setUnread).catch(failed)}
+            />
+          )}
+          {ready && view === "courses" && (
+            <Courses
+              sites={sites}
+              onOpenCourse={(id, course) => void openPage(id, "course", course)}
+            />
+          )}
+          {ready && view === "agenda" && (
+            <Agenda
+              sites={sites}
+              onOpenDay={(id, time) => void openPage(id, "calendar-day", time)}
+            />
+          )}
           {ready && view === "onboarding" && (
             <AddSite
               key={prefill.revision}

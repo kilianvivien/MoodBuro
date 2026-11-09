@@ -1,6 +1,7 @@
 mod auth_log;
 mod commands;
 mod downloads;
+mod library;
 mod links;
 mod menus;
 mod notifications;
@@ -126,7 +127,17 @@ pub fn run() {
             commands::popup_context,
             commands::popup_nav,
             commands::deep_link_open,
-            commands::downloads_recent,
+            commands::downloads_page,
+            commands::downloads_clear,
+            commands::download_copy_path,
+            commands::inbox_list,
+            commands::inbox_mark_read,
+            commands::site_open_page,
+            commands::courses_list,
+            commands::courses_refresh,
+            commands::course_pin,
+            commands::agenda_list,
+            commands::agenda_refresh,
             commands::download_open,
             commands::download_reveal,
             commands::unread_list,

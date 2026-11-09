@@ -24,7 +24,17 @@
     "allow-site-label-set",
     "allow-unread-list",
     "allow-deep-link-open",
-    "allow-downloads-recent",
+    "allow-downloads-page",
+    "allow-downloads-clear",
+    "allow-download-copy-path",
+    "allow-inbox-list",
+    "allow-inbox-mark-read",
+    "allow-site-open-page",
+    "allow-courses-list",
+    "allow-courses-refresh",
+    "allow-course-pin",
+    "allow-agenda-list",
+    "allow-agenda-refresh",
     "allow-download-open",
     "allow-download-reveal"
   ]

@@ -1,10 +1,26 @@
 import type { KeyboardEvent } from "react";
-import { Plus, Settings } from "lucide-react";
+import { BookOpen, CalendarDays, Inbox, Plus, Settings } from "lucide-react";
 import type { Site, UnreadStatus } from "../ipc";
 import { displayHost, initials } from "../lib/site";
 import { useI18n } from "../i18n/context";
 
-export type View = "site" | "onboarding" | "settings" | "downloads";
+export type View =
+  | "site"
+  | "onboarding"
+  | "settings"
+  | "downloads"
+  | "inbox"
+  | "courses"
+  | "agenda";
+/** Local shell views; anything else shows a Moodle view positioned by Rust. */
+export const isLocal = (view: View) => view !== "site";
+/** Views reached from the sidebar's top group. */
+export type Destination = "inbox" | "courses" | "agenda";
+const destinations = [
+  { view: "inbox", icon: Inbox },
+  { view: "courses", icon: BookOpen },
+  { view: "agenda", icon: CalendarDays },
+] as const;
 
 /** Up/Down/Home/End move focus between sidebar items, like a native source list. */
 function moveFocus(event: KeyboardEvent<HTMLElement>) {
@@ -34,6 +50,7 @@ export function Sidebar({
   active,
   view,
   onSite,
+  onView,
   onAdd,
   onSettings,
 }: {
@@ -42,13 +59,53 @@ export function Sidebar({
   active: string | null;
   view: View;
   onSite: (id: string) => void;
+  onView?: (view: Destination) => void;
   onAdd: () => void;
   onSettings: () => void;
 }) {
   const { t } = useI18n();
+  const total = unread.reduce((sum, status) => sum + status.unread, 0);
   return (
     <nav className="sidebar" aria-label={t.sidebar.label} onKeyDown={moveFocus}>
-      <ul className="site-list" role="list">
+      {onView && sites.length > 0 && (
+        <ul className="view-list" role="list" aria-label={t.sidebar.views}>
+          {destinations.map(({ view: target, icon: Icon }) => {
+            const badge = target === "inbox" && total > 0;
+            const label = badge
+              ? `${t.sidebar[target]} — ${t.sidebar.unread(total)}`
+              : t.sidebar[target];
+            return (
+              <li key={target}>
+                <button
+                  data-sidebar-item
+                  className="sidebar-item"
+                  title={label}
+                  aria-label={label}
+                  aria-current={view === target ? "page" : undefined}
+                  onClick={() => onView(target)}
+                >
+                  <Icon size={18} strokeWidth={1.75} aria-hidden="true" />
+                  {badge && (
+                    // Keyed by value so a changed count replays the pop.
+                    <span
+                      className="count-badge"
+                      key={total}
+                      aria-hidden="true"
+                    >
+                      {total > 99 ? "99+" : total}
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <ul
+        className="site-list"
+        role="list"
+        aria-label={t.sidebar.organisations}
+      >
         {sites.map((site) => {
           const status = unread.find((item) => item.siteId === site.id);
           const stateLabel = status
@@ -80,6 +137,7 @@ export function Sidebar({
                       status.connection,
                     )) && (
                     <span
+                      key={`${status.connection}:${status.unread}`}
                       className="site-status"
                       data-warning={status.connection !== "online" || undefined}
                       aria-hidden="true"

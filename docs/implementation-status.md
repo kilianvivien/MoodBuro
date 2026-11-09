@@ -2,9 +2,11 @@
 
 Use [the working plan](plan.md) to track completed tasks and next priorities.
 
-## Newly planned Alpha features — not delivered
+## Expanded Alpha features — first pass built, not validated
 
-At the product owner's request, the [Alpha scope amendment](alpha-feature-expansion.md) brings forward: A1 notification inbox and richer download controls; A2 course browser/pins and quick-open; A3 selected files saved offline with manual refresh; A4 upcoming agenda and opt-in local reminders; A5 manual ICS snapshot export. The original full background-sync/live-calendar/upload features are not implied by these smaller slices. All new implementation items are unchecked in [plan.md](plan.md). The original six-week estimate requires re-estimation; existing release/security gates remain open.
+At the product owner's request, the [Alpha scope amendment](alpha-feature-expansion.md) brings forward: A1 notification inbox and richer download controls; A2 course browser/pins and quick-open; A3 selected files saved offline with manual refresh; A4 upcoming agenda and opt-in local reminders; A5 manual ICS snapshot export. The original full background-sync/live-calendar/upload features are not implied by these smaller slices. The original six-week estimate requires re-estimation; existing release/security gates remain open.
+
+A first pass over A1, A2 and the read-only A4 agenda is implemented (see the last section). A3, A5 and reminders are not started. [plan.md](plan.md) lists what is checked and what is still open.
 
 ## Delivered
 
@@ -21,8 +23,8 @@ The first two implementation slices cover the workspace/CI foundation, organisat
 
 ## Verification
 
-- 46 UI/store/reducer/helper/localization tests; production frontend build, ESLint and Prettier pass.
-- 34 Rust tests (including mock HTTP contracts, URL/callback policy, SQLite migration/settings/reconnect, cookie domain boundaries); workspace Clippy with warnings denied passes.
+- 70 UI/store/reducer/helper/localization tests; production frontend build, ESLint and Prettier pass.
+- 42 Rust tests (including mock HTTP contracts, URL/callback policy, SQLite migration/settings/reconnect, cookie domain boundaries); workspace Clippy with warnings denied passes.
 - Native debug build/ad-hoc app packaging and shell-only IPC configuration/caller regression checks pass. Generated ACLs grant application commands individually to the local shell only.
 - HTTP tests use synthetic stock-Moodle-shaped data, not authenticated recordings from INSP or the planned 4.5/5.3 rigs.
 - JavaScript dependencies were not changed in the second slice. The previous audit had no high/critical findings and one moderate development-only minimatch advisory upstream. Rust advisory auditing remains to configure.
@@ -77,3 +79,15 @@ Native observation for this slice: a separately identified QA bundle initially r
 - Tray site rows use saved abbreviations or bounded labels, with Open/Home actions in a submenu. Recent Downloads contains the five newest filenames and a full-list action; selecting a completed filename only reveals it in Finder. Download events refresh the tray immediately.
 
 Automated verification: 46 UI tests, 34 Rust tests, frontend build/lint/format, workspace Clippy and local-only IPC/caller checks. Native PDF-save, popup history/opener behavior and the refined menu layout remain unverified in a live signed-in session following the UI inspection block noted above.
+
+## Inbox, courses, agenda and Quick Open
+
+- **Inbox.** Lists the cached notification subjects of every organisation (up to 100 each, 300 shown), grouped by day, filterable by organisation and unread state. Mark as Read and Mark All as Read call Moodle first, then update the local row for the same Moodle user, then wake that organisation's poller so the badge, Dock and menu-bar counts come from the server. Only an identifier already in the local cache can be marked. Unread conversations are reported separately per organisation, since the list does not contain them. Open shows the organisation's notifications page; no context URL is stored or followed.
+- **Courses.** `core_enrol_get_users_courses` per organisation, at most 500 courses, names reduced to bounded plain text. The cache is shown immediately and refreshed when older than ten minutes or on request; a failing organisation keeps its saved list and shows the reason. Pins are local rows, dropped when a course leaves the list. A course opens only if its identifier is in that account's cache.
+- **Agenda.** `core_calendar_get_calendar_upcoming_view`, at most 200 events, replaced as a whole on refresh so changed and cancelled events reconcile. Only id, name, start, duration, a reduced kind and the course are kept; descriptions and URLs are dropped. Entries stay listed for an hour after they end. Times use the Mac's time zone, which the view states. No submission or completion state is shown, and there are no reminders.
+- **Quick Open.** ⌘L (Go menu), the toolbar magnifier, or ⌘K in the browser preview. Searches course names, organisations and shell views locally. Rust hides the Moodle view while the panel is open; dismissing it switches back to the same organisation without a new autologin.
+- **Downloads.** 25 rows per page with Show More, filename search (wildcards are literal), organisation and state filters, Copy Path through `/usr/bin/pbcopy` from Rust, and Clear History (all or one organisation) that never deletes files or rows still downloading. Opening and revealing now look a download up by id instead of in the 20 newest rows.
+- **Account isolation.** Schema v5 tables cascade on removal and are purged with the existing tables when a different Moodle user reconnects. `save_courses`/`save_events` check the requesting user inside the transaction, so a response that arrives after an account was replaced is discarded.
+- **Limits.** Courses and Agenda refresh only while their view (or Quick Open) is open; nothing is fetched in the background. The poller still fetches the newest 20 notifications. The agenda horizon is whatever Moodle's upcoming view returns for the user's calendar preferences.
+
+Automated verification: 70 UI tests and 42 Rust tests (including contract tests for the three new web-service calls with stock-shaped synthetic responses, store tests for account binding, paging and clearing, and view tests in both languages), frontend build/lint/format, workspace Clippy and the IPC/caller check. The interface was exercised in the browser preview with sample data in light and dark. No native window, tray, menu, pasteboard or live Moodle behaviour was verified in this slice.

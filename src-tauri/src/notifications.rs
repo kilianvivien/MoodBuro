@@ -10,6 +10,8 @@ use tauri_plugin_notification::NotificationExt;
 pub struct Status {
     pub site_id: String,
     pub unread: u64,
+    /// Unread conversations included in `unread`; the inbox lists notifications only.
+    pub messages: u64,
     pub connection: &'static str,
 }
 pub struct Worker {
@@ -98,6 +100,18 @@ pub fn check_now(app: &AppHandle) {
         worker.wake.notify_one();
     }
 }
+/// Asks one organisation's worker to poll now (after a read-state change).
+pub fn wake(app: &AppHandle, id: &str) {
+    if let Some(worker) = app
+        .state::<AppState>()
+        .workers
+        .lock()
+        .expect("workers")
+        .get(id)
+    {
+        worker.wake.notify_one();
+    }
+}
 pub fn stop(app: &AppHandle, id: &str) {
     if let Some(worker) = app
         .state::<AppState>()
@@ -139,6 +153,7 @@ pub fn start(app: &AppHandle, site: md_store::Site) {
             status: Status {
                 site_id: id,
                 unread: previous.map_or(0, |p| p.1),
+                messages: 0,
                 connection: "checking",
             },
         },
@@ -195,7 +210,8 @@ async fn run(
                 return;
             };
             match result {
-                Ok((unread, response)) => {
+                Ok((notifications, messages, response)) => {
+                    let unread = notifications.saturating_add(messages);
                     let batch = md_notifier::batch(checkpoint, &response.notifications);
                     let items: Vec<_> = response
                         .notifications
@@ -216,6 +232,7 @@ async fn run(
                     {
                         checkpoint = Some(batch.checkpoint);
                         worker.status.unread = unread;
+                        worker.status.messages = messages;
                         worker.status.connection = "online";
                         failures = 0;
                         // Bounded, plain-text OS delivery; never include HTML, URLs or tokens.
@@ -291,9 +308,9 @@ async fn poll(
     client: &md_moodle::Client,
     token: &str,
     user: i64,
-) -> Result<(u64, md_moodle::PopupNotifications), md_moodle::Error> {
+) -> Result<(u64, u64, md_moodle::PopupNotifications), md_moodle::Error> {
     let notifications = client.unread_notifications(token, user).await?;
     let conversations = client.unread_conversations(token, user).await?;
     let items = client.popup_notifications(token, user).await?;
-    Ok((notifications.saturating_add(conversations), items))
+    Ok((notifications, conversations, items))
 }

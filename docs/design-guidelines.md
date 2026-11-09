@@ -20,24 +20,27 @@ When this guide and Apple's [Human Interface Guidelines for macOS](https://devel
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│ ● ● ●   ← →  ↻   Site name                          ⤴       │  unified toolbar, 52 pt (macOS)
-│              moodle.example.edu                              │  drag region, double-click zooms
+│ ● ● ●   ⌂ ← →  ↻   Site name                     ⌕  ⤓  ⤴    │  unified toolbar, 52 pt (macOS)
+│                moodle.example.edu                            │  drag region, double-click zooms
 ├──────┬───────────────────────────────────────────────────────┤
-│  EU  │                                                       │
-│  CX  │            Moodle web view (positioned by Rust)       │
-│  +   │       or a local view: Add Organisation / Settings    │
-│      │                                                       │
+│  ✉ 5 │                                                       │  views: Inbox, Courses, Agenda
+│  ▤   │                                                       │
+│  ▦   │            Moodle web view (positioned by Rust)       │
+│  ──  │       or a local view: Inbox / Courses / Agenda /     │
+│  EU  │       Downloads / Add Organisation / Settings         │  organisations
+│  CX  │                                                       │
+│  +   │                                                       │
 │  ⚙   │                                                       │
 └──────┴───────────────────────────────────────────────────────┘
  72 pt sidebar
 ```
 
-| Region          | Size                                | Owner                     | Notes                                                                                                           |
-| --------------- | ----------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Unified toolbar | 52 pt high (macOS), 44 pt elsewhere | `components/Toolbar.tsx`  | Spans the full width on macOS. Content starts after `--traffic-inset` (78 pt), which drops to 0 in full screen. |
-| Traffic lights  | x 20, y 26 (`TRAFFIC_LIGHTS`)       | AppKit via `windows.rs`   | Real controls, vertically centred in the toolbar. Never covered by shell UI.                                    |
-| Sidebar         | 72 pt wide                          | `components/Sidebar.tsx`  | Starts below the toolbar on macOS.                                                                              |
-| Content         | the rest                            | `App.tsx` `<main>` / Rust | Remote Moodle views cover it completely.                                                                        |
+| Region          | Size                                | Owner                     | Notes                                                                                                                                    |
+| --------------- | ----------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Unified toolbar | 52 pt high (macOS), 44 pt elsewhere | `components/Toolbar.tsx`  | Spans the full width on macOS. Content starts after `--traffic-inset` (78 pt), which drops to 0 in full screen.                          |
+| Traffic lights  | x 20, y 26 (`TRAFFIC_LIGHTS`)       | AppKit via `windows.rs`   | Real controls, vertically centred in the toolbar. Never covered by shell UI.                                                             |
+| Sidebar         | 72 pt wide                          | `components/Sidebar.tsx`  | Starts below the toolbar on macOS. App-wide views (Inbox, Courses, Agenda) sit above the organisations and appear once one is connected. |
+| Content         | the rest                            | `App.tsx` `<main>` / Rust | Remote Moodle views cover it completely.                                                                                                 |
 
 ### Geometry is defined twice — change both together
 
@@ -79,13 +82,15 @@ All colour comes from the semantic tokens in `styles.css`. **Never write a liter
 | `--fill` / `--fill-2`                              | Hover · pressed/tile backgrounds for borderless controls.                                                      |
 | `--accent`                                         | The user's macOS accent colour (falls back to system blue). Primary buttons, active progress, links-as-status. |
 | `--accent-tint`, `--selection`, `--selection-text` | Informational banners · source-list selection (auto-greys when inactive).                                      |
+| `--panel-shadow`                                   | The Quick Open panel only: the one surface that floats above the window.                                       |
 | `--focus`                                          | Keyboard focus ring.                                                                                           |
 | `--red`, `--red-text`, `--red-tint`                | Destructive buttons · error text · error capsule.                                                              |
 | `--green-text`                                     | Success confirmation text.                                                                                     |
 
 Rules:
 
-- **Accent is meaning, not decoration.** It marks the primary action, the current selection and progress. Never use it for headings, icons at rest or large backgrounds.
+- **Accent is meaning, not decoration.** It marks the primary action, the current selection, progress and unread state (the inbox dot and count badge, as in Mail). Never use it for headings, icons at rest or large backgrounds.
+- **Keyboard selection in a menu-like list is filled.** The Quick Open result under the keyboard is a solid `--accent` row with `--on-accent` text, as in Spotlight and menus. Everything else stays tinted.
 - **Selection is tinted, not filled.** Sidebar selection uses `--selection` (accent at ~16–26 %), not a solid accent block.
 - **Red only for errors and destructive actions.** Green only for a completed action's confirmation.
 - The app icon gradient (`.app-mark`) is the one place brand blue is fixed; it is an icon, not UI.
@@ -96,12 +101,13 @@ Rules:
 
 The system font (SF Pro) via `system-ui`. Sizes are tokens:
 
-| Token            | Size  | Use                                                          | Weight                                                                               |
-| ---------------- | ----- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `--text-title`   | 22 px | One large title per local view (onboarding)                  | 700                                                                                  |
-| `--text-body`    | 13 px | Everything by default: rows, buttons, fields, toolbar title  | 400; 500 for row titles/field labels; 600 for section titles, toolbar title, avatars |
-| `--text-small`   | 12 px | Segmented controls, banners, section messages, small buttons | 400                                                                                  |
-| `--text-caption` | 11 px | Subtitles, hints, footnotes, toolbar subtitle                | 400                                                                                  |
+| Token             | Size  | Use                                                           | Weight                                                                               |
+| ----------------- | ----- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `--text-title`    | 22 px | One large title per local view (onboarding)                   | 700                                                                                  |
+| `--text-headline` | 15 px | The heading of a list view (`.page-header`), Quick Open field | 600 (400 in the field)                                                               |
+| `--text-body`     | 13 px | Everything by default: rows, buttons, fields, toolbar title   | 400; 500 for row titles/field labels; 600 for section titles, toolbar title, avatars |
+| `--text-small`    | 12 px | Segmented controls, banners, section messages, small buttons  | 400                                                                                  |
+| `--text-caption`  | 11 px | Subtitles, hints, footnotes, toolbar subtitle                 | 400                                                                                  |
 
 Rules:
 
@@ -117,7 +123,18 @@ Rules:
 
 - **Spacing** uses a 2/4 pt rhythm: 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32, 48. Rows: 8 × 12 padding, 12 gap, min-height 44 (40 for footers). Between sections: 28.
 - **Radius** tokens, smallest to largest: `--radius-xs` 4 (tiny icon buttons) · `--radius-s` 5 (segments, compact fields, small buttons) · `--radius-m` 6 (push buttons, toolbar tools) · `--radius-l` 8 (fields, inner panels, row avatars) · `--radius-xl` 10 (groups, sidebar items) · `--radius-icon` 15 (64 pt app mark). Nested shapes use a smaller radius than their container.
-- **Motion** is short and functional: `var(--fast) var(--ease)` (120 ms) on colour/shadow changes only. No slide-ins, bounces or page transitions. Everything must still work under Reduce Motion, which removes transitions and slows spinners.
+- **Radius** also has `--radius-panel` 12 for the floating Quick Open panel.
+- **Motion** is native and fluid, never decorative (revised November 2026; it used to allow colour fades only). Three durations and three curves, all tokens:
+
+  | Token                     | Value            | Use                                                                                                  |
+  | ------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------- |
+  | `--fast` + `--ease`       | 120 ms           | Colour, shadow and press feedback (`scale(0.97)` on buttons, `0.92` on toolbar items).               |
+  | `--medium` + `--ease-out` | 220 ms           | A part moving or appearing in place: segmented thumb, confirmation, toolbar alert, Quick Open panel. |
+  | `--slow` + `--ease-out`   | 320 ms           | A local view entering (8 pt rise and fade) and its first eight rows following at 20 ms steps.        |
+  | `--spring`                | slight overshoot | Things that pop: unread badges, the unread dot, the pin, a completed progress mark.                  |
+
+  Rules: animate `opacity` and `transform` only; nothing loops except spinners and loading skeletons; an entrance plays once when the element mounts, never on every re-render; nothing delays input. **Never animate the sidebar width, the toolbar height or anything else the Moodle view is positioned against** — the native view does not follow. Under Reduce Motion every transition and animation is removed (spinners slow down instead), and the UI must be complete without them.
+
 - **Shadows**: `--shadow` for grouped surfaces, `--control-shadow` for bezelled controls. No large drop shadows; this is a flat window, not a stack of cards.
 
 ---
@@ -126,20 +143,28 @@ Rules:
 
 Build from these classes before inventing new ones. Each must keep all of its states: **rest, hover, active (pressed), disabled, focus-visible**, and where relevant **current** (`aria-current="page"`) and **inactive window**.
 
-| Component           | Class / file                                                                      | When to use                                                                                                                                     |
-| ------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Push button         | `.button` (+ `.primary`, `.destructive`, `.large`, `.small`)                      | Any command in a local view. One `.primary` per view at most, and it is the default (Return) action. `.destructive` only inside a confirmation. |
-| Toolbar item        | `.tool` (+ `.small`)                                                              | Icon-only commands in the toolbar. Always has `title` and `aria-label`.                                                                         |
-| Sidebar item        | `.sidebar-item` (+ `.site-avatar`)                                                | Top-level destinations only (organisations, Add, Settings). Up/Down/Home/End move focus.                                                        |
-| Text field          | `.text-field` wrapping an `<input>` (+ `.compact`, `.invalid`, `[data-disabled]`) | All text entry. Pair with `.field-label` and a `.field-message` linked through `aria-describedby`.                                              |
-| Segmented control   | `Segmented` in `views/Settings.tsx` (`.segmented`)                                | 2–4 mutually exclusive options that apply immediately. Built on native radios for keyboard support.                                             |
-| Grouped list        | `.group` › `.group-row` / `.site-row` (+ `.group-footer`)                         | Settings-style forms: label + description on the left, control on the right. Inset separators start at the text column.                         |
-| Nested row          | `.site-label-editor` pattern                                                      | A secondary setting that belongs to the row above, aligned with its text column.                                                                |
-| Inline confirmation | `.confirm` (`role="alertdialog"`)                                                 | Destructive actions. Focus goes to Cancel; Escape cancels only the confirmation.                                                                |
-| Section message     | `.section-message.error` / `.success`                                             | Outcome of an action in a local view, under the group it concerns.                                                                              |
-| Toolbar alert       | `.toolbar-alert`                                                                  | Errors while a Moodle view is visible. One line; detail in the tooltip; dismissible.                                                            |
-| Progress            | `.progress` + `.progress-step`                                                    | Multi-step work the user waits for. Steps match real phases (`lib/connection.ts`).                                                              |
-| Banner              | `.preview-banner` (`role="note"`)                                                 | A persistent, page-level fact (browser preview limits). Not for errors.                                                                         |
+| Component           | Class / file                                                                      | When to use                                                                                                                                                                       |
+| ------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Push button         | `.button` (+ `.primary`, `.destructive`, `.large`, `.small`)                      | Any command in a local view. One `.primary` per view at most, and it is the default (Return) action. `.destructive` only inside a confirmation.                                   |
+| Toolbar item        | `.tool` (+ `.small`)                                                              | Icon-only commands in the toolbar. Always has `title` and `aria-label`.                                                                                                           |
+| Sidebar item        | `.sidebar-item` (+ `.site-avatar`)                                                | Top-level destinations only (organisations, Add, Settings). Up/Down/Home/End move focus.                                                                                          |
+| Text field          | `.text-field` wrapping an `<input>` (+ `.compact`, `.invalid`, `[data-disabled]`) | All text entry. Pair with `.field-label` and a `.field-message` linked through `aria-describedby`.                                                                                |
+| Segmented control   | `Segmented` in `components/ui.tsx` (`.segmented`)                                 | 2–4 mutually exclusive options that apply immediately. Built on native radios for keyboard support; the selected bezel slides between segments.                                   |
+| Pop-up button       | `SiteSelect` in `components/ui.tsx` (`.popup-button`)                             | Choosing one of many (organisation filter). A native `<select>` in a push-button bezel, so the menu is the real macOS one.                                                        |
+| Search field        | `SearchField` in `components/ui.tsx` (`.search-field`)                            | Filtering a list in place. Has a clear button; Escape clears the text before it leaves the view.                                                                                  |
+| List view           | `.page` › `PageHeader` › `.filter-bar` › `.group` of `.list-row`                  | Inbox, Courses, Agenda, Downloads. Header: title, count, commands. Rows: leading mark (`.row-icon`, `.row-avatar`, `.unread-dot`, `.event-time`), text column, trailing commands. |
+| Icon button         | `.button.icon` (+ `.small`, `aria-pressed`)                                       | A secondary row command with a well-known glyph (Mark as Read, Pin, Show in Finder, Copy Path, Refresh). Always `title` + `aria-label`.                                           |
+| Tag                 | `.tag` (`data-kind`)                                                              | One-word classification at the end of a row (agenda event kind). Neutral; `due` is accent-tinted.                                                                                 |
+| Empty state         | `EmptyState` (`.empty-state`)                                                     | A list with nothing in it. Says whether it is empty, filtered to nothing, or all caught up — these are different messages.                                                        |
+| Loading             | `Skeleton`                                                                        | A cached list that has not loaded yet. Not for actions the user started (use the control's own spinner).                                                                          |
+| Quick Open          | `components/QuickOpen.tsx` (`.quick-open`)                                        | ⌘L. Combobox + listbox over saved names; Up/Down/Home/End, Return, Escape. The only floating panel in the shell.                                                                  |
+| Grouped list        | `.group` › `.group-row` / `.site-row` (+ `.group-footer`)                         | Settings-style forms: label + description on the left, control on the right. Inset separators start at the text column.                                                           |
+| Nested row          | `.site-label-editor` pattern                                                      | A secondary setting that belongs to the row above, aligned with its text column.                                                                                                  |
+| Inline confirmation | `.confirm` (`role="alertdialog"`)                                                 | Destructive actions. Focus goes to Cancel; Escape cancels only the confirmation.                                                                                                  |
+| Section message     | `.section-message.error` / `.success`                                             | Outcome of an action in a local view, under the group it concerns.                                                                                                                |
+| Toolbar alert       | `.toolbar-alert`                                                                  | Errors while a Moodle view is visible. One line; detail in the tooltip; dismissible.                                                                                              |
+| Progress            | `.progress` + `.progress-step`                                                    | Multi-step work the user waits for. Steps match real phases (`lib/connection.ts`).                                                                                                |
+| Banner              | `.preview-banner` (`role="note"`)                                                 | A persistent, page-level fact (browser preview limits). Not for errors.                                                                                                           |
 
 Icons: [lucide-react](https://lucide.dev), stroke width **1.75** (2 at ≤ 14 px), sizes **18** (sidebar), **16** (toolbar, fields), **14** (inline with text), **12** (captions). Always `aria-hidden="true"` with a text label or `aria-label` on the control. Prefer the glyph that matches the SF Symbol macOS uses for the same command (arrow.left → `ArrowLeft`, gear → `Settings`, arrow.clockwise → `RotateCw`).
 
@@ -147,8 +172,12 @@ Icons: [lucide-react](https://lucide.dev), stroke width **1.75** (2 at ≤ 14 px
 
 ## 7. Patterns
 
-- **Commands live in the menu bar first.** Every shell command with a toolbar or sidebar affordance also has a native menu item with the standard shortcut (`src-tauri/src/menus.rs`): Settings… ⌘,, Add Organisation… ⌘N, Back ⌘[, Forward ⌘], Reload ⌘R. New commands follow the [standard macOS shortcuts](https://support.apple.com/en-us/102650) and never reuse a system one.
-- **Local views** (Add Organisation, Settings) hide the remote view through Rust before rendering, have a toolbar title, and leave with **Done** / **Cancel** or Escape.
+- **Commands live in the menu bar first.** Every shell command with a toolbar or sidebar affordance also has a native menu item with the standard shortcut (`src-tauri/src/menus.rs`): Settings… ⌘,, Add Organisation… ⌘N, Inbox ⌘1, Courses ⌘2, Agenda ⌘3, Downloads ⌥⌘L (as in Safari), Quick Open… ⌘L, Back ⌘[, Forward ⌘], Reload ⌘R. New commands follow the [standard macOS shortcuts](https://support.apple.com/en-us/102650) and never reuse a system one. A shortcut must be a menu accelerator: while a Moodle view has focus, key events never reach the shell.
+- **Local views** (Inbox, Courses, Agenda, Downloads, Add Organisation, Settings) hide the remote view through Rust before rendering, have a toolbar title, and leave with **Done** / **Cancel** or Escape. A new one is added in `menus::LOCAL_VIEWS`, the `View`/`ShellView` types, the toolbar title and the menu.
+- **Cached lists say how old they are.** Courses and Agenda show the saved list at once, refresh organisations older than ten minutes in the background, and show "Updated … ago". One organisation failing keeps the others and the saved rows, with the reason above the list.
+- **Server-changing actions wait for the server.** Mark as Read changes the row only after Moodle accepted it; a failure leaves the row as it was and says why. Local-only state (pins) applies at once and rolls back on failure.
+- **Opening Moodle from a list** goes through `site_open_page`, which accepts a fixed page name and builds the URL in Rust from the saved site. Never pass a URL from the shell, and never follow one supplied by the server.
+- **Quick Open** is the one exception to "no overlays": a floating panel over the content area, without dimming the window. Because the Moodle view sits above the shell, Rust hides it while the panel is open and shows it again if the panel is dismissed.
 - **Settings apply immediately** (no Save button) unless the value is free text, which saves on Return or an explicit small button. Failed saves roll back only that field and explain why.
 - **Destructive actions** always ask inline first, say exactly what will be lost, and name the organisation.
 - **Errors**: keep the raw backend text in state and translate at render time (`useI18n().error` / `ErrorText`). Show what failed, then the detail.
@@ -179,7 +208,7 @@ Icons: [lucide-react](https://lucide.dev), stroke width **1.75** (2 at ≤ 14 px
 
 ## 10. Working on the UI
 
-- **Browser preview:** `pnpm dev`, then open `http://127.0.0.1:1420/?mac&demo`. `?mac` applies the macOS window chrome; `?demo` loads two neutral sample organisations so the sidebar, toolbar and Settings rows render. Both flags are dev-only and stripped from release builds.
+- **Browser preview:** `pnpm dev`, then open `http://127.0.0.1:1420/?mac&demo`. `?mac` applies the macOS window chrome; `?demo` loads two neutral sample organisations with sample notifications, courses, events and downloads (in memory, so Mark as Read, pins and Clear History can be tried). Both flags are dev-only and stripped from release builds. ⌘K opens Quick Open in the preview, because the browser owns ⌘L. Every new IPC call needs a demo fixture in `ipc.ts`.
 - **Native check:** `pnpm tauri dev`. Anything touching the toolbar, traffic lights, window states or geometry must be checked in the real window: drag, double-click to zoom, full screen, window inactive, light/dark.
 - `pnpm lint && pnpm format:check && pnpm test && pnpm build`, and `cargo clippy --workspace --all-targets -- -D warnings`.
 
@@ -188,6 +217,7 @@ Icons: [lucide-react](https://lucide.dev), stroke width **1.75** (2 at ≤ 14 px
 - [ ] Uses existing tokens and components; any new token is defined in every theme block.
 - [ ] Geometry changes made in both `styles.css` and `windows.rs`.
 - [ ] Checked in light and dark, active and inactive window, and Increase Contrast.
+- [ ] Any animation uses the motion tokens, touches only `opacity`/`transform`, and the view is complete with Reduce Motion on.
 - [ ] Keyboard-only path works; focus is visible; VoiceOver labels make sense.
 - [ ] Every new string exists in English and French; no institution names.
 - [ ] Commands also reachable from the menu bar with a standard shortcut.

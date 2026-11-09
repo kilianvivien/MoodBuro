@@ -34,6 +34,10 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
                 let _ = crate::windows::hide_sites(app);
                 let _ = app.emit_to("shell", "shell://navigate", "downloads");
             }
+            "tray-inbox" => {
+                show(app);
+                crate::menus::show_local_view(app, "inbox");
+            }
             "tray-settings" => {
                 show(app);
                 let _ = crate::windows::hide_sites(app);
@@ -105,6 +109,11 @@ async fn open_site(app: &AppHandle, id: &str, home: bool) -> Result<(), String> 
     let _ = app.emit_to("shell", "navigation://site-opened", id);
     Ok(())
 }
+fn count_all(statuses: &[Status]) -> u64 {
+    statuses
+        .iter()
+        .fold(0_u64, |n, s| n.saturating_add(s.unread))
+}
 pub fn refresh(app: &AppHandle, statuses: &[Status]) -> tauri::Result<()> {
     let Some(tray) = app.tray_by_id("unread") else {
         return Ok(());
@@ -162,6 +171,16 @@ pub fn refresh(app: &AppHandle, statuses: &[Status]) -> tauri::Result<()> {
     }
     let open = MenuItemBuilder::with_id("tray-open", text("Open MoodBuro", "Ouvrir MoodBuro"))
         .build(app)?;
+    let inbox_label = if count_all(statuses) == 0 {
+        text("Inbox…", "Boîte de réception…").to_owned()
+    } else {
+        format!(
+            "{} · {}",
+            text("Inbox…", "Boîte de réception…"),
+            count_all(statuses)
+        )
+    };
+    let inbox = MenuItemBuilder::with_id("tray-inbox", inbox_label).build(app)?;
     let check = MenuItemBuilder::with_id("tray-check", text("Check Now", "Vérifier maintenant"))
         .build(app)?;
     let settings =
@@ -211,14 +230,12 @@ pub fn refresh(app: &AppHandle, statuses: &[Status]) -> tauri::Result<()> {
         .build(app)?;
     tray.set_menu(Some(
         menu.separator()
-            .items(&[&open, &check, &downloads, &settings])
+            .items(&[&open, &inbox, &check, &downloads, &settings])
             .separator()
             .item(&quit)
             .build()?,
     ))?;
-    let count = statuses
-        .iter()
-        .fold(0_u64, |n, s| n.saturating_add(s.unread));
+    let count = count_all(statuses);
     tray.set_title(if count == 0 {
         None
     } else {

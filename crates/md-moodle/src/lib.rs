@@ -222,6 +222,97 @@ pub struct PopupNotifications {
     pub notifications: Vec<PopupNotification>,
 }
 
+/// Enrolled-course metadata; only the identifiers and names are retained.
+#[derive(Clone, Deserialize)]
+pub struct Course {
+    pub id: i64,
+    pub fullname: String,
+    #[serde(default)]
+    pub shortname: String,
+}
+#[derive(Clone, Deserialize)]
+pub struct EventCourse {
+    pub id: i64,
+    #[serde(default)]
+    pub fullname: String,
+}
+/// Upcoming calendar entry. Server-supplied URLs and descriptions are intentionally dropped.
+#[derive(Clone, Deserialize)]
+pub struct CalendarEvent {
+    pub id: i64,
+    pub name: String,
+    pub timestart: i64,
+    #[serde(default)]
+    pub timeduration: i64,
+    #[serde(default)]
+    pub eventtype: String,
+    #[serde(default)]
+    pub course: Option<EventCourse>,
+}
+#[derive(Deserialize)]
+pub struct UpcomingEvents {
+    pub events: Vec<CalendarEvent>,
+}
+
+/// Fixed Moodle destinations the shell may open. Built locally from the saved base URL;
+/// a server-supplied link is never followed.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Page {
+    Notifications,
+    Messages,
+    Calendar,
+    CalendarDay(i64),
+    Course(i64),
+}
+pub fn page_url(base: &Url, page: Page) -> Result<Url, Error> {
+    let (path, query) = match page {
+        Page::Notifications => ("message/output/popup/notifications.php", None),
+        Page::Messages => ("message/index.php", None),
+        Page::Calendar => ("calendar/view.php", Some("view=upcoming".to_owned())),
+        Page::CalendarDay(time) if time >= 0 => {
+            ("calendar/view.php", Some(format!("view=day&time={time}")))
+        }
+        Page::Course(id) if id > 0 => ("course/view.php", Some(format!("id={id}"))),
+        _ => return Err(Error::InvalidUrl),
+    };
+    let mut url = base.join(path).map_err(|_| Error::InvalidUrl)?;
+    url.set_query(query.as_deref());
+    Ok(url)
+}
+
+/// Moodle formats names as HTML. Keep bounded plain text: no tags, entities or control
+/// characters reach SQLite, the shell or native menus.
+pub fn plain_text(input: &str, max: usize) -> String {
+    let mut text = String::with_capacity(input.len().min(max * 4));
+    let mut in_tag = false;
+    for c in input.chars() {
+        match c {
+            '<' => in_tag = true,
+            '>' if in_tag => in_tag = false,
+            _ if in_tag => {}
+            c if c.is_control() => text.push(' '),
+            c => text.push(c),
+        }
+    }
+    for (entity, value) in [
+        ("&nbsp;", " "),
+        ("&lt;", "<"),
+        ("&gt;", ">"),
+        ("&quot;", "\""),
+        ("&#039;", "'"),
+        ("&#39;", "'"),
+        ("&amp;", "&"),
+    ] {
+        text = text.replace(entity, value);
+    }
+    text.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .chars()
+        .take(max)
+        .collect()
+}
+
 pub struct Client {
     base: Url,
     http: reqwest::Client,
@@ -396,6 +487,36 @@ impl Client {
         )
         .await
     }
+    pub async fn mark_all_notifications_read(
+        &self,
+        token: &str,
+        user_id: i64,
+    ) -> Result<(), Error> {
+        let _: serde_json::Value = self
+            .call(
+                token,
+                "core_message_mark_all_notifications_as_read",
+                &[("useridto", &user_id.to_string())],
+                false,
+            )
+            .await?;
+        Ok(())
+    }
+    pub async fn courses(&self, token: &str, user_id: i64) -> Result<Vec<Course>, Error> {
+        self.call(
+            token,
+            "core_enrol_get_users_courses",
+            &[("userid", &user_id.to_string()), ("returnusercount", "0")],
+            true,
+        )
+        .await
+    }
+    pub async fn upcoming_events(&self, token: &str) -> Result<Vec<CalendarEvent>, Error> {
+        let view: UpcomingEvents = self
+            .call(token, "core_calendar_get_calendar_upcoming_view", &[], true)
+            .await?;
+        Ok(view.events)
+    }
 }
 fn decode_response<T: DeserializeOwned>(value: serde_json::Value) -> Result<T, Error> {
     if let Some(code) = value.get("errorcode").and_then(|c| c.as_str()) {
@@ -553,6 +674,94 @@ mod contract_tests {
         let requests = server.received_requests().await.unwrap();
         let body = String::from_utf8_lossy(&requests[2].body);
         assert!(body.contains("limit=20") && body.contains("newestfirst=1"));
+    }
+    #[tokio::test]
+    async fn courses_events_and_mark_all_match_stock_moodle_shapes() {
+        let (server, client) = client().await;
+        for (function, arg, response) in [
+            (
+                "core_enrol_get_users_courses",
+                "userid=42",
+                serde_json::json!([{"id":7,"fullname":"Public Law &amp; Policy","shortname":"LAW1","summary":"<p>ignored</p>"},{"id":8,"fullname":"Economics"}]),
+            ),
+            (
+                "core_calendar_get_calendar_upcoming_view",
+                "moodlewsrestformat=json",
+                serde_json::json!({"events":[{"id":3,"name":"Essay due","timestart":1800000000,"timeduration":0,"eventtype":"due","course":{"id":7,"fullname":"Public Law"},"url":"https://example.org/mod/assign/view.php?id=9"},{"id":4,"name":"Personal note","timestart":1800003600}]}),
+            ),
+            (
+                "core_message_mark_all_notifications_as_read",
+                "useridto=42",
+                serde_json::json!(true),
+            ),
+        ] {
+            Mock::given(method("POST"))
+                .and(body_string_contains(format!("wsfunction={function}")))
+                .and(body_string_contains(arg))
+                .respond_with(ResponseTemplate::new(200).set_body_json(response))
+                .expect(1)
+                .mount(&server)
+                .await;
+        }
+        let courses = client.courses("test", 42).await.unwrap();
+        assert_eq!(courses.len(), 2);
+        assert_eq!(plain_text(&courses[0].fullname, 64), "Public Law & Policy");
+        assert_eq!(courses[1].shortname, "");
+        let events = client.upcoming_events("test").await.unwrap();
+        assert_eq!(events[0].course.as_ref().unwrap().id, 7);
+        assert!(events[1].course.is_none() && events[1].eventtype.is_empty());
+        client
+            .mark_all_notifications_read("test", 42)
+            .await
+            .unwrap();
+    }
+    #[tokio::test]
+    async fn denied_course_listing_is_typed() {
+        let (server, client) = client().await;
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(
+                serde_json::json!({"exception":"x","errorcode":"accessexception","message":"m"}),
+            ))
+            .mount(&server)
+            .await;
+        assert!(matches!(
+            client.courses("test", 42).await,
+            Err(Error::AccessDenied)
+        ));
+    }
+    #[test]
+    fn pages_are_fixed_and_names_are_plain_bounded_text() {
+        let base = Url::parse("https://example.org/moodle/").unwrap();
+        assert_eq!(
+            page_url(&base, Page::Course(12)).unwrap().as_str(),
+            "https://example.org/moodle/course/view.php?id=12"
+        );
+        assert_eq!(
+            page_url(&base, Page::CalendarDay(1800000000))
+                .unwrap()
+                .as_str(),
+            "https://example.org/moodle/calendar/view.php?view=day&time=1800000000"
+        );
+        assert!(page_url(&base, Page::Notifications)
+            .unwrap()
+            .path()
+            .ends_with("/moodle/message/output/popup/notifications.php"));
+        assert!(page_url(&base, Page::Course(0)).is_err());
+        assert!(page_url(&base, Page::CalendarDay(-1)).is_err());
+        for page in [Page::Messages, Page::Calendar, Page::Course(3)] {
+            assert_eq!(
+                navigation(&base, &page_url(&base, page).unwrap()),
+                Navigation::Allow
+            );
+        }
+        assert_eq!(
+            plain_text(
+                "<span lang=\"fr\">Droit</span>\n &amp; <b>Soci&#039;été</b>",
+                64
+            ),
+            "Droit & Soci'été"
+        );
+        assert_eq!(plain_text("abcdef", 3), "abc");
     }
     #[tokio::test]
     async fn mark_read_is_not_retried() {

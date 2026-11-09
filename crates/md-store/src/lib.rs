@@ -50,12 +50,65 @@ pub struct Download {
     pub state: String,
     pub started_at: i64,
 }
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InboxItem {
+    pub site_id: String,
+    pub id: i64,
+    pub subject: String,
+    pub time_created: i64,
+    pub read: bool,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Course {
+    pub site_id: String,
+    pub id: i64,
+    pub name: String,
+    pub short_name: String,
+    pub pinned: bool,
+}
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Event {
+    pub site_id: String,
+    pub id: i64,
+    pub name: String,
+    pub time_start: i64,
+    pub duration: i64,
+    pub kind: String,
+    pub course_id: Option<i64>,
+    pub course_name: Option<String>,
+}
+/// When an account's cached metadata (`courses` or `agenda`) was last refreshed.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Refreshed {
+    pub site_id: String,
+    pub refreshed_at: i64,
+}
+#[derive(Default)]
+pub struct DownloadFilter<'a> {
+    pub query: &'a str,
+    pub site_id: Option<&'a str>,
+    pub state: Option<&'a str>,
+}
+fn download_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Download> {
+    Ok(Download {
+        id: r.get(0)?,
+        site_id: r.get(1)?,
+        filename: r.get(2)?,
+        local_path: r.get(3)?,
+        state: r.get(4)?,
+        started_at: r.get(5)?,
+    })
+}
 pub struct Store(Connection);
 impl Store {
     pub fn open(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 4 {
+        if version > 5 {
             return Err(rusqlite::Error::InvalidQuery);
         }
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; BEGIN;
@@ -64,7 +117,11 @@ impl Store {
             CREATE TABLE IF NOT EXISTS notification_state (site_id TEXT PRIMARY KEY REFERENCES sites(id) ON DELETE CASCADE, checkpoint INTEGER NOT NULL, unread INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS notifications (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, moodle_id INTEGER NOT NULL, subject TEXT NOT NULL, time_created INTEGER NOT NULL, read INTEGER NOT NULL, PRIMARY KEY(site_id,moodle_id));
             CREATE TABLE IF NOT EXISTS downloads (id TEXT PRIMARY KEY, site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, filename TEXT NOT NULL, local_path TEXT NOT NULL, state TEXT NOT NULL, started_at INTEGER NOT NULL);
-            PRAGMA user_version=4; COMMIT;")?;
+            CREATE TABLE IF NOT EXISTS courses (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, course_id INTEGER NOT NULL, name TEXT NOT NULL, short_name TEXT NOT NULL, PRIMARY KEY(site_id,course_id));
+            CREATE TABLE IF NOT EXISTS course_pins (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, course_id INTEGER NOT NULL, PRIMARY KEY(site_id,course_id));
+            CREATE TABLE IF NOT EXISTS events (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, event_id INTEGER NOT NULL, name TEXT NOT NULL, time_start INTEGER NOT NULL, duration INTEGER NOT NULL, kind TEXT NOT NULL, course_id INTEGER, course_name TEXT, PRIMARY KEY(site_id,event_id));
+            CREATE TABLE IF NOT EXISTS sync_state (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, kind TEXT NOT NULL, refreshed_at INTEGER NOT NULL, PRIMARY KEY(site_id,kind));
+            PRAGMA user_version=5; COMMIT;")?;
         Ok(Self(connection))
     }
     pub fn download_insert(&self, item: &Download) -> rusqlite::Result<()> {
@@ -113,14 +170,223 @@ impl Store {
     }
     pub fn downloads_recent(&self) -> rusqlite::Result<Vec<Download>> {
         let mut stmt = self.0.prepare("SELECT id,site_id,filename,local_path,state,started_at FROM downloads ORDER BY started_at DESC,rowid DESC LIMIT 20")?;
+        let items = stmt.query_map([], download_row)?;
+        items.collect()
+    }
+    pub fn download(&self, id: &str) -> rusqlite::Result<Option<Download>> {
+        use rusqlite::OptionalExtension;
+        self.0
+            .query_row(
+                "SELECT id,site_id,filename,local_path,state,started_at FROM downloads WHERE id=?1",
+                [id],
+                download_row,
+            )
+            .optional()
+    }
+    /// One page of history, newest first, with the total number of matching rows.
+    pub fn downloads_page(
+        &self,
+        filter: &DownloadFilter<'_>,
+        offset: u32,
+        limit: u32,
+    ) -> rusqlite::Result<(Vec<Download>, u64)> {
+        // The filename filter is a literal substring: LIKE wildcards are escaped.
+        let pattern = format!(
+            "%{}%",
+            filter
+                .query
+                .trim()
+                .replace('\\', "\\\\")
+                .replace('%', "\\%")
+                .replace('_', "\\_")
+        );
+        const WHERE: &str = "filename LIKE ?1 ESCAPE '\\' AND (?2 IS NULL OR site_id=?2) AND (?3 IS NULL OR state=?3)";
+        let total: u64 = self.0.query_row(
+            &format!("SELECT COUNT(*) FROM downloads WHERE {WHERE}"),
+            params![pattern, filter.site_id, filter.state],
+            |r| r.get(0),
+        )?;
+        let mut stmt = self.0.prepare(&format!("SELECT id,site_id,filename,local_path,state,started_at FROM downloads WHERE {WHERE} ORDER BY started_at DESC,rowid DESC LIMIT ?4 OFFSET ?5"))?;
+        let items = stmt
+            .query_map(
+                params![pattern, filter.site_id, filter.state, limit, offset],
+                download_row,
+            )?
+            .collect::<rusqlite::Result<_>>()?;
+        Ok((items, total))
+    }
+    /// Forgets finished history rows (never the files). Active transfers stay listed.
+    pub fn downloads_clear(&self, site_id: Option<&str>) -> rusqlite::Result<usize> {
+        self.0.execute(
+            "DELETE FROM downloads WHERE state<>'downloading' AND (?1 IS NULL OR site_id=?1)",
+            params![site_id],
+        )
+    }
+    pub fn notifications_list(&self) -> rusqlite::Result<Vec<InboxItem>> {
+        let mut stmt = self.0.prepare("SELECT site_id,moodle_id,subject,time_created,read FROM notifications ORDER BY time_created DESC,moodle_id DESC LIMIT 300")?;
         let items = stmt.query_map([], |r| {
-            Ok(Download {
-                id: r.get(0)?,
-                site_id: r.get(1)?,
-                filename: r.get(2)?,
-                local_path: r.get(3)?,
-                state: r.get(4)?,
-                started_at: r.get(5)?,
+            Ok(InboxItem {
+                site_id: r.get(0)?,
+                id: r.get(1)?,
+                subject: r.get(2)?,
+                time_created: r.get(3)?,
+                read: r.get(4)?,
+            })
+        })?;
+        items.collect()
+    }
+    pub fn notification_cached(&self, site_id: &str, id: i64) -> rusqlite::Result<bool> {
+        self.0.query_row(
+            "SELECT EXISTS (SELECT 1 FROM notifications WHERE site_id=?1 AND moodle_id=?2)",
+            params![site_id, id],
+            |r| r.get(0),
+        )
+    }
+    /// Local read state after the server accepted it; `None` marks the whole account.
+    /// Bound to the Moodle user that made the request, so a replaced account is untouched.
+    pub fn notifications_mark_read(
+        &self,
+        site_id: &str,
+        user_id: i64,
+        id: Option<i64>,
+    ) -> rusqlite::Result<usize> {
+        self.0.execute(
+            "UPDATE notifications SET read=1 WHERE site_id=?1 AND (?3 IS NULL OR moodle_id=?3) AND EXISTS (SELECT 1 FROM sites WHERE id=?1 AND user_id=?2)",
+            params![site_id, user_id, id],
+        )
+    }
+    fn owned_by(
+        tx: &rusqlite::Transaction<'_>,
+        site_id: &str,
+        user_id: i64,
+    ) -> rusqlite::Result<()> {
+        let owned: bool = tx.query_row(
+            "SELECT EXISTS (SELECT 1 FROM sites WHERE id=?1 AND user_id=?2)",
+            params![site_id, user_id],
+            |r| r.get(0),
+        )?;
+        // A late response for a removed or replaced account must not be stored.
+        if owned {
+            Ok(())
+        } else {
+            Err(rusqlite::Error::InvalidQuery)
+        }
+    }
+    /// Replaces the account's course list. Pins for courses no longer listed are dropped.
+    pub fn save_courses(
+        &self,
+        site_id: &str,
+        user_id: i64,
+        items: &[Course],
+        now: i64,
+    ) -> rusqlite::Result<()> {
+        let tx = self.0.unchecked_transaction()?;
+        Self::owned_by(&tx, site_id, user_id)?;
+        tx.execute("DELETE FROM courses WHERE site_id=?1", [site_id])?;
+        for item in items {
+            tx.execute(
+                "INSERT OR REPLACE INTO courses VALUES (?1,?2,?3,?4)",
+                params![site_id, item.id, item.name, item.short_name],
+            )?;
+        }
+        tx.execute("DELETE FROM course_pins WHERE site_id=?1 AND course_id NOT IN (SELECT course_id FROM courses WHERE site_id=?1)", [site_id])?;
+        tx.execute("INSERT INTO sync_state VALUES (?1,'courses',?2) ON CONFLICT(site_id,kind) DO UPDATE SET refreshed_at=excluded.refreshed_at", params![site_id, now])?;
+        tx.commit()
+    }
+    pub fn courses(&self) -> rusqlite::Result<Vec<Course>> {
+        let mut stmt = self.0.prepare("SELECT c.site_id,c.course_id,c.name,c.short_name,p.course_id IS NOT NULL FROM courses c LEFT JOIN course_pins p ON p.site_id=c.site_id AND p.course_id=c.course_id ORDER BY c.name COLLATE NOCASE,c.course_id")?;
+        let items = stmt.query_map([], |r| {
+            Ok(Course {
+                site_id: r.get(0)?,
+                id: r.get(1)?,
+                name: r.get(2)?,
+                short_name: r.get(3)?,
+                pinned: r.get(4)?,
+            })
+        })?;
+        items.collect()
+    }
+    /// Pins are local only; they never change Moodle favourites. Unknown courses are refused.
+    pub fn set_course_pin(
+        &self,
+        site_id: &str,
+        course_id: i64,
+        pinned: bool,
+    ) -> rusqlite::Result<()> {
+        let changed = if pinned {
+            self.0.execute("INSERT OR IGNORE INTO course_pins SELECT site_id,course_id FROM courses WHERE site_id=?1 AND course_id=?2", params![site_id, course_id])?;
+            self.0.query_row(
+                "SELECT COUNT(*) FROM course_pins WHERE site_id=?1 AND course_id=?2",
+                params![site_id, course_id],
+                |r| r.get::<_, usize>(0),
+            )?
+        } else {
+            self.0.execute(
+                "DELETE FROM course_pins WHERE site_id=?1 AND course_id=?2",
+                params![site_id, course_id],
+            )?;
+            1
+        };
+        if changed == 1 {
+            Ok(())
+        } else {
+            Err(rusqlite::Error::QueryReturnedNoRows)
+        }
+    }
+    /// Replaces the account's upcoming events, so changed and cancelled entries reconcile.
+    pub fn save_events(
+        &self,
+        site_id: &str,
+        user_id: i64,
+        items: &[Event],
+        now: i64,
+    ) -> rusqlite::Result<()> {
+        let tx = self.0.unchecked_transaction()?;
+        Self::owned_by(&tx, site_id, user_id)?;
+        tx.execute("DELETE FROM events WHERE site_id=?1", [site_id])?;
+        for item in items {
+            tx.execute(
+                "INSERT OR REPLACE INTO events VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
+                params![
+                    site_id,
+                    item.id,
+                    item.name,
+                    item.time_start,
+                    item.duration,
+                    item.kind,
+                    item.course_id,
+                    item.course_name
+                ],
+            )?;
+        }
+        tx.execute("INSERT INTO sync_state VALUES (?1,'agenda',?2) ON CONFLICT(site_id,kind) DO UPDATE SET refreshed_at=excluded.refreshed_at", params![site_id, now])?;
+        tx.commit()
+    }
+    /// Cached events that have not ended before `from`, soonest first.
+    pub fn events(&self, from: i64) -> rusqlite::Result<Vec<Event>> {
+        let mut stmt = self.0.prepare("SELECT site_id,event_id,name,time_start,duration,kind,course_id,course_name FROM events WHERE time_start+duration>=?1 ORDER BY time_start,event_id LIMIT 500")?;
+        let items = stmt.query_map([from], |r| {
+            Ok(Event {
+                site_id: r.get(0)?,
+                id: r.get(1)?,
+                name: r.get(2)?,
+                time_start: r.get(3)?,
+                duration: r.get(4)?,
+                kind: r.get(5)?,
+                course_id: r.get(6)?,
+                course_name: r.get(7)?,
+            })
+        })?;
+        items.collect()
+    }
+    pub fn refreshed(&self, kind: &str) -> rusqlite::Result<Vec<Refreshed>> {
+        let mut stmt = self
+            .0
+            .prepare("SELECT site_id,refreshed_at FROM sync_state WHERE kind=?1")?;
+        let items = stmt.query_map([kind], |r| {
+            Ok(Refreshed {
+                site_id: r.get(0)?,
+                refreshed_at: r.get(1)?,
             })
         })?;
         items.collect()
@@ -251,7 +517,15 @@ impl Store {
     pub fn update(&self, site: &Site) -> rusqlite::Result<()> {
         let tx = self.0.unchecked_transaction()?;
         // A different account must start with a fresh, silent notification seed.
-        for table in ["notifications", "notification_state", "downloads"] {
+        for table in [
+            "notifications",
+            "notification_state",
+            "downloads",
+            "courses",
+            "course_pins",
+            "events",
+            "sync_state",
+        ] {
             tx.execute(&format!("DELETE FROM {table} WHERE site_id=?1 AND EXISTS (SELECT 1 FROM sites WHERE id=?1 AND user_id<>?2)"), params![site.id, site.user_id])?;
         }
         tx.execute(
@@ -485,5 +759,183 @@ mod download_tests {
             .unwrap();
         store.remove("site").unwrap();
         assert!(store.downloads_recent().unwrap().is_empty());
+    }
+}
+
+#[cfg(test)]
+mod library_tests {
+    use super::*;
+    fn store() -> (Store, Site) {
+        let store = Store::open(":memory:").unwrap();
+        let site = Site {
+            id: "site".into(),
+            wwwroot: "https://example.org/".into(),
+            name: "Example".into(),
+            user_id: 1,
+            full_name: "Learner".into(),
+        };
+        store.insert(&site).unwrap();
+        (store, site)
+    }
+    fn course(id: i64, name: &str) -> Course {
+        Course {
+            site_id: "site".into(),
+            id,
+            name: name.into(),
+            short_name: String::new(),
+            pinned: false,
+        }
+    }
+    fn event(id: i64, time_start: i64) -> Event {
+        Event {
+            site_id: "site".into(),
+            id,
+            name: "Essay due".into(),
+            time_start,
+            duration: 0,
+            kind: "due".into(),
+            course_id: Some(7),
+            course_name: Some("Law".into()),
+        }
+    }
+    #[test]
+    fn courses_pins_and_late_responses_are_account_bound() {
+        let (store, mut site) = store();
+        store
+            .save_courses("site", 1, &[course(2, "zoology"), course(1, "Algebra")], 10)
+            .unwrap();
+        store.set_course_pin("site", 2, true).unwrap();
+        store.set_course_pin("site", 2, true).unwrap();
+        assert!(store.set_course_pin("site", 99, true).is_err());
+        let courses = store.courses().unwrap();
+        assert_eq!(courses[0].name, "Algebra");
+        assert!(courses[1].pinned && !courses[0].pinned);
+        assert_eq!(store.refreshed("courses").unwrap()[0].refreshed_at, 10);
+        assert!(store.refreshed("agenda").unwrap().is_empty());
+        // A refresh keeps pins for courses still listed and drops the others.
+        store
+            .save_courses("site", 1, &[course(1, "Algebra")], 11)
+            .unwrap();
+        assert!(store.courses().unwrap().iter().all(|c| !c.pinned));
+        store.set_course_pin("site", 1, true).unwrap();
+        // A response for the previous Moodle user is refused and changes nothing.
+        assert!(store.save_courses("site", 2, &[], 12).is_err());
+        assert_eq!(store.courses().unwrap().len(), 1);
+        store.set_course_pin("site", 1, false).unwrap();
+        store.set_course_pin("site", 1, true).unwrap();
+        site.user_id = 2;
+        store.update(&site).unwrap();
+        assert!(store.courses().unwrap().is_empty());
+        assert!(store.refreshed("courses").unwrap().is_empty());
+        let pins: i64 = store
+            .0
+            .query_row("SELECT COUNT(*) FROM course_pins", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(pins, 0);
+    }
+    #[test]
+    fn agenda_reconciles_changes_and_is_removed_with_the_account() {
+        let (store, _) = store();
+        store
+            .save_events("site", 1, &[event(1, 100), event(2, 50), event(3, 10)], 5)
+            .unwrap();
+        let upcoming = store.events(40).unwrap();
+        assert_eq!(
+            upcoming.iter().map(|e| e.id).collect::<Vec<_>>(),
+            vec![2, 1]
+        );
+        // Changed due date and a cancelled event after refresh.
+        store.save_events("site", 1, &[event(1, 300)], 6).unwrap();
+        let upcoming = store.events(0).unwrap();
+        assert_eq!(upcoming.len(), 1);
+        assert_eq!(upcoming[0].time_start, 300);
+        assert!(store.save_events("site", 9, &[], 7).is_err());
+        assert_eq!(store.refreshed("agenda").unwrap()[0].refreshed_at, 6);
+        store.remove("site").unwrap();
+        assert!(store.events(0).unwrap().is_empty());
+        assert!(store.refreshed("agenda").unwrap().is_empty());
+    }
+    #[test]
+    fn inbox_read_state_is_scoped_to_the_requesting_account() {
+        let (store, _) = store();
+        let items: Vec<_> = (1..=3)
+            .map(|id| Notification {
+                id,
+                subject: format!("Notice {id}"),
+                time_created: id,
+                read: false,
+            })
+            .collect();
+        store.save_notifications("site", 3, 3, &items).unwrap();
+        assert!(store.notification_cached("site", 2).unwrap());
+        assert!(!store.notification_cached("site", 9).unwrap());
+        assert_eq!(
+            store.notifications_mark_read("site", 2, Some(2)).unwrap(),
+            0
+        );
+        assert_eq!(
+            store.notifications_mark_read("site", 1, Some(2)).unwrap(),
+            1
+        );
+        let list = store.notifications_list().unwrap();
+        assert_eq!(list[0].id, 3);
+        assert_eq!(
+            list.iter().map(|n| n.read).collect::<Vec<_>>(),
+            vec![false, true, false]
+        );
+        assert_eq!(store.notifications_mark_read("site", 1, None).unwrap(), 3);
+        assert!(store.notifications_list().unwrap().iter().all(|n| n.read));
+    }
+    #[test]
+    fn download_history_pages_filters_and_clears_without_touching_active_rows() {
+        let (store, _) = store();
+        for n in 0..30 {
+            store
+                .download_insert(&Download {
+                    id: n.to_string(),
+                    site_id: "site".into(),
+                    filename: if n % 2 == 0 {
+                        format!("notes_{n}.pdf")
+                    } else {
+                        format!("Slides 100% {n}.key")
+                    },
+                    local_path: "/home/Moodle/x".into(),
+                    state: if n == 29 { "downloading" } else { "complete" }.into(),
+                    started_at: n,
+                })
+                .unwrap();
+        }
+        let all = DownloadFilter::default();
+        let (page, total) = store.downloads_page(&all, 0, 25).unwrap();
+        assert_eq!((page.len(), total), (25, 30));
+        assert_eq!(page[0].id, "29");
+        assert_eq!(store.downloads_page(&all, 25, 25).unwrap().0.len(), 5);
+        // Wildcards in the search text are literal.
+        let filter = |query| DownloadFilter {
+            query,
+            ..Default::default()
+        };
+        assert_eq!(
+            store.downloads_page(&filter("NOTES_"), 0, 50).unwrap().1,
+            15
+        );
+        assert_eq!(store.downloads_page(&filter("100%"), 0, 50).unwrap().1, 15);
+        assert_eq!(store.downloads_page(&filter("%"), 0, 50).unwrap().1, 15);
+        let active = DownloadFilter {
+            state: Some("downloading"),
+            site_id: Some("site"),
+            ..Default::default()
+        };
+        assert_eq!(store.downloads_page(&active, 0, 50).unwrap().1, 1);
+        let other = DownloadFilter {
+            site_id: Some("other"),
+            ..Default::default()
+        };
+        assert_eq!(store.downloads_page(&other, 0, 50).unwrap().1, 0);
+        assert_eq!(store.download("3").unwrap().unwrap().started_at, 3);
+        assert!(store.download("missing").unwrap().is_none());
+        assert_eq!(store.downloads_clear(Some("other")).unwrap(), 0);
+        assert_eq!(store.downloads_clear(Some("site")).unwrap(), 29);
+        assert_eq!(store.downloads_page(&all, 0, 50).unwrap().1, 1);
     }
 }

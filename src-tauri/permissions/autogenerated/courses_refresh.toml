@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-courses-refresh"
+description = "Enables the courses_refresh command without any pre-configured scope."
+commands.allow = ["courses_refresh"]
+
+[[permission]]
+identifier = "deny-courses-refresh"
+description = "Denies the courses_refresh command without any pre-configured scope."
+commands.deny = ["courses_refresh"]

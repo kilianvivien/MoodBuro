@@ -139,12 +139,34 @@ const french: Record<string, string> = {
   "Unknown navigation action.": "Action de navigation inconnue.",
   "Navigation failed.": "La navigation a échoué.",
 
+  // Inbox, courses and agenda
+  "Unknown Moodle page.": "Page Moodle inconnue.",
+  "This course is no longer in your list. Refresh your courses.":
+    "Ce cours ne figure plus dans votre liste. Actualisez vos cours.",
+  "Could not read the course list.": "Impossible de lire la liste des cours.",
+  "Could not save the course list.":
+    "Impossible d’enregistrer la liste des cours.",
+  "Could not update this pin.": "Impossible de modifier cette épingle.",
+  "Could not read notifications.": "Impossible de lire les notifications.",
+  "Could not update notifications.":
+    "Impossible de mettre à jour les notifications.",
+  "This notification is no longer available.":
+    "Cette notification n’est plus disponible.",
+  "Could not read the agenda.": "Impossible de lire l’agenda.",
+  "Could not save the agenda.": "Impossible d’enregistrer l’agenda.",
+  "Unknown download filter.": "Filtre de téléchargement inconnu.",
+  "Could not clear download history.":
+    "Impossible d’effacer l’historique des téléchargements.",
+  "Could not copy the file path.": "Impossible de copier le chemin du fichier.",
+
   "Use up to 4 letters or numbers for the short label.":
     "Utilisez au maximum 4 lettres ou chiffres pour l’abréviation.",
 
   // Browser preview (ipc.ts)
   "Open the desktop app with pnpm tauri dev to manage sign-in.":
     "Ouvrez l’app de bureau avec pnpm tauri dev pour gérer les connexions.",
+  "Open the desktop app with pnpm tauri dev to use this feature.":
+    "Ouvrez l’app de bureau avec pnpm tauri dev pour utiliser cette fonction.",
 };
 
 /** What was being attempted, so an untranslated error still says what failed. */

@@ -108,12 +108,108 @@ pub fn popup_nav(webview: tauri::Webview, app: AppHandle, action: String) -> Res
     navigate_view(&app, &site.id, &target, &action)
 }
 #[tauri::command]
-pub fn downloads_recent(
+pub fn downloads_page(
     webview: tauri::Webview,
     app: AppHandle,
-) -> Result<Vec<crate::downloads::Summary>, String> {
+    query: String,
+    site_id: Option<String>,
+    state: Option<String>,
+    offset: u32,
+) -> Result<crate::downloads::Page, String> {
     shell(&webview)?;
-    crate::downloads::recent(&app)
+    crate::downloads::page(&app, &query, site_id.as_deref(), state.as_deref(), offset)
+}
+#[tauri::command]
+pub fn downloads_clear(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: Option<String>,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::downloads::clear(&app, site_id.as_deref())
+}
+#[tauri::command]
+pub fn download_copy_path(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::downloads::copy_path(&app, &id)
+}
+#[tauri::command]
+pub fn inbox_list(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Vec<md_store::InboxItem>, String> {
+    shell(&webview)?;
+    crate::library::inbox(&app)
+}
+#[tauri::command]
+pub async fn inbox_mark_read(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    id: Option<i64>,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::library::mark_read(&app, &site_id, id).await
+}
+#[tauri::command]
+pub async fn site_open_page(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+    page: String,
+    value: Option<i64>,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::library::open_page(&app, &id, &page, value).await
+}
+#[tauri::command]
+pub fn courses_list(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<crate::library::Listing<md_store::Course>, String> {
+    shell(&webview)?;
+    crate::library::courses(&app)
+}
+#[tauri::command]
+pub async fn courses_refresh(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::library::refresh_courses(&app, &id).await
+}
+#[tauri::command]
+pub fn course_pin(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    course_id: i64,
+    pinned: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::library::pin(&app, &site_id, course_id, pinned)
+}
+#[tauri::command]
+pub fn agenda_list(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<crate::library::Listing<md_store::Event>, String> {
+    shell(&webview)?;
+    crate::library::agenda(&app)
+}
+#[tauri::command]
+pub async fn agenda_refresh(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::library::refresh_agenda(&app, &id).await
 }
 #[tauri::command]
 pub fn download_open(
@@ -545,7 +641,7 @@ fn show_local(app: &AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub fn shell_view(webview: tauri::Webview, app: AppHandle, view: String) -> Result<(), String> {
     shell(&webview)?;
-    if !matches!(view.as_str(), "onboarding" | "settings" | "downloads") {
+    if !crate::menus::LOCAL_VIEWS.contains(&view.as_str()) {
         return Err("Unknown shell view.".into());
     }
     show_local(&app)

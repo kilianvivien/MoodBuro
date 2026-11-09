@@ -6,6 +6,7 @@ import {
   Download,
   House,
   RotateCw,
+  Search,
   X,
 } from "lucide-react";
 import type { NavAction, Site } from "../ipc";
@@ -24,6 +25,8 @@ export function Toolbar({
   onDismissError,
   onLeave,
   onDownloads,
+  onQuickOpen,
+  paused = false,
 }: {
   view: View;
   site: Site | undefined;
@@ -38,6 +41,9 @@ export function Toolbar({
   onDismissError: () => void;
   onLeave: () => void;
   onDownloads?: () => void;
+  onQuickOpen?: () => void;
+  /** Quick Open covers the Moodle view: page commands have nothing to act on. */
+  paused?: boolean;
 }) {
   const i18n = useI18n();
   const { t } = i18n;
@@ -66,6 +72,20 @@ export function Toolbar({
       </button>
     </div>
   );
+  const quickOpen = onQuickOpen && (
+    <button
+      className="tool"
+      title={t.toolbar.quickOpen}
+      aria-label={t.toolbar.quickOpen}
+      onClick={onQuickOpen}
+    >
+      <Search {...icon} />
+    </button>
+  );
+  const local =
+    view === "site" || view === "onboarding"
+      ? t.toolbar.addOrganisation
+      : t.toolbar[view];
   return (
     // "deep": the whole bar drags the window; buttons still click.
     <header className="toolbar" data-tauri-drag-region="deep">
@@ -80,6 +100,7 @@ export function Toolbar({
               className="tool"
               title={t.toolbar.home}
               aria-label={t.toolbar.home}
+              disabled={paused}
               onClick={() => onNav("home")}
             >
               <House {...icon} />
@@ -88,6 +109,7 @@ export function Toolbar({
               className="tool"
               title={t.toolbar.back}
               aria-label={t.toolbar.back}
+              disabled={paused}
               onClick={() => onNav("back")}
             >
               <ArrowLeft {...icon} />
@@ -96,6 +118,7 @@ export function Toolbar({
               className="tool"
               title={t.toolbar.forward}
               aria-label={t.toolbar.forward}
+              disabled={paused}
               onClick={() => onNav("forward")}
             >
               <ArrowRight {...icon} />
@@ -104,16 +127,18 @@ export function Toolbar({
               className="tool"
               title={t.toolbar.reload}
               aria-label={t.toolbar.reload}
+              disabled={paused}
               onClick={() => onNav("reload")}
             >
               <RotateCw size={15} strokeWidth={1.75} aria-hidden="true" />
             </button>
           </div>
-          <div className="toolbar-title">
+          <div className="toolbar-title" key={site.id}>
             <h1>{site.name}</h1>
             <span>{displayHost(site.wwwroot)}</span>
           </div>
           {alert}
+          {quickOpen}
           {onDownloads && (
             <button
               className="tool"
@@ -128,6 +153,7 @@ export function Toolbar({
             className="tool"
             title={t.toolbar.openInBrowser}
             aria-label={t.toolbar.openInBrowser}
+            disabled={paused}
             onClick={() => onNav("open_in_browser")}
           >
             <ExternalLink size={15} strokeWidth={1.75} aria-hidden="true" />
@@ -135,16 +161,21 @@ export function Toolbar({
         </>
       ) : (
         <>
-          <div className="toolbar-title">
-            <h1>
-              {view === "settings"
-                ? t.toolbar.settings
-                : view === "downloads"
-                  ? t.toolbar.downloads
-                  : t.toolbar.addOrganisation}
-            </h1>
+          <div className="toolbar-title" key={view}>
+            <h1>{local}</h1>
           </div>
           {alert}
+          {view !== "onboarding" && quickOpen}
+          {view !== "onboarding" && view !== "downloads" && onDownloads && (
+            <button
+              className="tool"
+              title={t.toolbar.downloads}
+              aria-label={t.toolbar.downloads}
+              onClick={onDownloads}
+            >
+              <Download {...icon} />
+            </button>
+          )}
           {canLeave && (
             <button className="button" onClick={onLeave}>
               {view === "onboarding" ? t.toolbar.cancel : t.toolbar.done}

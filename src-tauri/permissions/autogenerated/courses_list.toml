@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-courses-list"
+description = "Enables the courses_list command without any pre-configured scope."
+commands.allow = ["courses_list"]
+
+[[permission]]
+identifier = "deny-courses-list"
+description = "Denies the courses_list command without any pre-configured scope."
+commands.deny = ["courses_list"]

@@ -30,14 +30,18 @@ Pins are a small addition to the course browser, stored locally per account. The
 
 A completed slice should produce a reviewable local build and its relevant evidence. These slices are the target feature set for the expanded Alpha. If a slice cannot meet its acceptance criteria, record an explicit scope decision in the tracker rather than silently dropping it or marking the full PRD requirement complete.
 
+## Progress — 9 November 2026
+
+First implementation pass over A1, A2 and the read-only half of A4, against synthetic fixtures only. Checked boxes below mean "built and covered by automated tests"; none of the **Acceptance** paragraphs is met yet, because each needs a real account, an installed build or the 4.5/5.3 rigs. Items with an italic note are partly built. A3, A5 and A4's reminders are untouched.
+
 ## A1 — Notification inbox and download controls
 
-- [ ] Add a local notification inbox grouped/filterable by site, with subject, date, unread state, Open and Mark Read.
-- [ ] Use the existing native/menu-bar entry points to reach the inbox and expose the latest unread items without wide menu rows.
-- [ ] Open a safe site notification page when a precise activity destination is unavailable; never follow an unvalidated context URL.
-- [ ] Refresh authoritative counts/read state after Mark Read. Show failures and preserve the previous state when the server rejects the operation.
-- [ ] Replace the 20-row-only Downloads view with paginated history and filename/site/state filters; add course filtering when A2 supplies a reliable association. Keep an explicit Unknown Course bucket.
-- [ ] Add Copy Path and per-site Clear History, keeping files on disk. Confirm history clearing and describe its effect.
+- [x] Add a local notification inbox grouped/filterable by site, with subject, date, unread state, Open and Mark Read.
+- [ ] Use the existing native/menu-bar entry points to reach the inbox and expose the latest unread items without wide menu rows. _(Partly built: View → Inbox ⌘1 and a tray Inbox entry with the count; individual unread items are not listed in the tray.)_
+- [x] Open a safe site notification page when a precise activity destination is unavailable; never follow an unvalidated context URL.
+- [x] Refresh authoritative counts/read state after Mark Read. Show failures and preserve the previous state when the server rejects the operation.
+- [ ] Replace the 20-row-only Downloads view with paginated history and filename/site/state filters; add course filtering when A2 supplies a reliable association. Keep an explicit Unknown Course bucket. _(Built: paging and filename/site/state filters. Open: course filter and Unknown Course bucket, which need the download-to-course association.)_
+- [x] Add Copy Path and per-site Clear History, keeping files on disk. Confirm history clearing and describe its effect.
 - [ ] Add a safe retry route: resolve a fresh source from stable Moodle file metadata when available; otherwise offer return to the relevant Moodle page/site. Never persist or replay a stale credential-bearing URL or claim that revealing a page restarted a transfer.
 - [ ] Add a PDF/image handling preference: retain inline viewing by default; offer an explicit Save/Open in Default App route through managed downloads. Risky/unknown types always retain confirmation and never auto-open.
 
@@ -45,12 +49,12 @@ A completed slice should produce a reviewable local build and its relevant evide
 
 ## A2 — Course browser, pins and quick-open
 
-- [ ] Fetch enrolled-course metadata with bounded requests, cache it per account, and expose refresh, empty, offline/stale and permission-error states.
-- [ ] Add a compact course browser with local pins and course/site labels. Opening a result routes through the existing session bridge and navigation guard.
-- [ ] Add Cmd+L quick-open across sites' course names and already cached activities. Search cached metadata locally; show what is available offline and when the cache was refreshed.
+- [x] Fetch enrolled-course metadata with bounded requests, cache it per account, and expose refresh, empty, offline/stale and permission-error states.
+- [x] Add a compact course browser with local pins and course/site labels. Opening a result routes through the existing session bridge and navigation guard.
+- [ ] Add Cmd+L quick-open across sites' course names and already cached activities. Search cached metadata locally; show what is available offline and when the cache was refreshed. _(Built: ⌘L over course names, organisations and shell views. Open: no activity metadata is cached yet, and the panel does not show the cache age — the Courses view does.)_
 - [ ] Offer an opt-in global Cmd+Shift+M shortcut; handle registration conflicts visibly and unregister it when disabled or quitting.
 - [ ] Reuse course/context identifiers to finish course-folder download routing. Keep the Downloads fallback when association is unknown; never infer a course from a similar name.
-- [ ] Clear metadata/pins on removal or account replacement and reject late responses from the previous user.
+- [x] Clear metadata/pins on removal or account replacement and reject late responses from the previous user.
 
 **Acceptance:** keyboard-only search can open the correct course across three sites; pins survive restart; a cached list remains usable offline without implying that the Moodle page itself is offline; shortcut conflicts do not override another binding or prevent app use. API access failure does not break ordinary Moodle browsing.
 
@@ -67,8 +71,8 @@ A completed slice should produce a reviewable local build and its relevant evide
 
 ## A4 — Upcoming agenda and local reminders
 
-- [ ] Fetch available upcoming event/deadline metadata per site into a normalized read-only agenda. Link each item back to its Moodle page through validated routing.
-- [ ] Display the site/course, event date, time zone and last-refresh/stale state. Do not invent submission/completion status the service does not supply.
+- [x] Fetch available upcoming event/deadline metadata per site into a normalized read-only agenda. Link each item back to its Moodle page through validated routing. _(Each item opens its day in the Moodle calendar, a fixed page; the activity's own URL is not followed.)_
+- [x] Display the site/course, event date, time zone and last-refresh/stale state. Do not invent submission/completion status the service does not supply.
 - [ ] Offer reminders, off by default, with 24-hour/1-hour offsets and per-site control. Suppress past and known-completed items and deduplicate by account/event/due-time/offset.
 - [ ] Reconcile changed/deleted events after refresh; avoid an old-reminder burst on initial import or after sleep. Reschedule from the latest known state on wake.
 - [ ] Make permission/network limitations visible. No reminder guarantee is made while the app is quit; closing the main window still uses the background process.

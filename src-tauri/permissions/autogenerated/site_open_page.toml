@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-site-open-page"
+description = "Enables the site_open_page command without any pre-configured scope."
+commands.allow = ["site_open_page"]
+
+[[permission]]
+identifier = "deny-site-open-page"
+description = "Denies the site_open_page command without any pre-configured scope."
+commands.deny = ["site_open_page"]

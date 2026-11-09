@@ -22,6 +22,11 @@ The 72 px sidebar and the toolbar (52 pt unified on macOS, 44 px elsewhere) are 
 | Site             | A site is selected          | Visible (positioned by Rust)                       |
 | Add Organisation | No sites, sidebar **+**, ⌘N | Hidden (`show_onboarding`)                         |
 | Settings         | Sidebar gear, ⌘,            | Hidden (`shell_view('settings')` before rendering) |
+| Inbox            | Sidebar, ⌘1, tray           | Hidden (`shell_view('inbox')`)                     |
+| Courses          | Sidebar, ⌘2                 | Hidden (`shell_view('courses')`)                   |
+| Agenda           | Sidebar, ⌘3                 | Hidden (`shell_view('agenda')`)                    |
+| Downloads        | Toolbar, ⌥⌘L, tray          | Hidden (`shell_view('downloads')`)                 |
+| Quick Open       | Toolbar, ⌘L (panel)         | Hidden while open; restored if dismissed           |
 
 Escape, **Done** or **Cancel** returns to the last site, or the first site if that one was removed.
 
@@ -62,3 +67,16 @@ Whole-window transparency and Liquid Glass stay out: they previously left the ti
 ## Organisation short labels
 
 Réglages → Organisations provides an editable abbreviation (up to four letters/numbers). It replaces automatic initials in the sidebar and account avatar, while the full site name remains in labels/tooltips. Clearing it restores automatic initials. Labels persist independently of credentials, survive reconnect, and are deleted with the local account. No institution is hard-coded.
+
+## Inbox, Courses, Agenda and Quick Open (November 2026)
+
+Product-owner choices for this slice: build A1, A2 and the read-only part of A4 together; motion "native and fluid"; new destinations as icons in the existing 72-point sidebar rather than toolbar buttons, so no geometry changed in Rust.
+
+- **Sidebar.** Inbox (with the total unread count), Courses and Agenda sit above the organisation tiles, separated by a short rule, and appear only once an organisation is connected. Downloads stays a toolbar command. Organisation badges moved to the top-right corner so they no longer cover the initials.
+- **One list pattern.** The four list views share `.page`: a header (title, count, commands), an optional filter bar, grouped rows and a footnote stating the limits. Inbox and Agenda group by calendar day in the Mac's time zone ("Today", "Tomorrow", then full dates).
+- **Inbox counts.** The badge counts notifications plus unread conversations, but the list holds notifications only. A row per organisation states its unread conversations and opens Moodle's Messages page, so marking everything read does not leave an unexplained badge.
+- **Opening things.** Notifications open the organisation's notifications page, courses open `course/view.php`, events open the calendar day. All are fixed pages built in Rust; a course identifier is accepted only if it is in that account's cached list. Server-supplied context URLs are still never followed or stored.
+- **Quick Open.** A Spotlight-like panel rather than a view: it searches saved course names, organisations and shell views without a network call (accent-insensitive, every word must match, name starts rank first). With nothing typed it lists pinned courses, organisations and views. Cached activities are not indexed yet, and the global ⌘⇧M shortcut is not built; both stay open in the tracker.
+- **Downloads.** History is paged (25 rows, Show More) with a filename search, organisation pop-up and state filter. Copy Path writes to the pasteboard from Rust, so paths still never reach the shell. Clear History asks first, keeps files and keeps transfers in progress listed.
+- **Motion.** The earlier "colour fades only" rule was replaced at the product owner's request; the rules are in the guidelines. The window geometry and the Moodle view never animate.
+- **Not verified natively.** Everything above was checked in the browser preview with sample data and by automated tests. The native menu shortcuts, the tray Inbox entry, hiding/restoring the Moodle view around Quick Open, and all live Moodle calls remain to be checked in the app with a real account.

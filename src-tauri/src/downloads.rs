@@ -243,22 +243,85 @@ pub struct Summary {
     item: md_store::Download,
     needs_confirmation: bool,
 }
-pub fn recent(app: &AppHandle) -> Result<Vec<Summary>, String> {
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Page {
+    items: Vec<Summary>,
+    total: u64,
+}
+pub const PAGE_SIZE: u32 = 25;
+pub fn page(
+    app: &AppHandle,
+    query: &str,
+    site_id: Option<&str>,
+    state: Option<&str>,
+    offset: u32,
+) -> Result<Page, String> {
+    if !matches!(state, None | Some("downloading" | "complete" | "failed")) || query.len() > 256 {
+        return Err("Unknown download filter.".into());
+    }
+    let filter = md_store::DownloadFilter {
+        query,
+        site_id,
+        state,
+    };
+    let (items, total) = app
+        .state::<AppState>()
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?
+        .downloads_page(&filter, offset, PAGE_SIZE)
+        .map_err(|_| "Could not read download history.")?;
+    Ok(Page {
+        items: items
+            .into_iter()
+            .map(|item| Summary {
+                needs_confirmation: policy::needs_confirmation(Path::new(&item.filename)),
+                item,
+            })
+            .collect(),
+        total,
+    })
+}
+/// Forgets finished history rows; the files themselves are never touched.
+pub fn clear(app: &AppHandle, site_id: Option<&str>) -> Result<(), String> {
     app.state::<AppState>()
         .store
         .lock()
         .map_err(|_| "Site storage unavailable.")?
-        .downloads_recent()
-        .map_err(|_| "Could not read download history.".into())
-        .map(|items| {
-            items
-                .into_iter()
-                .map(|item| Summary {
-                    needs_confirmation: policy::needs_confirmation(Path::new(&item.filename)),
-                    item,
-                })
-                .collect()
-        })
+        .downloads_clear(site_id)
+        .map_err(|_| "Could not clear download history.")?;
+    changed(app);
+    Ok(())
+}
+/// Puts the validated path on the pasteboard from Rust; it never crosses IPC.
+pub fn copy_path(app: &AppHandle, id: &str) -> Result<(), String> {
+    let path = path(app, id, false, false)?;
+    #[cfg(target_os = "macos")]
+    {
+        use std::io::Write;
+        let failed = || "Could not copy the file path.".to_owned();
+        let mut child = std::process::Command::new("/usr/bin/pbcopy")
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+            .map_err(|_| failed())?;
+        child
+            .stdin
+            .take()
+            .ok_or_else(failed)?
+            .write_all(path.to_string_lossy().as_bytes())
+            .map_err(|_| failed())?;
+        if child.wait().map_err(|_| failed())?.success() {
+            Ok(())
+        } else {
+            Err(failed())
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = path;
+        Err("Could not copy the file path.".into())
+    }
 }
 pub fn path(app: &AppHandle, id: &str, confirmed: bool, opening: bool) -> Result<PathBuf, String> {
     let item = app
@@ -266,10 +329,9 @@ pub fn path(app: &AppHandle, id: &str, confirmed: bool, opening: bool) -> Result
         .store
         .lock()
         .map_err(|_| "Site storage unavailable.")?
-        .downloads_recent()
+        .download(id)
         .map_err(|_| "Could not read download history.")?
-        .into_iter()
-        .find(|d| d.id == id && d.state == "complete")
+        .filter(|d| d.state == "complete")
         .ok_or("This download is unavailable.")?;
     let path = PathBuf::from(&item.local_path);
     let root = app

@@ -17,17 +17,25 @@
   --radius-m: 6px;
   --radius-l: 8px;
   --radius-xl: 10px;
+  --radius-panel: 12px;
   --radius-icon: 15px;
 
-  /* Type scale (SF Pro): body, secondary, caption, large title. */
+  /* Type scale (SF Pro): body, secondary, caption, view headline, large title. */
+  --text-headline: 15px;
   --text-body: 13px;
   --text-small: 12px;
   --text-caption: 11px;
   --text-title: 22px;
 
-  /* Motion: short, ease-out; removed under Reduce Motion. */
+  /* Motion: short and functional; removed under Reduce Motion.
+     --fast for colour, --medium for moving parts, --slow for a view entering.
+     --spring overshoots slightly, for things that pop (badges, thumbs). */
   --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.34, 1.45, 0.64, 1);
   --fast: 120ms;
+  --medium: 220ms;
+  --slow: 320ms;
 
   /* Surfaces */
   --window: #f5f5f7;
@@ -65,6 +73,10 @@
   --shadow: 0 0.5px 1.5px rgb(0 0 0 / 0.12), 0 0 0 0.5px rgb(0 0 0 / 0.04);
   --control-shadow:
     0 0 0 0.5px var(--control-border), 0 0.5px 1px rgb(0 0 0 / 0.08);
+  /* Floating panel (Quick Open): the one surface that sits above the window. */
+  --panel-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.14), 0 2px 6px rgb(0 0 0 / 0.08),
+    0 18px 48px rgb(0 0 0 / 0.2);
 
   color-scheme: light;
   font-family:
@@ -117,6 +129,9 @@
     --shadow: 0 0.5px 1px rgb(0 0 0 / 0.3), 0 0 0 0.5px rgb(255 255 255 / 0.06);
     --control-shadow:
       0 0 0 0.5px var(--control-border), 0 0.5px 1px rgb(0 0 0 / 0.2);
+    --panel-shadow:
+      0 0 0 0.5px rgb(255 255 255 / 0.16), 0 2px 6px rgb(0 0 0 / 0.3),
+      0 18px 48px rgb(0 0 0 / 0.5);
     color-scheme: dark;
   }
 }
@@ -145,6 +160,9 @@
   --shadow: 0 0.5px 1px rgb(0 0 0 / 0.3), 0 0 0 0.5px rgb(255 255 255 / 0.06);
   --control-shadow:
     0 0 0 0.5px var(--control-border), 0 0.5px 1px rgb(0 0 0 / 0.2);
+  --panel-shadow:
+    0 0 0 0.5px rgb(255 255 255 / 0.16), 0 2px 6px rgb(0 0 0 / 0.3),
+    0 18px 48px rgb(0 0 0 / 0.5);
   color-scheme: dark;
 }
 
@@ -234,7 +252,8 @@ body {
   background: var(--window);
 }
 button,
-input {
+input,
+select {
   font: inherit;
   color: inherit;
   letter-spacing: inherit;
@@ -248,6 +267,7 @@ input {
 }
 h1,
 h2,
+h3,
 p {
   margin: 0;
 }
@@ -314,10 +334,28 @@ ol {
   padding: 2px 0 8px;
   width: 100%;
 }
-.site-list > li {
+.site-list > li,
+.view-list > li {
   display: flex;
   justify-content: center;
   width: 100%;
+}
+/* Inbox, Courses, Agenda: app-wide views above the organisations. */
+.view-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  flex-shrink: 0;
+  padding: 2px 0 0;
+}
+.view-list::after {
+  content: "";
+  width: 28px;
+  height: 1px;
+  margin: 6px 0 6px;
+  background: var(--separator);
 }
 .sidebar-item {
   flex-shrink: 0;
@@ -329,10 +367,12 @@ ol {
   place-items: center;
   background: transparent;
   color: var(--label-2);
+  position: relative;
   transition:
     background-color var(--fast) var(--ease),
     color var(--fast) var(--ease),
-    box-shadow var(--fast) var(--ease);
+    box-shadow var(--fast) var(--ease),
+    transform var(--medium) var(--spring);
 }
 .sidebar-item:hover {
   background: var(--fill);
@@ -340,6 +380,8 @@ ol {
 }
 .sidebar-item:active {
   background: var(--fill-2);
+  transform: scale(0.93);
+  transition-duration: var(--fast);
 }
 /* Organisation tile: initials or the user's short label. */
 .site-avatar {
@@ -364,6 +406,27 @@ ol {
 }
 .settings-button {
   margin-top: auto;
+}
+/* Total unread across organisations, on the Inbox item. */
+.count-badge {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  min-width: 20px;
+  padding: 0 4px;
+  border: 2px solid var(--sidebar);
+  border-radius: var(--radius-xl);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  animation: pop var(--slow) var(--spring) both;
+}
+:root[data-inactive] .count-badge {
+  background: var(--label-3);
 }
 
 /* ---------- Toolbar ---------- */
@@ -403,7 +466,8 @@ ol {
   flex-shrink: 0;
   transition:
     background-color var(--fast) var(--ease),
-    color var(--fast) var(--ease);
+    color var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
 }
 .tool:hover {
   background: var(--fill);
@@ -411,6 +475,12 @@ ol {
 }
 .tool:active {
   background: var(--fill-2);
+  transform: scale(0.92);
+}
+.tool:disabled {
+  background: transparent;
+  color: var(--label-3);
+  transform: none;
 }
 .tool.small {
   width: 20px;
@@ -429,6 +499,7 @@ ol {
   padding-left: 4px;
   white-space: nowrap;
   pointer-events: none;
+  animation: fade-in var(--medium) var(--ease-out) both;
 }
 .toolbar-title h1 {
   font-size: var(--text-body);
@@ -463,6 +534,7 @@ ol {
   background: var(--red-tint);
   color: var(--red-text);
   font-size: var(--text-small);
+  animation: slide-in var(--medium) var(--ease-out) both;
 }
 .toolbar-alert > span {
   overflow: hidden;
@@ -490,6 +562,14 @@ ol {
   font-size: var(--text-body);
   white-space: nowrap;
   flex-shrink: 0;
+  transition:
+    background-color var(--fast) var(--ease),
+    color var(--fast) var(--ease),
+    opacity var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
+}
+.button:active:not(:disabled) {
+  transform: scale(0.97);
 }
 .button:hover:not(:disabled) {
   background: linear-gradient(var(--fill), var(--fill)), var(--control);
@@ -534,6 +614,61 @@ ol {
   padding: 0 8px;
   border-radius: var(--radius-s);
   font-size: var(--text-small);
+}
+/* Icon-only push button; always has title and aria-label. */
+.button.icon {
+  width: 24px;
+  padding: 0;
+}
+.button.small.icon {
+  width: 22px;
+}
+.button[aria-pressed="true"] {
+  color: var(--accent);
+}
+.pin-toggle {
+  color: var(--label-3);
+}
+.pin-toggle svg {
+  transition: transform var(--medium) var(--spring);
+  transform: rotate(45deg);
+}
+.pin-toggle[aria-pressed="true"] svg {
+  fill: currentColor;
+  transform: none;
+}
+
+/* Pop-up button: a native select inside a push-button bezel. */
+.popup-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  max-width: 200px;
+  border-radius: var(--radius-m);
+  background: var(--control);
+  box-shadow: var(--control-shadow);
+  color: var(--label);
+  flex-shrink: 0;
+}
+.popup-button select {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 100%;
+  max-width: 100%;
+  padding: 0 24px 0 9px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  font-size: var(--text-body);
+  text-overflow: ellipsis;
+  cursor: default;
+}
+.popup-button svg {
+  position: absolute;
+  right: 6px;
+  color: var(--label-2);
+  pointer-events: none;
 }
 
 .text-field {
@@ -581,6 +716,12 @@ ol {
   padding: 0 6px;
   border-radius: var(--radius-s);
 }
+.search-field {
+  height: 28px;
+  padding: 0 4px 0 8px;
+  gap: 6px;
+  border-radius: var(--radius-m);
+}
 .field-label {
   display: block;
   margin: 0 0 6px 2px;
@@ -612,6 +753,33 @@ ol {
   border-radius: 7px;
   background: var(--fill);
   box-shadow: inset 0 0 0 0.5px var(--separator);
+  position: relative;
+  min-width: 0;
+}
+/* The selected bezel slides between segments once it has been measured. */
+.segmented-thumb {
+  display: none;
+}
+.segmented[data-thumb] .segmented-thumb {
+  display: block;
+  position: absolute;
+  top: 2px;
+  left: 0;
+  width: var(--thumb-width);
+  height: 22px;
+  border-radius: var(--radius-s);
+  background: var(--control);
+  box-shadow:
+    0 0 0 0.5px var(--control-border),
+    0 1px 2px rgb(0 0 0 / 0.1);
+  transform: translateX(var(--thumb-x));
+  transition:
+    transform var(--medium) var(--ease-out),
+    width var(--medium) var(--ease-out);
+}
+.segmented[data-thumb] .segment input:checked + span {
+  background: transparent;
+  box-shadow: none;
 }
 .segmented:disabled {
   opacity: 0.6;
@@ -675,6 +843,7 @@ ol {
   box-shadow:
     0 6px 16px rgb(0 104 224 / 0.25),
     inset 0 0.5px 0 rgb(255 255 255 / 0.35);
+  animation: pop 480ms var(--spring) both;
 }
 .onboarding-title {
   margin-top: 20px;
@@ -744,6 +913,10 @@ ol {
   box-shadow: none;
   background: var(--accent);
   color: var(--on-accent);
+  animation: pop var(--slow) var(--spring) both;
+}
+.progress {
+  animation: reveal var(--medium) var(--ease-out) both;
 }
 .progress-hint {
   margin: 10px 0 0 25px;
@@ -938,6 +1111,13 @@ ol {
   border-radius: var(--radius-l);
   background: var(--fill);
 }
+.confirm {
+  animation: reveal var(--medium) var(--ease-out) both;
+}
+/* A confirmation that is not nested under a row. */
+.confirm.standalone {
+  margin: 0;
+}
 .confirm-title {
   font-weight: 600;
 }
@@ -959,6 +1139,10 @@ ol {
   gap: 6px;
   margin: 8px 2px 0;
   font-size: var(--text-small);
+  animation: fade-in var(--medium) var(--ease-out) both;
+}
+.page > .section-message {
+  margin: 0 2px;
 }
 .section-message svg {
   flex-shrink: 0;
@@ -985,9 +1169,375 @@ ol {
   margin: 8px 2px 0;
   font-size: var(--text-caption);
   color: var(--label-2);
+  line-height: 1.45;
+}
+
+/* ---------- Local views: Inbox, Courses, Agenda, Downloads ---------- */
+
+.page {
+  width: min(680px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 20px 0 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 28px;
+}
+.page-heading {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.page-heading h2 {
+  font-size: var(--text-headline);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.page-detail,
+.refresh-status {
+  font-size: var(--text-caption);
+  color: var(--label-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+.page-actions,
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.filter-bar .search-field {
+  flex: 1;
+  min-width: 120px;
+}
+.page .section-footnote {
+  margin: 0 2px;
+}
+
+/* Rows of a grouped list: leading mark, text column, trailing commands. */
+.list-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px 12px;
+}
+.group > .list-row + .list-row::before,
+.group > li + li > .list-row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 0;
+  height: 1px;
+  background: var(--separator);
+}
+/* Separators start at the text column, as in a native grouped list. */
+.list-row:has(> .row-icon, > .row-avatar)::before {
+  left: 56px;
+}
+.list-row:has(> .unread-dot)::before {
+  left: 32px;
+}
+.list-row:has(> .event-time)::before {
+  left: 84px;
+}
+.row-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-l);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--fill);
+  color: var(--label-2);
+}
+.list-row[data-state="failed"] .row-icon {
+  color: var(--red-text);
+}
+.list-row .row-title {
+  font-weight: 400;
+}
+.list-row[data-unread] .row-title,
+.list-row strong.row-title {
+  font-weight: 500;
+}
+.list-row .row-actions {
+  flex-shrink: 0;
+  align-items: center;
+}
+/* Unread marker, as in Mail: accent dot that shrinks away once read. */
+.unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--accent);
+  transform: scale(0);
+  opacity: 0;
+  transition:
+    transform var(--medium) var(--spring),
+    opacity var(--medium) var(--ease);
+}
+.list-row[data-unread] .unread-dot {
+  transform: none;
+  opacity: 1;
+}
+:root[data-inactive] .unread-dot {
+  background: var(--label-3);
+}
+.day-section {
+  display: grid;
+  gap: 6px;
+}
+.day-section .section-header {
+  align-items: baseline;
+}
+.day-title {
+  margin: 0 2px;
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--label-2);
+}
+.event-time {
+  width: 60px;
+  flex-shrink: 0;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.event-time span {
+  display: block;
+  font-size: var(--text-caption);
+  font-weight: 400;
+  color: var(--label-2);
+}
+.tag {
+  flex-shrink: 0;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 9px;
+  background: var(--fill);
+  color: var(--label-2);
+  font-size: var(--text-caption);
+  font-weight: 500;
+  line-height: 18px;
+}
+.tag[data-kind="due"] {
+  background: var(--accent-tint);
+  color: var(--label);
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 44px 16px 40px;
+  text-align: center;
+  animation: reveal var(--slow) var(--ease-out) both;
+}
+.empty-icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 8px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--fill);
+  color: var(--label-2);
+}
+.empty-title {
+  font-weight: 600;
+}
+.empty-hint {
+  max-width: 32em;
+  font-size: var(--text-small);
+  color: var(--label-2);
+  line-height: 1.45;
+}
+.list-more {
+  display: flex;
+  justify-content: center;
+}
+.skeleton-tile {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-l);
+  flex-shrink: 0;
+  background: var(--fill-2);
+}
+.skeleton-lines {
+  flex: 1;
+  display: grid;
+  gap: 7px;
+}
+.skeleton-lines span {
+  height: 8px;
+  width: 46%;
+  border-radius: var(--radius-xs);
+  background: var(--fill-2);
+}
+.skeleton-lines span + span {
+  width: 28%;
+  background: var(--fill);
+}
+.skeleton .list-row {
+  animation: pulse 1.4s var(--ease) infinite;
+}
+.skeleton .list-row:nth-child(2) {
+  animation-delay: 120ms;
+}
+.skeleton .list-row:nth-child(3) {
+  animation-delay: 240ms;
+}
+.skeleton .list-row:nth-child(n + 4) {
+  animation-delay: 360ms;
+}
+
+/* ---------- Quick Open (⌘L) ---------- */
+
+/* Covers the content area only; the Moodle view is hidden by Rust meanwhile.
+   Not a dimming overlay: the window stays as it is behind the panel. */
+.quick-open-layer {
+  position: fixed;
+  inset: var(--toolbar-height) 0 0 var(--sidebar-width);
+  z-index: 4;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: min(12vh, 96px) 24px 24px;
+}
+.quick-open {
+  width: min(560px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border-radius: var(--radius-panel);
+  background: var(--elevated);
+  box-shadow: var(--panel-shadow);
+  animation: panel-in var(--medium) var(--ease-out) both;
+}
+.quick-open .search-field {
+  height: 38px;
+  padding: 0 8px 0 10px;
+  gap: 9px;
+  background: transparent;
+  box-shadow: none;
+}
+.quick-open .search-field input {
+  font-size: var(--text-headline);
+}
+.quick-results {
+  min-height: 0;
+  max-height: min(396px, 60vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-top: 6px;
+  padding-top: 6px;
+  box-shadow: inset 0 1px 0 var(--separator);
+  display: grid;
+  gap: 1px;
+}
+.quick-result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 6px 10px 6px 6px;
+  border-radius: var(--radius-l);
+}
+.quick-result .quick-pin {
+  flex-shrink: 0;
+  fill: currentColor;
+  color: var(--label-3);
+}
+.quick-result .quick-return {
+  flex-shrink: 0;
+  opacity: 0;
+}
+/* Keyboard selection is a solid accent row, as in Spotlight and menus. */
+.quick-result[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.quick-result[aria-selected="true"] .row-subtitle,
+.quick-result[aria-selected="true"] .quick-pin {
+  color: inherit;
+  opacity: 0.8;
+}
+.quick-result[aria-selected="true"] .row-avatar,
+.quick-result[aria-selected="true"] .row-icon {
+  background: rgb(255 255 255 / 0.2);
+  color: inherit;
+}
+.quick-result[aria-selected="true"] .quick-return {
+  opacity: 0.8;
+}
+.quick-empty {
+  padding: 28px 16px;
+  margin-top: 6px;
+  text-align: center;
+  box-shadow: inset 0 1px 0 var(--separator);
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+}
+.quick-hint {
+  margin-top: 6px;
+  padding: 7px 8px 2px;
+  box-shadow: inset 0 1px 0 var(--separator);
+  font-size: var(--text-caption);
+  color: var(--label-2);
 }
 
 /* ---------- Motion & accessibility ---------- */
+
+/* A local view entering: a short rise and fade, as when a pane changes in
+   System Settings. Only the shell's own content animates; the Moodle view and
+   the window geometry never do. */
+.content > :not(.quick-open-layer) {
+  animation: view-in var(--slow) var(--ease-out) both;
+}
+/* The first rows of a list follow the view in, one after another. */
+.page .group > :nth-child(-n + 8) {
+  animation: row-in var(--slow) var(--ease-out) both;
+}
+.page .group > :nth-child(2) {
+  animation-delay: 20ms;
+}
+.page .group > :nth-child(3) {
+  animation-delay: 40ms;
+}
+.page .group > :nth-child(4) {
+  animation-delay: 60ms;
+}
+.page .group > :nth-child(5) {
+  animation-delay: 80ms;
+}
+.page .group > :nth-child(6) {
+  animation-delay: 100ms;
+}
+.page .group > :nth-child(7) {
+  animation-delay: 120ms;
+}
+.page .group > :nth-child(8) {
+  animation-delay: 140ms;
+}
+.site-status {
+  animation: pop var(--slow) var(--spring) both;
+}
 
 .spin {
   animation: spin 0.9s linear infinite;
@@ -997,14 +1547,62 @@ ol {
     transform: rotate(360deg);
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .spin {
-    animation-duration: 2.4s;
+@keyframes view-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
+}
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+/* Reduce Motion: nothing moves. Entrances are skipped, spinners slow down. */
+@media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     transition: none !important;
+    animation: none !important;
+  }
+  .spin {
+    animation: spin 2.4s linear infinite !important;
   }
 }
 @media (prefers-contrast: more) {
@@ -1012,6 +1610,11 @@ ol {
   .progress,
   .confirm {
     box-shadow: 0 0 0 1px var(--separator);
+  }
+  .tag,
+  .row-icon,
+  .empty-icon {
+    box-shadow: inset 0 0 0 1px var(--control-border);
   }
   .site-avatar {
     box-shadow: inset 0 0 0 1px var(--control-border);
@@ -1021,48 +1624,31 @@ ol {
   .row-actions .button {
     padding: 0 8px;
   }
+  .refresh-status,
+  .tag {
+    display: none;
+  }
 }
 
 .site-status {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  min-width: 16px;
-  padding: 0 2px;
+  top: -3px;
+  right: -5px;
+  min-width: 20px;
+  padding: 0 4px;
   border: 2px solid var(--sidebar);
-  border-radius: var(--radius-l);
-  background: var(--accent-tint);
+  border-radius: var(--radius-xl);
+  background: var(--elevated);
   color: var(--label);
   font-size: var(--text-caption);
   font-weight: 600;
   line-height: 16px;
   text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 .site-status[data-warning] {
   background: var(--control);
   color: var(--red-text);
-}
-
-.download-info {
-  flex: 1;
-  min-width: 0;
-  display: grid;
-  gap: 4px;
-}
-.download-info strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 500;
-}
-.download-info span {
-  font-size: var(--text-caption);
-  color: var(--label-2);
-}
-.download-actions {
-  display: flex;
-  flex-shrink: 0;
-  gap: 8px;
 }
 
 /* Popup windows use the standard native titlebar; their local toolbar is 44 pt.
