@@ -2,7 +2,7 @@
 
 Last updated: 9 November 2026.
 
-This is the working checklist for project advancement. The [PRD](prd.md) defines the product, and the [Alpha implementation plan](alpha-plan.md) supplies the original scope and sequence. Work has landed across parts of W1–W3; that does not mean those weeks or their validation gates are complete.
+This is the working checklist for project advancement. The [PRD](prd.md) defines the product, and the [Alpha implementation plan](alpha-plan.md) supplies the baseline scope and sequence. The [expanded Alpha feature scope](alpha-feature-expansion.md) promotes bounded user-facing slices from later milestones. Work has landed across parts of W1–W3; that does not mean those weeks or their validation gates are complete.
 
 **How to maintain this file:** check an implementation item when it is built and its relevant checks pass. Keep live/platform validation as separate unchecked items until evidence exists. After each implementation slice, update the completed work, next priorities, verification evidence and any decisions or blockers.
 
@@ -11,7 +11,8 @@ This is the working checklist for project advancement. The [PRD](prd.md) defines
 | Milestone | Status | Remaining gate |
 | --- | --- | --- |
 | M0 — architecture and sign-in spike | In progress | Repeatable three-site login/SSO tests, platform/security validation and D1–D5 decisions |
-| M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, course download routing, installed-app validation and release qualification |
+| M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, course download routing and installed-app validation |
+| Expanded Alpha features — A1–A5 | Planned; not implemented | Inbox/download controls, course quick-open, selected offline files, agenda/reminders and manual ICS export |
 | First tester Alpha | Not ready for distribution | All Alpha exit criteria, universal packaging and private distribution setup |
 
 The INSP dashboard has been observed authenticated in the app. This is a successful real-site observation; it does not close the complete SSO, session-restoration or security test matrix.
@@ -68,6 +69,8 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 
 ## Next steps — in priority order
 
+**Implementation priority:** finish the current PDF/popup escape paths, then implement A1–A5 below. Run the M0/native validation tasks alongside this work; unavailable account/platform intervention is a deferred check, not a reason to stop unrelated feature implementation. The original six-week baseline no longer estimates the expanded scope; re-estimate each feature slice before promising a release date.
+
 ### 1. Close the M0 validation gaps
 
 - [ ] Turn the observed INSP login into a repeatable manual script covering sign-in, cancellation, reconnect, restart and session restoration.
@@ -107,7 +110,23 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 - [x] Require inline confirmation for risky/unknown file types, revalidate paths in Rust and never auto-open downloads.
 - [ ] Verify installed-app deep links and session-authenticated downloads across the test rigs.
 
-### 4. Prepare the tester Alpha
+### 4. Build the expanded user-facing Alpha (planned A1–A5)
+
+The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies and acceptance criteria. All items below remain unchecked until implementation and relevant verification exist; partial PRD coverage must not be reported as the full v1.0 feature.
+
+- [ ] Stabilize PDF saving, native history and popup parent return; add a public-API save fallback before extending file workflows.
+- [ ] **A1:** notification inbox with safe Open/Mark Read and authoritative unread-count reconciliation; latest-unread tray access.
+- [ ] **A1:** paginated/searchable download history, site/state filters, Copy Path, confirmed Clear History without deleting files, safe retry/fallback and PDF/image handling preferences.
+- [ ] **A2:** account-bound course browser and local pins, metadata refresh/stale states and reliable course/context mapping for downloads.
+- [ ] **A2:** Cmd+L quick-open for courses/cached activities across sites; optional global Cmd+Shift+M with conflict handling.
+- [ ] **A3:** choose course files to save offline, with known sizes, bounded transfers and safe course/section folders.
+- [ ] **A3:** browse/open saved files offline and manually refresh selected files without overwriting local edits or propagating server deletions.
+- [ ] **A4:** read-only upcoming agenda across sites, with safe Moodle links and explicit time-zone/stale-state handling.
+- [ ] **A4:** opt-in local due-date reminders, deduplication and rescheduling after event changes/wake; no delivery promise while quit.
+- [ ] **A5:** manually export the selected agenda to a token-free ICS snapshot; validate/import it in Apple Calendar. Live subscriptions remain later.
+- [ ] Verify the combined A1–A5 acceptance cases, access-denied behavior, account replacement/cleanup, FR/EN and keyboard paths.
+
+### 5. Prepare the tester Alpha
 
 - [ ] Configure a stable self-signed Alpha identity, updater signing keys and private HTTPS hosting with the product owner.
 - [ ] Implement the universal Apple Silicon/Intel DMG release workflow and verify architectures/signatures/checksums.
@@ -120,14 +139,16 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 
 ## Deferred beyond the Alpha
 
-- [ ] Course-folder sync and offline file library.
-- [ ] Calendar subscriptions and deadline reminders.
-- [ ] Uploads, drag-and-drop submissions and quick-open search.
-- [ ] Expanded download controls, metadata and sync deduplication.
-- [ ] Developer ID signing/notarization and managed deployment work.
-- [ ] Windows and Linux platform validation and releases.
+The bounded A1–A5 versions above are Alpha targets, not enabled features. The following larger versions remain deferred:
 
-These are roadmap items, not enabled features. Same-origin HTTPS downloads are captured into per-site Downloads folders. Course routing and native transfer qualification remain open. Closing the window hides it and keeps polling active; Quit ends the process.
+- [ ] Full scheduled course-folder sync, resumable mirroring, automatic server-deletion handling and full sync/download de-duplication.
+- [ ] Live authenticated calendar subscriptions and automatic external-calendar refresh; the Alpha gets agenda/reminders and manual ICS export only.
+- [ ] Uploads, drag-and-drop submissions and Finder Services/share integration.
+- [ ] File-content search and OS search extensions beyond ordinary indexing of saved files.
+- [ ] Download pause/resume, automatic retention/deletion and expanded Finder tagging/metadata.
+- [ ] Developer ID signing/notarization, managed deployment and Windows/Linux releases.
+
+Current implementation still captures downloads into per-site Downloads folders; course routing, selected offline files and native transfer qualification remain open. Closing the window hides it and keeps polling active; Quit ends the process.
 
 ## Evidence and related documents
 
@@ -135,7 +156,8 @@ These are roadmap items, not enabled features. Same-origin HTTPS downloads are c
 - [Authentication review](auth-review.md): inspected evidence and remaining security checks.
 - [UI design](ui-design.md): shell, titlebar, localization and label decisions.
 - [Architecture decisions](adr/0001-alpha-foundation.md): technical choices and corrections.
-- [Original Alpha plan](alpha-plan.md): scope, spike definitions, QA matrix and release gate.
+- [Alpha plan](alpha-plan.md): baseline and amended scope, spike definitions, QA matrix and release gate.
+- [Expanded Alpha features](alpha-feature-expansion.md): A1–A5 boundaries, delivery order and acceptance criteria.
 
 ## Recent delivery checkpoints
 

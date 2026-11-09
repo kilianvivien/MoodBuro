@@ -2,28 +2,41 @@
 
 Nov 9, 2026 · @Kilian
 
-Implementation progress: use [the working checklist](plan.md) and see [current status](implementation-status.md) for delivered slices and remaining gates.
+Implementation progress: use [the working checklist](plan.md) and see [current status](implementation-status.md) for delivered slices and remaining gates. **Scope amendment (9 November 2026):** the [expanded Alpha feature plan](alpha-feature-expansion.md) is part of this plan and promotes bounded later-milestone features; its limits override older exclusions below.
 
 ## 1. Scope, team and exit criteria
 
-The alpha is an unsigned (ad-hoc or self-signed) macOS build delivered in 6 weeks by two engineers, covering PRD milestones M0 (spike) and M1 (core shell): sign-in to any Moodle site including SSO, several sites side by side, native notifications with dock badge and menu-bar extra, deep links, and basic capture of downloads from the Moodle view. It goes to 10–20 internal testers on 2–3 real Moodle sites.
+The baseline Alpha was scoped as an unsigned (ad-hoc or self-signed) macOS build in 6 weeks by two engineers. The expanded Alpha now includes bounded slices of later milestones A1–A5 as well as PRD milestones M0 (spike) and M1 (core shell); the original six-week estimate must be re-estimated for this added scope. The core includes sign-in to any Moodle site including SSO, several sites side by side, native notifications with dock badge and menu-bar extra, deep links, and basic capture of downloads from the Moodle view. It goes to 10–20 internal testers on 2–3 real Moodle sites.
 
 **Team.** Engineer R owns the Rust core (auth, WS client, index, notifier, OS adapters, release). Engineer F owns the shell UI (React, Vite, TypeScript, Zustand) and QA scripts. Both review each other's PRs; the product owner runs the weekly demo.
 
 **In the alpha (PRD IDs)**
 
-| Area | Included | Deferred to beta (M2) |
+| Area | Included | Deferred beyond Alpha |
 | --- | --- | --- |
 | Window and webviews | OS-1, SEC-1, SEC-2, SEC-6, SEC-7 | — |
 | Sign-in | OS-2, SEC-3, SEC-4, OS-18 (autologin) | `login/token.php` fallback |
 | Multi-site | OS-16 (up to 10 sites) | Per-site badge share in settings |
-| Notifications | OS-3, OS-4, OS-5, MAC-1, MAC-2 (badge), MAC-3 (without actions) | Notification actions, due-date reminders (OS-9) |
+| Notifications | OS-3–OS-5, MAC-1, MAC-2 (badge); A1 inbox/Open/Mark Read and A4 opt-in local reminders (OS-9 partial) | Native actions beyond qualified platform support; reminder guarantees while quit |
 | Deep links | OS-13 | — |
-| Downloads | DL-1, DL-2 (`Downloads/` + course routing when the course is known), DL-10, a minimal list in the menu-bar extra | DL-3 de-dup with sync, full panel DL-4, metadata DL-6 |
+| Downloads | DL-1/DL-2/DL-10; A1 searchable/paginated history, Copy Path, safe retry/fallback, PDF/image preferences (DL-4/DL-7/DL-8 partial) | Pause/resume, full DL-3 sync de-dup, automatic retention and expanded DL-6 metadata |
+| Courses and quick-open | A2 course browser, local pins, Cmd+L palette and optional global shortcut (OS-12/MAC-8 partial) | Server full-text and file-content search |
+| Offline files | A3 explicit selected-file saving and manual refresh (OS-6/OS-7 partial) | Full scheduled course mirroring, resumable sync and automatic server deletions |
+| Agenda and calendar | A4 read-only upcoming agenda/reminders; A5 manual token-free ICS snapshot (OS-8/OS-9/MAC-5 partial) | Live authenticated calendar subscription and automatic calendar refresh |
 | macOS polish | MAC-6, MAC-8; MAC-9 universal binary only (signing and notarization deferred to beta) | MAC-4 Finder favourite, MAC-10 MDM |
-| Not in alpha | — | Folder sync (OS-6), calendar (OS-8), upload (OS-10), quick-open (OS-12), Windows, Linux |
+| Not in alpha | — | Upload (OS-10), full automatic sync/live calendar integrations beyond the slices above, Windows, Linux |
 
 Basic download capture is pulled forward from M2 because, without it, files downloaded in the Moodle view land in WebKit's default location and the alpha would teach testers the wrong habit.
+
+**Expanded user-feature gates (planned, not delivered)**
+
+- [ ] A1: read/open a notification and reconcile unread counts; find an older download, copy its path, clear history without deleting files, and handle missing/expired sources honestly.
+- [ ] A2: browse/pin courses and quick-open the correct course/cached activity across sites; cached/offline state and global-shortcut conflicts are explicit.
+- [ ] A3: explicitly save selected course files, reopen them offline after restart and manually refresh without destroying edited files or deleting server-removed files locally.
+- [ ] A4: show upcoming agenda items and deliver opt-in reminders with time-zone/DST, changed-date, stale-data and deduplication checks.
+- [ ] A5: export a valid token-free ICS snapshot and import it into Apple Calendar; the UI clearly says it is not a live subscription.
+
+The full acceptance criteria are in the [feature amendment](alpha-feature-expansion.md). These gates supplement, rather than replace, the original gates below. Any change to the target feature set must be recorded explicitly.
 
 **Exit criteria (alpha gate)**
 
@@ -40,7 +53,9 @@ Basic download capture is pulled forward from M2 because, without it, files down
 
 ## 2. Week-by-week plan
 
-Weeks 1–2 are the M0 spike and end with SSO sign-in working on three sites; weeks 3–6 build the core shell and end with the first alpha build. Each week ends with a Friday demo and a nightly build the team uses daily.
+**Scheduling amendment:** the weeks below describe the original core-shell baseline. They are not a six-week promise for the expanded Alpha. After stabilizing current PDF/popups, implement A1 inbox/download controls → A2 course index/quick-open → A3 selected offline files → A4 agenda/reminders → A5 ICS export, then combined qualification/release. Estimate each slice and update the working tracker; run independent M0 checks alongside feature work.
+
+In the original baseline, weeks 1–2 covered the M0 spike and three-site SSO; weeks 3–6 covered the core shell and first Alpha build. Weekly demos and local builds remain useful checkpoints, but the expanded feature sequence above replaces that original release timing.
 
 &#91;embedded content: alpha timeline · 6 weeks, 2 lanes, 2 gates\]
 
@@ -57,7 +72,7 @@ moodle-desk/
 │  ├─ src/views/               # Sidebar, Toolbar, AddSite, Settings, DownloadsMenu
 │  └─ src/ipc.ts               # typed wrappers over invoke() + listen()
 ├─ src-tauri/                  # Tauri app crate (thin: wiring only)
-│  ├─ capabilities/shell.json  # the ONLY capability file
+│  ├─ capabilities/            # local shell + restricted popup toolbar; no remote grants
 │  ├─ tauri.conf.json
 │  └─ src/{main.rs,lib.rs,commands.rs,windows.rs,tray.rs}
 ├─ crates/
@@ -333,7 +348,9 @@ Week 1 answers five questions that could change the design; each has a default, 
 | Tauri `unstable` API changes on update | Low | Pin Tauri minor version for the alpha |
 | Notifier load on real sites | Low | 120 s default, count-first polling, backoff; share numbers with the admin |
 
-**Task checklist by week**
+**Original core-shell task checklist by week**
+
+A1–A5 are tracked separately in [plan.md](plan.md); these historical week labels do not imply those feature slices have landed.
 
 - [ ] W1 R: workspace, CI, child webview + capability isolation, nav guard, auth window + token parsing, Keychain wrapper
 - [ ] W1 F: shell skeleton (sidebar, toolbar, Add Site), test rig compose, self-signed certificate, updater key and download host with product owner

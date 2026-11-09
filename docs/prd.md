@@ -256,11 +256,25 @@ The app must stay lighter than a browser tab when idle in the tray and must inst
 
 ## 7. Milestones, metrics, risks and open questions
 
-macOS v1.0 ships after about 13 weeks for two engineers (one Rust-leaning, one front-end); Windows v1.1 follows about 4 weeks later and Linux v1.2 about 4 weeks after that. All durations are estimates to be firmed up after the M0 spike.
+The original baseline estimated macOS v1.0 at about 13 weeks for two engineers (one Rust-leaning, one front-end), with Windows v1.1 and Linux v1.2 each about 4 weeks later. These are historical estimates; the expanded Alpha scope below requires re-estimation by slice after the M0/API spikes.
 
 &#91;embedded content: roadmap · 6 phases, macOS first\]
 
 Phases are drawn equal width, not to scale; the M3 gate is the macOS v1.0 release, and Windows and Linux reuse the same core with platform adapters only.
+
+### Alpha scope amendment — 9 November 2026
+
+The product owner requested more user-facing features in the Alpha. The [expanded Alpha feature plan](alpha-feature-expansion.md) and [working tracker](plan.md) now promote the following bounded slices from later roadmap work. This changes delivery sequencing, not the full v1.0 requirement definitions in §3.
+
+| Delivery | Promoted scope | Larger scope retained for later |
+| --- | --- | --- |
+| Expanded Alpha A1 | Notification inbox/read actions; searchable download history, Copy Path, safe retry/fallback and inline-file preferences (OS-3–OS-5, MAC-3, DL-4/DL-7/DL-8 partial) | Unqualified native notification actions, download pause/resume and full metadata/retention controls |
+| Expanded Alpha A2 | Course browser/pins; course/cached-activity quick-open, Cmd+L and an optional global shortcut (OS-12/MAC-8 partial) | Server full-text and file-content search |
+| Expanded Alpha A3 | Explicitly selected course files saved offline and manually refreshed (OS-6/OS-7 partial; plain-file MAC-4 behavior) | Full scheduled mirroring, automatic deletion handling, resumable sync and complete DL-3 de-duplication |
+| Expanded Alpha A4–A5 | Read-only upcoming agenda, opt-in local reminders while running, and manual token-free ICS snapshot export (OS-8/OS-9/MAC-5 partial) | Live authenticated calendar subscriptions, automatic external-calendar refresh and reminder delivery guarantees while quit |
+| Later releases | Uploads/submission assistance (OS-10), Finder Services, signing/notarization, managed deployment and additional platforms | Unchanged v1.0/later-platform requirements remain applicable |
+
+The original Alpha six-week estimate and overall sequencing are baselines for the smaller scope, not commitments for this expansion. Re-estimate by slice. None of A1–A5 is marked delivered by this planning decision; full security, sign-in, account-isolation and platform gates remain mandatory. The live-calendar export-token question Q6 still applies to the deferred subscription path; manual ICS generation from agenda data does not depend on that token.
 
 ### 7.1 Success metrics (90 days after v1.0)
 

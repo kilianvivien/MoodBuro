@@ -2,6 +2,10 @@
 
 Use [the working plan](plan.md) to track completed tasks and next priorities.
 
+## Newly planned Alpha features — not delivered
+
+At the product owner's request, the [Alpha scope amendment](alpha-feature-expansion.md) brings forward: A1 notification inbox and richer download controls; A2 course browser/pins and quick-open; A3 selected files saved offline with manual refresh; A4 upcoming agenda and opt-in local reminders; A5 manual ICS snapshot export. The original full background-sync/live-calendar/upload features are not implied by these smaller slices. All new implementation items are unchecked in [plan.md](plan.md). The original six-week estimate requires re-estimation; existing release/security gates remain open.
+
 ## Delivered
 
 The first two implementation slices cover the workspace/CI foundation, organisation-URL onboarding, the macOS shell and settings, account lifecycle and session-restoration infrastructure. This does **not** close M0 or claim the entire W1/W2 plan. `md-notifier` now implements polling decisions; `md-os` remains an extension point.
@@ -33,7 +37,7 @@ The first two implementation slices cover the workspace/CI foundation, organisat
 2. Provision Moodle 4.5/5.3 + Keycloak fixtures and test SAML/OIDC. Verify version-specific public roots, rate-limit behaviour and missing-private-token fallback.
 3. D1/D2: three simultaneous sites, warm-switch timing, resize, focus, cookies/profile separation on macOS 12, 15 and current macOS.
 4. Inject a remote-webview IPC probe; configuration checks do not prove runtime isolation. Verify Keychain prompts, deletion and app identity across installed updates.
-5. Qualify the implemented notification/tray worker lifecycle (W4), finish reorder/menu-bar-only controls, then qualify deep links/download capture and implement course routing (W5), followed by universal packaging/distribution (W6). Same-origin HTTPS downloads are now captured. Closing the window hides it while polling continues; Quit exits.
+5. Qualify the current PDF/popup/notification/download lifecycle, then implement A1–A5 in the amended order (inbox/download controls → courses/quick-open → selected offline files → agenda/reminders → ICS export), alongside independent M0 checks. Finish reorder/menu-bar-only controls, course routing and universal packaging/distribution before release. Same-origin HTTPS downloads are now captured. Closing the window hides it while polling continues; Quit exits.
 6. Record D1–D5 results before claiming M0. Full legacy browser-data deletion remains an explicit privacy/platform gate.
 
 See [authentication check](auth-review.md), [UI decisions](ui-design.md) and [architecture decisions](adr/0001-alpha-foundation.md).
