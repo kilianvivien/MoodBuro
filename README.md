@@ -101,7 +101,7 @@ Les téléchargements sont actuellement bloqués dans les vues Moodle. Fermer la
 
 ## Documentation
 
-[Suivi d’avancement](docs/plan.md) · [PRD](docs/prd.md) · [Plan Alpha](docs/alpha-plan.md) · [État de l’implémentation](docs/implementation-status.md) · [Décisions d’architecture](docs/adr/0001-alpha-foundation.md) · [Interface](docs/ui-design.md)
+[Suivi d’avancement](docs/plan.md) · [PRD](docs/prd.md) · [Plan Alpha](docs/alpha-plan.md) · [État de l’implémentation](docs/implementation-status.md) · [Décisions d’architecture](docs/adr/0001-alpha-foundation.md) · [Interface](docs/ui-design.md) · [Charte d’interface](docs/design-guidelines.md)
 
 Le nom « Moodle Desk » présent dans les documents initiaux est le nom de travail historique. Le code utilise MoodBuro. Le projet est indépendant de Moodle HQ.
 

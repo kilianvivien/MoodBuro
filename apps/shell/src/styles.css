@@ -1,33 +1,70 @@
-/* MoodBuro shell — macOS-native styling. Tokens mirror AppKit semantic colours.
-   Geometry: 72 px sidebar and 44 px toolbar must match src-tauri/src/windows.rs. */
+/* MoodBuro shell — macOS-native styling.
+   Rules and rationale: docs/design-guidelines.md. Use the tokens below; never
+   hard-code a colour, radius or font size in a component rule.
+   Geometry (--sidebar-width, --toolbar-height) must match src-tauri/src/windows.rs. */
+
+/* ---------- Tokens ---------- */
 
 :root {
+  /* Geometry. .desktop (macOS app) switches to the unified 52 pt toolbar. */
   --sidebar-width: 72px;
   --toolbar-height: 44px;
+  --traffic-inset: 0px;
 
+  /* Radii: small controls → buttons → fields → groups → app icon. */
+  --radius-xs: 4px;
+  --radius-s: 5px;
+  --radius-m: 6px;
+  --radius-l: 8px;
+  --radius-xl: 10px;
+  --radius-icon: 15px;
+
+  /* Type scale (SF Pro): body, secondary, caption, large title. */
+  --text-body: 13px;
+  --text-small: 12px;
+  --text-caption: 11px;
+  --text-title: 22px;
+
+  /* Motion: short, ease-out; removed under Reduce Motion. */
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --fast: 120ms;
+
+  /* Surfaces */
   --window: #f5f5f7;
+  --toolbar: #f5f5f7;
+  --sidebar: #ebebef;
   --elevated: #ffffff;
   --control: #ffffff;
-  --sidebar: rgb(232 232 237 / 0.86);
-  --toolbar: rgb(246 246 248 / 0.78);
+
+  /* Text */
   --label: rgb(0 0 0 / 0.85);
   --label-2: rgb(0 0 0 / 0.55);
   --label-3: rgb(0 0 0 / 0.3);
+
+  /* Lines and fills */
   --separator: rgb(0 0 0 / 0.1);
   --control-border: rgb(0 0 0 / 0.14);
   --fill: rgb(0 0 0 / 0.05);
   --fill-2: rgb(0 0 0 / 0.09);
-  --accent: #007aff;
+
+  /* Accent: the user's macOS accent colour when WebKit exposes it. */
+  --accent: var(--system-accent, #007aff);
   --accent-pressed: #0064d1;
   --on-accent: #ffffff;
-  --accent-tint: rgb(0 122 255 / 0.1);
+  --accent-tint: rgb(0 122 255 / 0.12);
   --focus: rgb(0 122 255 / 0.5);
+  --selection: rgb(0 122 255 / 0.16);
+  --selection-text: var(--accent);
+
+  /* Status */
   --red: #e0352b;
   --red-text: #c8261c;
   --red-tint: rgb(255 59 48 / 0.1);
   --green-text: #1d7c35;
+
   --shadow: 0 0.5px 1.5px rgb(0 0 0 / 0.12), 0 0 0 0.5px rgb(0 0 0 / 0.04);
-  --material-blur: saturate(180%) blur(20px);
+  --control-shadow:
+    0 0 0 0.5px var(--control-border), 0 0.5px 1px rgb(0 0 0 / 0.08);
 
   color-scheme: light;
   font-family:
@@ -37,7 +74,7 @@
     "SF Pro Text",
     "Helvetica Neue",
     sans-serif;
-  font-size: 13px;
+  font-size: var(--text-body);
   line-height: 1.38;
   letter-spacing: -0.003em;
   color: var(--label);
@@ -47,17 +84,20 @@
   -webkit-font-smoothing: antialiased;
   -webkit-user-select: none;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
   cursor: default;
 }
 
-/* Dark tokens: system preference unless pinned light, or pinned dark. */
+/* Dark tokens: system preference unless pinned light, or pinned dark.
+   The two blocks must stay identical. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --window: #1e1e1f;
+    --toolbar: #1e1e1f;
+    --sidebar: #252527;
     --elevated: #2a2a2c;
     --control: rgb(255 255 255 / 0.1);
-    --sidebar: rgb(38 38 40 / 0.86);
-    --toolbar: rgb(34 34 36 / 0.78);
     --label: rgb(255 255 255 / 0.88);
     --label-2: rgb(255 255 255 / 0.56);
     --label-3: rgb(255 255 255 / 0.26);
@@ -65,24 +105,27 @@
     --control-border: rgb(255 255 255 / 0.12);
     --fill: rgb(255 255 255 / 0.07);
     --fill-2: rgb(255 255 255 / 0.12);
-    --accent: #0a84ff;
+    --accent: var(--system-accent, #0a84ff);
     --accent-pressed: #3b9bff;
     --accent-tint: rgb(10 132 255 / 0.18);
     --focus: rgb(10 132 255 / 0.6);
+    --selection: rgb(10 132 255 / 0.26);
     --red: #ff453a;
     --red-text: #ff6961;
     --red-tint: rgb(255 69 58 / 0.16);
     --green-text: #4cd964;
-    --shadow: 0 0.5px 1px rgb(0 0 0 / 0.3), 0 0 0 0.5px rgb(255 255 255 / 0.04);
+    --shadow: 0 0.5px 1px rgb(0 0 0 / 0.3), 0 0 0 0.5px rgb(255 255 255 / 0.06);
+    --control-shadow:
+      0 0 0 0.5px var(--control-border), 0 0.5px 1px rgb(0 0 0 / 0.2);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --window: #1e1e1f;
+  --toolbar: #1e1e1f;
+  --sidebar: #252527;
   --elevated: #2a2a2c;
   --control: rgb(255 255 255 / 0.1);
-  --sidebar: rgb(38 38 40 / 0.86);
-  --toolbar: rgb(34 34 36 / 0.78);
   --label: rgb(255 255 255 / 0.88);
   --label-2: rgb(255 255 255 / 0.56);
   --label-3: rgb(255 255 255 / 0.26);
@@ -90,16 +133,56 @@
   --control-border: rgb(255 255 255 / 0.12);
   --fill: rgb(255 255 255 / 0.07);
   --fill-2: rgb(255 255 255 / 0.12);
-  --accent: #0a84ff;
+  --accent: var(--system-accent, #0a84ff);
   --accent-pressed: #3b9bff;
   --accent-tint: rgb(10 132 255 / 0.18);
   --focus: rgb(10 132 255 / 0.6);
+  --selection: rgb(10 132 255 / 0.26);
   --red: #ff453a;
   --red-text: #ff6961;
   --red-tint: rgb(255 69 58 / 0.16);
   --green-text: #4cd964;
-  --shadow: 0 0.5px 1px rgb(0 0 0 / 0.3), 0 0 0 0.5px rgb(255 255 255 / 0.04);
+  --shadow: 0 0.5px 1px rgb(0 0 0 / 0.3), 0 0 0 0.5px rgb(255 255 255 / 0.06);
+  --control-shadow:
+    0 0 0 0.5px var(--control-border), 0 0.5px 1px rgb(0 0 0 / 0.2);
   color-scheme: dark;
+}
+
+/* System accent (System Settings → Appearance → Accent colour). WKWebView
+   exposes it as a keyword; tints are derived so they follow it too. */
+@supports (color: -apple-system-control-accent) {
+  :root {
+    --system-accent: -apple-system-control-accent;
+  }
+}
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+  :root:root:root {
+    --accent-pressed: color-mix(in srgb, var(--accent) 82%, black);
+    --accent-tint: color-mix(in srgb, var(--accent) 12%, transparent);
+    --focus: color-mix(in srgb, var(--accent) 50%, transparent);
+    --selection: color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:root:not([data-theme="light"]) {
+      --accent-pressed: color-mix(in srgb, var(--accent) 80%, white);
+      --accent-tint: color-mix(in srgb, var(--accent) 18%, transparent);
+      --focus: color-mix(in srgb, var(--accent) 60%, transparent);
+      --selection: color-mix(in srgb, var(--accent) 26%, transparent);
+    }
+  }
+  :root:root[data-theme="dark"] {
+    --accent-pressed: color-mix(in srgb, var(--accent) 80%, white);
+    --accent-tint: color-mix(in srgb, var(--accent) 18%, transparent);
+    --focus: color-mix(in srgb, var(--accent) 60%, transparent);
+    --selection: color-mix(in srgb, var(--accent) 26%, transparent);
+  }
+}
+
+/* Inactive window (not key): selection turns grey, toolbar text dims.
+   Specificity beats the color-mix overrides above. */
+:root:root:root[data-inactive] {
+  --selection: var(--fill-2);
+  --selection-text: var(--label);
 }
 
 /* Increase Contrast: stronger secondary text, separators and control edges. */
@@ -111,7 +194,6 @@
     --control-border: rgb(0 0 0 / 0.5);
     --focus: #0040dd;
     --sidebar: #e3e3e8;
-    --toolbar: #f2f2f5;
   }
   :root[data-theme="dark"] {
     --label-2: rgb(255 255 255 / 0.8);
@@ -120,7 +202,6 @@
     --control-border: rgb(255 255 255 / 0.5);
     --focus: #409cff;
     --sidebar: #2c2c2e;
-    --toolbar: #242426;
   }
 }
 @media (prefers-contrast: more) and (prefers-color-scheme: dark) {
@@ -131,9 +212,19 @@
     --control-border: rgb(255 255 255 / 0.5);
     --focus: #409cff;
     --sidebar: #2c2c2e;
-    --toolbar: #242426;
   }
 }
+
+/* macOS desktop app: one unified titlebar + toolbar under the traffic lights. */
+.desktop {
+  --toolbar-height: 52px;
+  --traffic-inset: 78px;
+}
+.desktop.fullscreen {
+  --traffic-inset: 0px;
+}
+
+/* ---------- Base ---------- */
 
 * {
   box-sizing: border-box;
@@ -186,11 +277,12 @@ ol {
 }
 .content {
   position: fixed;
-  inset: 0 0 0 var(--sidebar-width);
+  inset: var(--toolbar-height) 0 0 var(--sidebar-width);
   overflow-y: auto;
-  padding-top: var(--toolbar-height);
+  overscroll-behavior: none;
   display: flex;
   flex-direction: column;
+  background: var(--window);
 }
 
 /* ---------- Sidebar ---------- */
@@ -205,15 +297,17 @@ ol {
   align-items: center;
   padding: 10px 0 12px;
   background: var(--sidebar);
-  -webkit-backdrop-filter: var(--material-blur);
-  backdrop-filter: var(--material-blur);
-  border-right: 1px solid var(--separator);
+  box-shadow: inset -1px 0 0 var(--separator);
+}
+/* Below the unified toolbar, which spans the full window width. */
+.desktop .sidebar {
+  top: var(--toolbar-height);
 }
 .site-list {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: none;
@@ -221,25 +315,24 @@ ol {
   width: 100%;
 }
 .site-list > li {
-  position: relative;
   display: flex;
   justify-content: center;
   width: 100%;
 }
 .sidebar-item {
-  position: relative;
   flex-shrink: 0;
   width: 40px;
   height: 40px;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-xl);
   display: grid;
   place-items: center;
   background: transparent;
   color: var(--label-2);
   transition:
-    background-color 120ms ease,
-    color 120ms ease;
+    background-color var(--fast) var(--ease),
+    color var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease);
 }
 .sidebar-item:hover {
   background: var(--fill);
@@ -248,10 +341,11 @@ ol {
 .sidebar-item:active {
   background: var(--fill-2);
 }
+/* Organisation tile: initials or the user's short label. */
 .site-avatar {
   background: var(--fill-2);
   color: var(--label);
-  font-size: 13px;
+  font-size: var(--text-body);
   font-weight: 600;
   letter-spacing: 0.01em;
 }
@@ -259,66 +353,16 @@ ol {
   background: var(--fill-2);
   box-shadow: inset 0 0 0 1px var(--separator);
 }
+/* Source-list selection: tinted, not filled; grey when the window is inactive. */
 .sidebar-item[aria-current="page"] {
-  background: var(--accent);
-  color: var(--on-accent);
-  box-shadow: var(--shadow);
+  background: var(--selection);
+  color: var(--selection-text);
 }
-/* Selection indicator, aligned to the window edge. */
-.site-list > li:has([aria-current="page"])::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 10px;
-  bottom: 10px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--label);
-}
-.add-site {
-  border: 1px dashed var(--control-border);
-}
-.add-site[aria-current="page"] {
-  border-color: transparent;
+.site-avatar[aria-current="page"] {
+  box-shadow: inset 0 0 0 1px var(--selection);
 }
 .settings-button {
   margin-top: auto;
-}
-
-/* macOS uses an opaque backing all the way into the native titlebar.
-   Keep these 32 logical pixels in sync with TITLEBAR in windows.rs. */
-.window-titlebar {
-  display: none;
-}
-.desktop .window-titlebar {
-  position: fixed;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  inset: 0 0 auto;
-  height: 32px;
-  padding-inline: 96px;
-  z-index: 5;
-  background: var(--window);
-  color: var(--label);
-  font-size: 13px;
-  font-weight: 600;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.window-titlebar span {
-  pointer-events: none;
-}
-.desktop .sidebar {
-  top: 32px;
-}
-.desktop .toolbar {
-  top: 32px;
-  background: var(--window);
-}
-.desktop .content {
-  top: 32px;
-  background: var(--window);
 }
 
 /* ---------- Toolbar ---------- */
@@ -329,15 +373,18 @@ ol {
   left: var(--sidebar-width);
   right: 0;
   height: var(--toolbar-height);
-  z-index: 1;
+  z-index: 3;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 0 10px 0 12px;
   background: var(--toolbar);
-  -webkit-backdrop-filter: var(--material-blur);
-  backdrop-filter: var(--material-blur);
-  border-bottom: 1px solid var(--separator);
+  box-shadow: inset 0 -1px 0 var(--separator);
+}
+.desktop .toolbar {
+  left: 0;
+  padding-left: calc(var(--traffic-inset) + 8px);
+  padding-right: 12px;
 }
 .toolbar-group {
   display: flex;
@@ -347,12 +394,15 @@ ol {
   width: 28px;
   height: 28px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   background: transparent;
   color: var(--label-2);
   display: grid;
   place-items: center;
   flex-shrink: 0;
+  transition:
+    background-color var(--fast) var(--ease),
+    color var(--fast) var(--ease);
 }
 .tool:hover {
   background: var(--fill);
@@ -364,29 +414,41 @@ ol {
 .tool.small {
   width: 20px;
   height: 20px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   color: inherit;
 }
+/* Title above subtitle, as an NSWindow title/subtitle pair. */
 .toolbar-title {
   flex: 1;
   min-width: 0;
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
   padding-left: 4px;
   white-space: nowrap;
+  pointer-events: none;
 }
 .toolbar-title h1 {
-  font-size: 13px;
+  font-size: var(--text-body);
   font-weight: 600;
+  line-height: 16px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .toolbar-title span {
-  font-size: 11px;
+  font-size: var(--text-caption);
+  line-height: 14px;
   color: var(--label-2);
   overflow: hidden;
   text-overflow: ellipsis;
+}
+:root[data-inactive] .toolbar-title h1,
+:root[data-inactive] .tool {
+  color: var(--label-3);
+}
+:root[data-inactive] .toolbar-title span {
+  color: var(--label-3);
 }
 .toolbar-alert {
   display: flex;
@@ -399,7 +461,7 @@ ol {
   border-radius: 13px;
   background: var(--red-tint);
   color: var(--red-text);
-  font-size: 12px;
+  font-size: var(--text-small);
 }
 .toolbar-alert > span {
   overflow: hidden;
@@ -420,13 +482,11 @@ ol {
   height: 24px;
   padding: 0 10px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-m);
   background: var(--control);
-  box-shadow:
-    0 0 0 0.5px var(--control-border),
-    0 0.5px 1px rgb(0 0 0 / 0.08);
+  box-shadow: var(--control-shadow);
   color: var(--label);
-  font-size: 13px;
+  font-size: var(--text-body);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -444,6 +504,11 @@ ol {
   color: var(--on-accent);
   box-shadow: 0 0.5px 1px rgb(0 0 0 / 0.15);
 }
+.button.primary:hover:not(:disabled) {
+  background:
+    linear-gradient(rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.06)),
+    var(--accent);
+}
 .button.primary:active:not(:disabled) {
   background: var(--accent-pressed);
 }
@@ -459,69 +524,30 @@ ol {
   opacity: 0.6;
 }
 .button.large {
-  height: 30px;
+  height: 28px;
   padding: 0 16px;
-  border-radius: 7px;
+  border-radius: var(--radius-l);
+}
+.button.small {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-s);
+  font-size: var(--text-small);
 }
 
-/* ---------- Onboarding ---------- */
-
-.onboarding {
-  width: min(400px, calc(100% - 48px));
-  margin: auto;
-  padding: 40px 0 48px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-.app-mark {
-  width: 64px;
-  height: 64px;
-  border-radius: 15px;
-  display: grid;
-  place-items: center;
-  color: #fff;
-  background: linear-gradient(180deg, #3d9bff, #0068e0);
-  box-shadow:
-    0 6px 16px rgb(0 104 224 / 0.25),
-    inset 0 0.5px 0 rgb(255 255 255 / 0.35);
-}
-.onboarding-title {
-  margin-top: 20px;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-.onboarding-lead {
-  margin-top: 8px;
-  color: var(--label-2);
-  line-height: 1.45;
-  max-width: 34em;
-}
-.connect-form {
-  width: 100%;
-  margin-top: 28px;
-  text-align: left;
-}
-.field-label {
-  display: block;
-  margin: 0 0 6px 2px;
-  font-weight: 500;
-}
 .text-field {
   display: flex;
   align-items: center;
   gap: 8px;
-  height: 34px;
+  height: 32px;
   padding: 0 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-l);
   background: var(--control);
   box-shadow:
     0 0 0 0.5px var(--control-border),
     0 0.5px 1px rgb(0 0 0 / 0.06);
   color: var(--label-2);
-  transition: box-shadow 120ms ease;
+  transition: box-shadow var(--fast) var(--ease);
 }
 .text-field:focus-within {
   box-shadow:
@@ -538,21 +564,33 @@ ol {
   flex: 1;
   min-width: 0;
   height: 100%;
+  padding: 0;
   border: 0;
   outline: none;
   background: transparent;
   color: var(--label);
-  font-size: 13px;
+  font-size: var(--text-body);
 }
 .text-field input::placeholder {
   color: var(--label-3);
+}
+/* Compact variant for inline values in a settings row. */
+.text-field.compact {
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--radius-s);
+}
+.field-label {
+  display: block;
+  margin: 0 0 6px 2px;
+  font-weight: 500;
 }
 .field-message {
   display: flex;
   align-items: flex-start;
   gap: 5px;
   margin: 6px 2px 0;
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--label-2);
   line-height: 1.4;
 }
@@ -562,6 +600,97 @@ ol {
 .field-message svg {
   flex-shrink: 0;
   margin-top: 0.5px;
+}
+
+.segmented {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 2px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--fill);
+  box-shadow: inset 0 0 0 0.5px var(--separator);
+}
+.segmented:disabled {
+  opacity: 0.6;
+}
+.segment {
+  position: relative;
+}
+.segment input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+}
+.segment span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: var(--radius-s);
+  font-size: var(--text-small);
+  color: var(--label-2);
+  transition:
+    background-color var(--fast) var(--ease),
+    color var(--fast) var(--ease);
+}
+.segment input:not(:checked):hover + span {
+  color: var(--label);
+}
+.segment input:checked + span {
+  background: var(--control);
+  color: var(--label);
+  box-shadow:
+    0 0 0 0.5px var(--control-border),
+    0 1px 2px rgb(0 0 0 / 0.1);
+}
+.segment input:focus-visible + span {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* ---------- Onboarding ---------- */
+
+.onboarding {
+  width: min(400px, calc(100% - 48px));
+  margin: auto;
+  padding: 40px 0 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.app-mark {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-icon);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(180deg, #3d9bff, #0068e0);
+  box-shadow:
+    0 6px 16px rgb(0 104 224 / 0.25),
+    inset 0 0.5px 0 rgb(255 255 255 / 0.35);
+}
+.onboarding-title {
+  margin-top: 20px;
+  font-size: var(--text-title);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.onboarding-lead {
+  margin-top: 8px;
+  color: var(--label-2);
+  line-height: 1.45;
+  max-width: 34em;
+}
+.connect-form {
+  width: 100%;
+  margin-top: 28px;
+  text-align: left;
 }
 .form-actions {
   display: flex;
@@ -576,7 +705,7 @@ ol {
 .progress {
   margin-top: 18px;
   padding: 12px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-xl);
   background: var(--elevated);
   box-shadow: var(--shadow);
 }
@@ -617,7 +746,7 @@ ol {
 }
 .progress-hint {
   margin: 10px 0 0 25px;
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--label-2);
 }
 .privacy-note {
@@ -625,7 +754,7 @@ ol {
   align-items: flex-start;
   gap: 6px;
   margin-top: 32px;
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--label-2);
   text-align: left;
   line-height: 1.4;
@@ -635,7 +764,7 @@ ol {
   margin-top: 0.5px;
 }
 
-/* ---------- Settings ---------- */
+/* ---------- Settings (grouped form, like System Settings) ---------- */
 
 .settings {
   width: min(640px, calc(100% - 48px));
@@ -646,9 +775,9 @@ ol {
 }
 .preview-banner {
   padding: 9px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-l);
   background: var(--accent-tint);
-  font-size: 12px;
+  font-size: var(--text-small);
   color: var(--label);
 }
 .section-header {
@@ -658,15 +787,15 @@ ol {
 }
 .section-title {
   margin: 0 0 8px 2px;
-  font-size: 13px;
+  font-size: var(--text-body);
   font-weight: 600;
 }
 .section-count {
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--label-2);
 }
 .group {
-  border-radius: 10px;
+  border-radius: var(--radius-xl);
   background: var(--elevated);
   box-shadow: var(--shadow);
   overflow: hidden;
@@ -692,15 +821,14 @@ ol {
   height: 1px;
   background: var(--separator);
 }
-.group-footer {
-  border-top: 1px solid var(--separator);
-}
 /* Settings rows in one group (Theme, Language) share an inset separator. */
 .group-row + .group-row:not(.group-footer) {
   box-shadow: inset 0 1px 0 var(--separator);
 }
 .group-footer {
   justify-content: flex-end;
+  min-height: 40px;
+  border-top: 1px solid var(--separator);
 }
 .group-empty {
   padding: 16px 12px;
@@ -710,12 +838,12 @@ ol {
 .row-avatar {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
+  border-radius: var(--radius-l);
   display: grid;
   place-items: center;
   flex-shrink: 0;
   background: var(--fill-2);
-  font-size: 12px;
+  font-size: var(--text-small);
   font-weight: 600;
 }
 .row-text {
@@ -732,7 +860,7 @@ ol {
   white-space: nowrap;
 }
 .row-subtitle {
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--label-2);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -743,17 +871,70 @@ ol {
   align-items: center;
   gap: 5px;
   margin-top: 2px;
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--accent);
 }
 .row-actions {
   display: flex;
   gap: 6px;
 }
+
+/* Short label: a nested row aligned with the organisation's text column. */
+.site-label-editor {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 12px 0 56px;
+  padding: 8px 0 10px;
+  box-shadow: inset 0 1px 0 var(--separator);
+}
+.site-label-editor .row-text label {
+  font-size: var(--text-small);
+  font-weight: 500;
+}
+.label-hint {
+  font-size: var(--text-caption);
+  color: var(--label-2);
+  line-height: 1.35;
+}
+.site-label-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.site-label-controls .text-field {
+  width: 64px;
+}
+.site-label-controls input {
+  font-size: var(--text-small);
+  font-weight: 600;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+.site-label-controls input::placeholder {
+  font-weight: 400;
+  text-transform: none;
+}
+.label-feedback {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: var(--text-caption);
+}
+.label-feedback.success {
+  color: var(--green-text);
+}
+.label-feedback.error {
+  color: var(--red-text);
+}
+
 .confirm {
   margin: 0 12px 12px 56px;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-l);
   background: var(--fill);
 }
 .confirm-title {
@@ -761,7 +942,7 @@ ol {
 }
 .confirm-body {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: var(--text-small);
   color: var(--label-2);
   line-height: 1.45;
 }
@@ -771,55 +952,12 @@ ol {
   gap: 8px;
   margin-top: 12px;
 }
-.segmented {
-  display: inline-flex;
-  flex-shrink: 0;
-  margin: 0;
-  padding: 2px;
-  border: 0;
-  border-radius: 7px;
-  background: var(--fill);
-  box-shadow: inset 0 0 0 0.5px var(--separator);
-}
-.segmented:disabled {
-  opacity: 0.6;
-}
-.segment {
-  position: relative;
-}
-.segment input {
-  position: absolute;
-  opacity: 0;
-  inset: 0;
-  margin: 0;
-}
-.segment span {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  height: 22px;
-  padding: 0 10px;
-  border-radius: 5px;
-  font-size: 12px;
-  color: var(--label-2);
-}
-.segment input:checked + span {
-  background: var(--control);
-  color: var(--label);
-  box-shadow:
-    0 0 0 0.5px var(--control-border),
-    0 1px 2px rgb(0 0 0 / 0.1);
-}
-.segment input:focus-visible + span {
-  outline: 3px solid var(--focus);
-  outline-offset: 1px;
-}
 .section-message {
   display: flex;
   align-items: flex-start;
   gap: 6px;
   margin: 8px 2px 0;
-  font-size: 12px;
+  font-size: var(--text-small);
 }
 .section-message svg {
   flex-shrink: 0;
@@ -838,13 +976,13 @@ ol {
 .error-detail {
   display: block;
   margin-top: 2px;
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--label-2);
   overflow-wrap: anywhere;
 }
 .section-footnote {
   margin: 8px 2px 0;
-  font-size: 11px;
+  font-size: var(--text-caption);
   color: var(--label-2);
 }
 
@@ -868,52 +1006,18 @@ ol {
     transition: none !important;
   }
 }
-@media (prefers-reduced-transparency: reduce) {
-  .sidebar,
-  .toolbar {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  .sidebar {
-    background: var(--window);
-  }
-  .toolbar {
-    background: var(--elevated);
-  }
-}
 @media (prefers-contrast: more) {
   .group,
   .progress,
   .confirm {
     box-shadow: 0 0 0 1px var(--separator);
   }
-  .add-site {
-    border-style: solid;
+  .site-avatar {
+    box-shadow: inset 0 0 0 1px var(--control-border);
   }
 }
 @media (max-width: 760px) {
   .row-actions .button {
     padding: 0 8px;
   }
-}
-
-.site-label-editor {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding: 0 16px 14px 58px;
-  font-size: 11px;
-}
-.site-label-editor input {
-  width: 64px;
-  border: 1px solid var(--control-border);
-  border-radius: 5px;
-  padding: 4px 6px;
-  background: var(--control);
-  text-transform: uppercase;
-}
-.site-label-editor .label-hint {
-  color: var(--label-2);
-  flex-basis: 100%;
 }

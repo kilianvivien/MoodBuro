@@ -1,17 +1,19 @@
 # Shell UI design (alpha)
 
+Decision log. For the rules new UI must follow, see [design-guidelines.md](design-guidelines.md).
+
 The local shell (`apps/shell`) should feel like a native macOS app that hosts Moodle, not a website.
 
 ## Principles
 
-- **Native first.** The real macOS traffic lights stay; the integrated title strip supplies the centered title and drag region; the shell never draws imitation window controls. Menu commands (Settings… ⌘,, Add Organisation… ⌘N, Back/Forward/Reload) live in the native menu bar and reach the shell through `shell://navigate` / `shell://error`.
+- **Native first.** The real macOS traffic lights stay, centred in the unified toolbar, which is also the drag region; the shell never draws imitation window controls. Menu commands (Settings… ⌘,, Add Organisation… ⌘N, Back/Forward/Reload) live in the native menu bar and reach the shell through `shell://navigate` / `shell://error`.
 - **System typography and colour.** `system-ui` (SF Pro) at 13 px, AppKit-like semantic tokens (`--label`, `--label-2`, `--separator`, `--fill`…) and the system blue accent (`#007aff` / `#0a84ff`).
-- **Materials sparingly.** The desktop window has an opaque backing; the 72 px sidebar uses a semantic tinted surface. The 44 px toolbar shares the opaque titlebar surface on macOS; controls use subtle fills and semantic colours. Everything else is opaque.
+- **Opaque surfaces.** The window, 72 px sidebar and toolbar are opaque semantic surfaces; controls use subtle fills and semantic colours. The accent follows the macOS accent colour when WebKit exposes it.
 - **Honest controls.** Every control works. Navigation buttons appear only when a site is shown. The browser preview says what it cannot do instead of pretending.
 
 ## Geometry
 
-The 72 px sidebar and 44 px toolbar are fixed in `src-tauri/src/windows.rs` (`SIDEBAR`, `TOOLBAR`). Remote site views are positioned by Rust and cover the content area, so shell messages for a visible site show in the toolbar, not in the content area.
+The 72 px sidebar and the toolbar (52 pt unified on macOS, 44 px elsewhere) are fixed in `src-tauri/src/windows.rs` (`SIDEBAR`, `TOOLBAR`). Remote site views are positioned by Rust and cover the content area, so shell messages for a visible site show in the toolbar, not in the content area.
 
 ## Views
 
@@ -47,13 +49,15 @@ The shell is fully translated into English and French (`src/i18n/`): every visib
 
 - Visible focus rings on every control; Up/Down/Home/End move between sidebar items; `aria-current` marks the current site/view.
 - Progress and outcomes use `role="status"`/`role="alert"`; the field links its help or error with `aria-describedby`.
-- `prefers-contrast: more` strengthens text, separators and control edges; `prefers-reduced-motion` removes transitions and slows spinners; `prefers-reduced-transparency` makes the browser-preview materials opaque (desktop materials follow macOS).
+- `prefers-contrast: more` strengthens text, separators and control edges; `prefers-reduced-motion` removes transitions and slows spinners; there are no translucent materials, so Reduce Transparency needs no override.
 
-## Integrated titlebar
+## Unified toolbar (November 2026)
 
-The main macOS window is opaque. `TitleBarStyle::Overlay` retains native traffic lights and hides the native leading title. The local shell paints a 32-point title strip with a centered MoodBuro label and `data-tauri-drag-region`; only the local shell gets start-dragging/internal-double-click permissions. Sidebar and toolbar start below this strip, and Rust positions Moodle views at 32 + 44 points. Other platforms keep their native titlebar geometry.
+The separate 32-point title strip stacked on a 44-point toolbar was replaced by one 52-point unified toolbar, as in Safari, Mail and Finder. `TitleBarStyle::Overlay` keeps the native traffic lights, now placed at (20, 26) through `WindowConfig.traffic_light_position` so they are vertically centred; the toolbar spans the full width with a 78-point leading inset and is a `data-tauri-drag-region="deep"` (buttons still click; double-click zooms). The window title is hidden; the toolbar shows the site name over its host, like an NSWindow title/subtitle. Moodle views start at 52 points.
 
-Whole-window transparency and window-wide Liquid Glass were removed after they left the titlebar without a reliable backing. The user's subsequent screenshot confirms the solid centered title and correct Moodle content alignment. Drag-region interaction still needs a manual check.
+Rust emits `window://focused` and `window://fullscreen` so the shell greys selection and dims toolbar text when the window is not key, and drops the traffic-light inset in full screen. The window and shell webview get an opaque backing matching `--window` to avoid a white flash at launch. Sidebar selection is a tinted rounded rectangle (no edge bar), which turns grey when the window is inactive. Release builds suppress the web context menu outside text fields.
+
+Whole-window transparency and Liquid Glass stay out: they previously left the titlebar without a reliable backing. A user screenshot of the native window (authenticated dashboard) confirms the centred traffic lights, toolbar layout and content alignment. Still to check by hand: dragging and double-click zoom on the toolbar, the full-screen inset, inactive-window dimming, release-build context-menu suppression, and that a non-blue system accent colour is picked up.
 
 ## Organisation short labels
 

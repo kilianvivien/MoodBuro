@@ -5,25 +5,43 @@ use tauri::{
 };
 use tauri_plugin_opener::OpenerExt;
 
+// Shell geometry. Keep in sync with `--sidebar-width` / `--toolbar-height`
+// in apps/shell/src/styles.css and docs/design-guidelines.md.
 pub const SIDEBAR: f64 = 72.;
-pub const TOOLBAR: f64 = 44.;
+/// macOS: one unified 52 pt titlebar + toolbar, like Safari, Mail or Finder.
 #[cfg(target_os = "macos")]
-pub const TITLEBAR: f64 = 32.;
+pub const TOOLBAR: f64 = 52.;
 #[cfg(not(target_os = "macos"))]
-pub const TITLEBAR: f64 = 0.;
-const CONTENT_TOP: f64 = TITLEBAR + TOOLBAR;
+pub const TOOLBAR: f64 = 44.;
+const CONTENT_TOP: f64 = TOOLBAR;
+/// Native traffic lights, vertically centred in the unified toolbar.
+#[cfg(target_os = "macos")]
+const TRAFFIC_LIGHTS: tauri::utils::config::LogicalPosition =
+    tauri::utils::config::LogicalPosition { x: 20., y: 26. };
+/// Opaque window backing (`--window` in styles.css): no white flash on launch.
+const LIGHT_BACKING: tauri::window::Color = tauri::window::Color(245, 245, 247, 255);
+const DARK_BACKING: tauri::window::Color = tauri::window::Color(30, 30, 31, 255);
+
 pub fn create_shell(app: &AppHandle) -> tauri::Result<()> {
-    let builder = tauri::WindowBuilder::new(app, "main")
-        .title("MoodBuro")
-        .inner_size(1120., 760.)
-        .min_inner_size(760., 540.);
-    // The window stays opaque. AppKit overlays its real traffic lights while
-    // the local shell paints the titlebar backing and centered title.
+    #[cfg_attr(not(target_os = "macos"), allow(unused_mut))]
+    let mut config = tauri::utils::config::WindowConfig {
+        label: "main".into(),
+        title: "MoodBuro".into(),
+        width: 1120.,
+        height: 760.,
+        min_width: Some(760.),
+        min_height: Some(540.),
+        ..Default::default()
+    };
+    // The window stays opaque. AppKit draws the real traffic lights over the
+    // local shell, which paints the unified toolbar and its drag region.
     #[cfg(target_os = "macos")]
-    let builder = builder
-        .title_bar_style(tauri::TitleBarStyle::Overlay)
-        .hidden_title(true);
-    let window = builder.build()?;
+    {
+        config.title_bar_style = tauri::TitleBarStyle::Overlay;
+        config.hidden_title = true;
+        config.traffic_light_position = Some(TRAFFIC_LIGHTS);
+    }
+    let window = tauri::WindowBuilder::from_config(app, &config)?.build()?;
     let appearance = app
         .state::<AppState>()
         .store
@@ -33,12 +51,22 @@ pub fn create_shell(app: &AppHandle) -> tauri::Result<()> {
         .unwrap_or_default()
         .appearance;
     apply_appearance(app, appearance)?;
+    let backing = backing(window.theme().unwrap_or(tauri::Theme::Light));
+    window.set_background_color(Some(backing))?;
     window.add_child(
-        WebviewBuilder::new("shell", WebviewUrl::App("index.html".into())).auto_resize(),
+        WebviewBuilder::new("shell", WebviewUrl::App("index.html".into()))
+            .background_color(backing)
+            .auto_resize(),
         LogicalPosition::new(0., 0.),
         LogicalSize::new(1120., 760.),
     )?;
     Ok(())
+}
+pub fn backing(theme: tauri::Theme) -> tauri::window::Color {
+    match theme {
+        tauri::Theme::Dark => DARK_BACKING,
+        _ => LIGHT_BACKING,
+    }
 }
 pub fn resize(app: &AppHandle) -> tauri::Result<()> {
     let window = app.get_window("main").expect("main window");
@@ -131,6 +159,9 @@ pub fn apply_appearance(app: &AppHandle, appearance: md_store::Appearance) -> ta
     };
     for window in app.windows().values() {
         window.set_theme(theme)?;
+        // Automatic: read back the theme AppKit now resolves to.
+        let resolved = theme.unwrap_or(window.theme().unwrap_or(tauri::Theme::Light));
+        window.set_background_color(Some(backing(resolved)))?;
     }
     Ok(())
 }

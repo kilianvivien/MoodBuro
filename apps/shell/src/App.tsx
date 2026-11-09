@@ -4,7 +4,6 @@ import { desktop, ipc, message, type NavAction } from "./ipc";
 import { useSites } from "./stores/sites";
 import { useSettings } from "./stores/settings";
 import { connection as reduce, idle } from "./lib/connection";
-import { Titlebar } from "./components/Titlebar";
 import { Sidebar, type View } from "./components/Sidebar";
 import { Toolbar } from "./components/Toolbar";
 import { AddSite } from "./views/AddSite";
@@ -220,7 +219,6 @@ export default function App() {
   return (
     <I18nProvider locale={locale}>
       <div className="app">
-        <Titlebar />
         <Sidebar
           sites={sites}
           active={active}

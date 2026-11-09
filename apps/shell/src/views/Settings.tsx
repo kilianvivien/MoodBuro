@@ -244,36 +244,51 @@ function SiteRow({
           className="site-label-editor"
           onSubmit={(event) => void saveLabel(event)}
         >
-          <label htmlFor={`label-${site.id}`}>{t.settings.shortLabel}</label>
-          <input
-            id={`label-${site.id}`}
-            value={shortLabel}
-            maxLength={4}
-            placeholder={initials(site.name)}
-            onChange={(event) => {
-              setShortLabel(event.target.value);
-              setLabelSaved(false);
-            }}
-            disabled={labelBusy}
-            aria-describedby={`label-hint-${site.id}`}
-            autoComplete="off"
-            spellCheck={false}
-          />
-          <button
-            className="button"
-            disabled={labelBusy || shortLabel === (site.shortLabel ?? "")}
-          >
-            {t.settings.saveLabel}
-          </button>
-          <span id={`label-hint-${site.id}`} className="label-hint">
-            {t.settings.shortLabelHint}
-          </span>
-          {labelSaved && <span role="status">{t.settings.labelSaved}</span>}
-          {labelError && (
-            <span role="alert">
-              <ErrorText error={labelError} context="settings" />
+          <div className="row-text">
+            <label htmlFor={`label-${site.id}`}>{t.settings.shortLabel}</label>
+            <span id={`label-hint-${site.id}`} className="label-hint">
+              {t.settings.shortLabelHint}
             </span>
-          )}
+            {labelSaved && (
+              <span className="label-feedback success" role="status">
+                <CircleCheck size={12} strokeWidth={2} aria-hidden="true" />
+                {t.settings.labelSaved}
+              </span>
+            )}
+            {labelError && (
+              <span className="label-feedback error" role="alert">
+                <CircleAlert size={12} strokeWidth={2} aria-hidden="true" />
+                <ErrorText error={labelError} context="settings" />
+              </span>
+            )}
+          </div>
+          <div className="site-label-controls">
+            <div
+              className="text-field compact"
+              data-disabled={labelBusy || undefined}
+            >
+              <input
+                id={`label-${site.id}`}
+                value={shortLabel}
+                maxLength={4}
+                placeholder={initials(site.name)}
+                onChange={(event) => {
+                  setShortLabel(event.target.value);
+                  setLabelSaved(false);
+                }}
+                disabled={labelBusy}
+                aria-describedby={`label-hint-${site.id}`}
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+            <button
+              className="button small"
+              disabled={labelBusy || shortLabel === (site.shortLabel ?? "")}
+            >
+              {t.settings.saveLabel}
+            </button>
+          </div>
         </form>
       )}
       {confirming && (

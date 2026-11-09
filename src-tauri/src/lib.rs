@@ -34,6 +34,21 @@ pub fn run() {
             {
                 if window.label() == "main" {
                     let _ = windows::resize(window.app_handle());
+                    // Full screen hides the traffic lights; the toolbar reclaims their inset.
+                    let full = window.is_fullscreen().unwrap_or(false);
+                    let _ = window.emit_to("shell", "window://fullscreen", full);
+                }
+            }
+            if window.label() == "main" {
+                match event {
+                    // Inactive windows dim selection and toolbar text, as AppKit does.
+                    tauri::WindowEvent::Focused(focused) => {
+                        let _ = window.emit_to("shell", "window://focused", *focused);
+                    }
+                    tauri::WindowEvent::ThemeChanged(theme) => {
+                        let _ = window.set_background_color(Some(windows::backing(*theme)));
+                    }
+                    _ => {}
                 }
             }
             if let tauri::WindowEvent::Destroyed = event {

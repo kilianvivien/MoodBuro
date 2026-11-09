@@ -63,7 +63,8 @@ export function Toolbar({
     </div>
   );
   return (
-    <header className="toolbar">
+    // "deep": the whole bar drags the window; buttons still click.
+    <header className="toolbar" data-tauri-drag-region="deep">
       {browsing ? (
         <>
           <div

@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "shell", "runtimeExecutable": "pnpm", "runtimeArgs": ["dev"], "port": 1420, "url": "http://127.0.0.1:1420" }
+  ]
+}

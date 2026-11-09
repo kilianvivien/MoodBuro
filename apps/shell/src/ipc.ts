@@ -1,4 +1,5 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import { previewFlags } from "./lib/window";
 
 export interface Site {
   id: string;
@@ -20,6 +21,27 @@ export type ShellView = "onboarding" | "settings";
 export type NavAction = "back" | "forward" | "reload" | "open_in_browser";
 
 export const desktop = isTauri();
+
+// Dev-only `?demo`: neutral sample organisations so the browser preview can
+// show the sidebar, toolbar and Settings rows. Never shipped in release builds.
+const demo = !desktop && import.meta.env.DEV && previewFlags().demo;
+const demoSites: Site[] = [
+  {
+    id: "demo-1",
+    wwwroot: "https://moodle.example.edu/",
+    name: "Example University",
+    userId: 1,
+    fullName: "Alex Martin",
+  },
+  {
+    id: "demo-2",
+    wwwroot: "https://moodle.exemple.fr/",
+    name: "Campus Exemple",
+    userId: 2,
+    fullName: "Alex Martin",
+    shortLabel: "CX",
+  },
+];
 
 const desktopOnly = () =>
   Promise.reject(
@@ -50,10 +72,14 @@ export const ipc = {
     desktop
       ? invoke<string | null>("site_label_set", { id, label })
       : desktopOnly(),
-  sites: () => (desktop ? invoke<Site[]>("sites_list") : Promise.resolve([])),
+  sites: () =>
+    desktop
+      ? invoke<Site[]>("sites_list")
+      : Promise.resolve(demo ? [...demoSites] : []),
   addSite: (url: string) =>
     desktop ? invoke<void>("site_add", { url }) : desktopOnly(),
-  switchSite: (id: string) => invoke<void>("site_switch", { id }),
+  switchSite: (id: string) =>
+    demo ? Promise.resolve() : invoke<void>("site_switch", { id }),
   onboarding: () =>
     desktop ? invoke<void>("show_onboarding") : Promise.resolve(),
   shellView: (view: ShellView) =>
@@ -75,7 +101,8 @@ export const ipc = {
     previewSettings = { ...previewSettings, ...change };
     return Promise.resolve({ ...previewSettings });
   },
-  nav: (action: NavAction) => invoke<void>("nav", { action }),
+  nav: (action: NavAction) =>
+    demo ? Promise.resolve() : invoke<void>("nav", { action }),
 };
 
 export function message(cause: unknown) {
