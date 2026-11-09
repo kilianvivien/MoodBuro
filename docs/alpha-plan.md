@@ -2,6 +2,8 @@
 
 Nov 9, 2026 · @Kilian
 
+Implementation progress: see [current status](implementation-status.md) for delivered slices and remaining gates.
+
 ## 1. Scope, team and exit criteria
 
 The alpha is an unsigned (ad-hoc or self-signed) macOS build delivered in 6 weeks by two engineers, covering PRD milestones M0 (spike) and M1 (core shell): sign-in to any Moodle site including SSO, several sites side by side, native notifications with dock badge and menu-bar extra, deep links, and basic capture of downloads from the Moodle view. It goes to 10–20 internal testers on 2–3 real Moodle sites.

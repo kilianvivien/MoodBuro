@@ -17,3 +17,12 @@ Status: accepted for scaffolding; platform spike results pending.
 - https://v2.tauri.app/security/capabilities/
 - https://docs.rs/tauri/latest/tauri/webview/struct.WebviewBuilder.html
 - https://github.com/moodle/moodle/blob/MOODLE_405_STABLE/admin/tool/mobile/launch.php
+
+## Follow-on decision — macOS shell and sessions
+
+- Native titlebar and traffic lights remain owned by macOS. Native menu items provide Settings (`Cmd+,`), Add Organisation (`Cmd+N`), reload (`Cmd+R`), history (`Cmd+[` / `Cmd+]`) and external browser (`Cmd+Shift+B`). The web shell uses system fonts, semantic light/dark colours and a restrained monochrome Lucide icon family.
+- Tauri supplies actual `LiquidGlassRegular` window material on supported macOS, falling back to AppKit `Sidebar` material on earlier versions. The local shell permits transparency; content stays opaque. `macos-private-api` is enabled for transparent WKWebView rendering, consistent with the PRD’s outside-the-App-Store distribution. This is not a conversion of every HTML control to an AppKit control.
+- On macOS 14+, auth and site webviews share a persistent store identified by the site's UUID. Other platforms and macOS 12–13 retain the shared default store. Site removal requests asynchronous deletion of the dedicated store and removes credentials/metadata. Shared legacy cookies are removed only when no retained site uses their domain; legacy local storage and shared IdP sessions may remain. Full SEC-8 deletion on that fallback remains an Alpha gate.
+- One-use autologin URLs stay Rust-side. The Rust client identifies `MoodBuro/<version> MoodleMobile`: Moodle's stock `is_moodle_app()` requires that compatibility marker, while MoodBuro's own identity remains explicit. Key minting is never retried automatically. Unavailable/rate-limited keys fall back to an existing browser session; invalid tokens ask the user to reconnect in Settings.
+- Public discovery supports same-origin HTTPS redirects and an explicit `/public/` fallback. Cross-origin canonical sites still require the user to enter the canonical URL; credentials are never forwarded across origins.
+- Contract tests use synthetic stock-Moodle-shaped responses, not recordings from authenticated INSP accounts. Moodle 4.5/5.3 rigs and live SSO remain necessary before M0.

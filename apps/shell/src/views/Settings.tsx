@@ -1,0 +1,401 @@
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  CircleAlert,
+  CircleCheck,
+  Languages,
+  LoaderCircle,
+  Monitor,
+  Moon,
+  Plus,
+  Sun,
+} from "lucide-react";
+import type { Appearance, Language, Site } from "../ipc";
+import type { Connection } from "../lib/connection";
+import { displayHost, initials } from "../lib/site";
+import { useI18n } from "../i18n/context";
+import { ErrorText } from "../i18n/ErrorText";
+import type { ErrorContext } from "../i18n/errors";
+
+/** Outcome of the last account action; errors stay raw until rendered. */
+export type Notice =
+  | { tone: "success"; text: string }
+  | { tone: "error"; error: string; context: ErrorContext };
+
+const appearanceIcons: Record<Appearance, typeof Sun> = {
+  system: Monitor,
+  light: Sun,
+  dark: Moon,
+};
+const languageOptions: readonly Language[] = ["system", "fr", "en"];
+
+function Segmented<T extends string>({
+  name,
+  legend,
+  options,
+  value,
+  disabled,
+  onChange,
+}: {
+  name: string;
+  legend: string;
+  options: readonly { value: T; label: ReactNode; lang?: string }[];
+  value: T;
+  disabled: boolean;
+  onChange: (value: T) => void;
+}) {
+  // Native radios give arrow-key selection and one tab stop for free.
+  return (
+    <fieldset className="segmented" disabled={disabled}>
+      <legend className="visually-hidden">{legend}</legend>
+      {options.map((option) => (
+        <label key={option.value} className="segment">
+          <input
+            type="radio"
+            name={name}
+            value={option.value}
+            checked={value === option.value}
+            onChange={() => onChange(option.value)}
+          />
+          <span lang={option.lang}>{option.label}</span>
+        </label>
+      ))}
+    </fieldset>
+  );
+}
+
+function RemoveConfirmation({
+  site,
+  removing,
+  onCancel,
+  onConfirm,
+}: {
+  site: Site;
+  removing: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const { t } = useI18n();
+  const cancel = useRef<HTMLButtonElement>(null);
+  useEffect(() => cancel.current?.focus(), []);
+  const titleId = `remove-${site.id}-title`;
+  return (
+    <div
+      className="confirm"
+      role="alertdialog"
+      aria-labelledby={titleId}
+      aria-describedby={`remove-${site.id}-body`}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && !removing) {
+          // Close only the confirmation, not Settings itself.
+          event.preventDefault();
+          event.stopPropagation();
+          onCancel();
+        }
+      }}
+    >
+      <p id={titleId} className="confirm-title">
+        {t.settings.removeTitle(site.name)}
+      </p>
+      <p id={`remove-${site.id}-body`} className="confirm-body">
+        {t.settings.removeBody}
+      </p>
+      <div className="confirm-actions">
+        <button
+          ref={cancel}
+          className="button"
+          onClick={onCancel}
+          disabled={removing}
+        >
+          {t.settings.cancel}
+        </button>
+        <button
+          className="button destructive"
+          onClick={onConfirm}
+          disabled={removing}
+        >
+          {removing && (
+            <LoaderCircle
+              className="spin"
+              size={14}
+              strokeWidth={2}
+              aria-hidden="true"
+            />
+          )}
+          {t.settings.confirmRemove}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SiteRow({
+  site,
+  connection,
+  onOpen,
+  onReauthenticate,
+  onRemove,
+}: {
+  site: Site;
+  connection: Connection;
+  onOpen: () => void;
+  onReauthenticate: () => void;
+  onRemove: () => Promise<boolean>;
+}) {
+  const { t } = useI18n();
+  const [confirming, setConfirming] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const removeButton = useRef<HTMLButtonElement>(null);
+  const signingIn =
+    connection.phase !== "idle" && connection.siteId === site.id;
+  const busy = connection.phase !== "idle";
+
+  async function confirm() {
+    setRemoving(true);
+    // On success this row unmounts; only restore state when removal failed.
+    if (!(await onRemove())) {
+      setRemoving(false);
+      setConfirming(false);
+      removeButton.current?.focus();
+    }
+  }
+
+  return (
+    <li className="site-row">
+      <div className="site-row-main">
+        <span className="row-avatar" aria-hidden="true">
+          {initials(site.name)}
+        </span>
+        <div className="row-text">
+          <span className="row-title">{site.name}</span>
+          <span className="row-subtitle">
+            {[site.fullName, displayHost(site.wwwroot)]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
+          {signingIn && (
+            <span className="row-status" role="status">
+              <LoaderCircle
+                className="spin"
+                size={12}
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              {connection.phase === "checking"
+                ? t.settings.connecting
+                : t.settings.continueInWindow}
+            </span>
+          )}
+        </div>
+        {!confirming && (
+          <div className="row-actions">
+            <button className="button" onClick={onOpen}>
+              {t.settings.open}
+            </button>
+            <button
+              className="button"
+              onClick={onReauthenticate}
+              disabled={busy}
+              aria-label={t.settings.signInAgainLabel(site.name)}
+            >
+              {t.settings.signInAgain}
+            </button>
+            <button
+              ref={removeButton}
+              className="button"
+              onClick={() => setConfirming(true)}
+              disabled={signingIn}
+              aria-label={t.settings.removeLabel(site.name)}
+            >
+              {t.settings.remove}
+            </button>
+          </div>
+        )}
+      </div>
+      {confirming && (
+        <RemoveConfirmation
+          site={site}
+          removing={removing}
+          onCancel={() => {
+            setConfirming(false);
+            removeButton.current?.focus();
+          }}
+          onConfirm={() => void confirm()}
+        />
+      )}
+    </li>
+  );
+}
+
+export function Settings({
+  desktop,
+  sites,
+  appearance,
+  appearanceSaving,
+  language,
+  languageSaving,
+  settingsError,
+  connection,
+  accountMessage,
+  onAppearance,
+  onLanguage,
+  onOpenSite,
+  onReauthenticate,
+  onRemove,
+  onAdd,
+}: {
+  desktop: boolean;
+  sites: Site[];
+  appearance: Appearance;
+  appearanceSaving: boolean;
+  language: Language;
+  languageSaving: boolean;
+  /** Raw backend message from loading or saving a setting. */
+  settingsError: string | null;
+  connection: Connection;
+  /** Outcome of the last account action, announced under the list. */
+  accountMessage: Notice | null;
+  onAppearance: (value: Appearance) => void;
+  onLanguage: (value: Language) => void;
+  onOpenSite: (id: string) => void;
+  onReauthenticate: (id: string) => void;
+  onRemove: (id: string) => Promise<boolean>;
+  onAdd: () => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="settings">
+      {!desktop && (
+        <p className="preview-banner" role="note">
+          {t.settings.previewBanner}
+        </p>
+      )}
+
+      <section aria-labelledby="general-heading">
+        <h2 id="general-heading" className="section-title">
+          {t.settings.general}
+        </h2>
+        <div className="group">
+          <div className="group-row">
+            <div className="row-text">
+              <span className="row-title">{t.settings.theme}</span>
+              <span className="row-subtitle">{t.settings.themeHint}</span>
+            </div>
+            <Segmented
+              name="appearance"
+              legend={t.settings.theme}
+              value={appearance}
+              disabled={appearanceSaving}
+              onChange={onAppearance}
+              options={(["system", "light", "dark"] as const).map((value) => {
+                const Icon = appearanceIcons[value];
+                return {
+                  value,
+                  label: (
+                    <>
+                      <Icon size={14} strokeWidth={1.75} aria-hidden="true" />
+                      {t.settings.appearance[value]}
+                    </>
+                  ),
+                };
+              })}
+            />
+          </div>
+          <div className="group-row">
+            <div className="row-text">
+              <span className="row-title">{t.settings.language}</span>
+              <span className="row-subtitle">{t.settings.languageHint}</span>
+            </div>
+            <Segmented
+              name="language"
+              legend={t.settings.language}
+              value={language}
+              disabled={languageSaving}
+              onChange={onLanguage}
+              options={languageOptions.map((value) => ({
+                value,
+                // Language names read in their own language, as on macOS.
+                lang: value === "system" ? undefined : value,
+                label:
+                  value === "system" ? (
+                    <>
+                      <Languages
+                        size={14}
+                        strokeWidth={1.75}
+                        aria-hidden="true"
+                      />
+                      {t.settings.languages.system}
+                    </>
+                  ) : (
+                    t.settings.languages[value]
+                  ),
+              }))}
+            />
+          </div>
+        </div>
+        {settingsError && (
+          <p className="section-message error" role="alert">
+            <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
+            <ErrorText error={settingsError} context="settings" />
+          </p>
+        )}
+      </section>
+
+      <section aria-labelledby="accounts-heading">
+        <div className="section-header">
+          <h2 id="accounts-heading" className="section-title">
+            {t.settings.organisations}
+          </h2>
+          <span className="section-count">
+            {t.settings.siteCount(sites.length)}
+          </span>
+        </div>
+        <div className="group">
+          {sites.length > 0 ? (
+            <ul className="site-rows" role="list">
+              {sites.map((site) => (
+                <SiteRow
+                  key={site.id}
+                  site={site}
+                  connection={connection}
+                  onOpen={() => onOpenSite(site.id)}
+                  onReauthenticate={() => onReauthenticate(site.id)}
+                  onRemove={() => onRemove(site.id)}
+                />
+              ))}
+            </ul>
+          ) : (
+            <p className="group-empty">{t.settings.empty}</p>
+          )}
+          <div className="group-row group-footer">
+            <button className="button" onClick={onAdd}>
+              <Plus size={14} strokeWidth={2} aria-hidden="true" />
+              {t.settings.add}
+            </button>
+          </div>
+        </div>
+        {accountMessage && (
+          <p
+            className={`section-message ${accountMessage.tone}`}
+            role={accountMessage.tone === "error" ? "alert" : "status"}
+          >
+            {accountMessage.tone === "error" ? (
+              <>
+                <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
+                <ErrorText
+                  error={accountMessage.error}
+                  context={accountMessage.context}
+                />
+              </>
+            ) : (
+              <>
+                <CircleCheck size={14} strokeWidth={2} aria-hidden="true" />
+                {accountMessage.text}
+              </>
+            )}
+          </p>
+        )}
+        <p className="section-footnote">{t.settings.footnote}</p>
+      </section>
+    </div>
+  );
+}

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { ipc, type Site } from "../ipc";
+
 export const useSites = create<{
   sites: Site[];
   active: string | null;
@@ -9,7 +10,12 @@ export const useSites = create<{
   sites: [],
   active: null,
   refresh: async () => {
-    set({ sites: await ipc.sites() });
+    const sites = await ipc.sites();
+    // A removed site must never stay selected.
+    set(({ active }) => ({
+      sites,
+      active: sites.some((site) => site.id === active) ? active : null,
+    }));
   },
   select: (active) => set({ active }),
 }));

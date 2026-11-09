@@ -1,0 +1,154 @@
+import type { Locale } from "./locale";
+import { catalogues, type Messages } from "./messages";
+
+/**
+ * French for every error string Rust can return today (src-tauri/src/commands.rs,
+ * windows.rs, lib.rs, md-moodle::Error) plus the browser-preview message from
+ * ipc.ts. Rust errors are English strings for now, so they are translated here by
+ * exact text. Keep this list in step with the Rust messages.
+ */
+const french: Record<string, string> = {
+  // md-moodle::Error
+  "Enter an HTTPS Moodle base URL, without a query or fragment.":
+    "Saisissez l’adresse HTTPS de base du Moodle, sans paramètres ni fragment.",
+  "The sign-in response is invalid or belongs to another sign-in attempt.":
+    "La réponse de connexion est invalide ou appartient à une autre tentative de connexion.",
+  "The Moodle site could not be reached or returned an unexpected response.":
+    "Le site Moodle est injoignable ou a renvoyé une réponse inattendue.",
+  "This site could not authorise mobile web services. Ask its administrator to enable them.":
+    "Ce site n’a pas pu autoriser les services web mobiles. Demandez à son administrateur de les activer.",
+  "Your Moodle session has expired. Reconnect this organisation in Settings.":
+    "Votre session Moodle a expiré. Reconnectez cette organisation dans les Réglages.",
+  "Moodle is limiting requests. Please try again shortly.":
+    "Moodle limite les requêtes. Réessayez dans quelques instants.",
+  "This account does not have permission for that Moodle service.":
+    "Ce compte n’a pas l’autorisation d’utiliser ce service Moodle.",
+
+  // Sign-in and organisations
+  "Sign-in cancelled.": "Connexion annulée.",
+  "The site reports a different base origin. Enter its canonical Moodle URL.":
+    "Le site indique une autre origine. Saisissez son adresse Moodle officielle.",
+  "Invalid sign-in URL.": "Adresse de connexion invalide.",
+  "The site supplied an unsafe sign-in URL.":
+    "Le site a fourni une adresse de connexion non sécurisée.",
+  "The alpha supports up to 10 sites.":
+    "La version alpha prend en charge 10 sites au maximum.",
+  "This Moodle site has already been added.":
+    "Ce site Moodle a déjà été ajouté.",
+  "Finish or close the current sign-in window first.":
+    "Terminez ou fermez d’abord la fenêtre de connexion en cours.",
+  "Finish or close the current sign-in window before removing an organisation.":
+    "Terminez ou fermez la fenêtre de connexion en cours avant de retirer une organisation.",
+  "Could not open the organisation sign-in window.":
+    "Impossible d’ouvrir la fenêtre de connexion de l’organisation.",
+  "Sign-in state unavailable.": "État de connexion indisponible.",
+  "Could not access the existing credential. Unlock the OS credential store and try again.":
+    "Impossible d’accéder à l’identifiant existant. Déverrouillez le trousseau et réessayez.",
+  "Could not access the existing private credential.":
+    "Impossible d’accéder à l’identifiant privé existant.",
+  "Could not save the token in the OS credential store.":
+    "Impossible d’enregistrer le jeton dans le trousseau.",
+  "Could not save the private token in the OS credential store.":
+    "Impossible d’enregistrer le jeton privé dans le trousseau.",
+  "Could not update the private credential.":
+    "Impossible de mettre à jour l’identifiant privé.",
+  "Could not save the site metadata.":
+    "Impossible d’enregistrer les informations du site.",
+  "Reconnect this organisation in Settings to restore its credentials.":
+    "Reconnectez cette organisation dans les Réglages pour rétablir ses identifiants.",
+  "Could not remove this organisation’s credentials. Please try again.":
+    "Impossible de supprimer les identifiants de cette organisation. Réessayez.",
+  "Could not remove the saved organisation.":
+    "Impossible de retirer l’organisation enregistrée.",
+
+  // Storage and state
+  "This command is restricted to the local shell.":
+    "Cette commande est réservée à l’interface locale.",
+  "Site storage unavailable.": "Stockage des sites indisponible.",
+  "Could not read sites.": "Impossible de lire les sites.",
+  "Could not read saved sites.": "Impossible de lire les sites enregistrés.",
+  "Unknown site.": "Site inconnu.",
+  "Invalid site identifier.": "Identifiant de site invalide.",
+  "Invalid site URL.": "Adresse de site invalide.",
+  "Invalid site host.": "Hôte du site invalide.",
+  "Site state unavailable.": "État du site indisponible.",
+  "Settings unavailable.": "Réglages indisponibles.",
+  "Could not read settings.": "Impossible de lire les réglages.",
+  "Could not save settings.": "Impossible d’enregistrer les réglages.",
+  "Could not change the window appearance.":
+    "Impossible de modifier l’apparence de la fenêtre.",
+
+  // Views and navigation
+  "Unknown shell view.": "Vue inconnue.",
+  "Could not show the local shell.":
+    "Impossible d’afficher l’interface locale.",
+  "Local shell missing.": "Interface locale introuvable.",
+  "Main window missing.": "Fenêtre principale introuvable.",
+  "Moodle view missing.": "Vue Moodle introuvable.",
+  "Could not create the Moodle view.": "Impossible de créer la vue Moodle.",
+  "Could not resize the Moodle view.":
+    "Impossible de redimensionner la vue Moodle.",
+  "Could not show the Moodle view.": "Impossible d’afficher la vue Moodle.",
+  "Could not renew the Moodle view.": "Impossible de renouveler la vue Moodle.",
+  "Could not close the Moodle view.": "Impossible de fermer la vue Moodle.",
+  "Could not switch sites.": "Impossible de changer de site.",
+  "Could not access the site’s browser data.":
+    "Impossible d’accéder aux données de navigation du site.",
+  "Could not hide the browser data view.":
+    "Impossible de masquer la vue des données de navigation.",
+  "Could not clear the site’s browser data.":
+    "Impossible d’effacer les données de navigation du site.",
+  "Could not read browser cookies.":
+    "Impossible de lire les cookies du navigateur.",
+  "Could not remove a site cookie.":
+    "Impossible de supprimer un cookie du site.",
+  "Choose a site first.": "Choisissez d’abord un site.",
+  "Could not read the current page.": "Impossible de lire la page actuelle.",
+  "This sign-in page cannot be shared with the browser. Open the organisation’s base URL instead.":
+    "Cette page de connexion ne peut pas être ouverte dans le navigateur. Ouvrez plutôt l’adresse de base de l’organisation.",
+  "Could not open the browser.": "Impossible d’ouvrir le navigateur.",
+  "Unknown navigation action.": "Action de navigation inconnue.",
+  "Navigation failed.": "La navigation a échoué.",
+
+  // Browser preview (ipc.ts)
+  "Open the desktop app with pnpm tauri dev to manage sign-in.":
+    "Ouvrez l’app de bureau avec pnpm tauri dev pour gérer les connexions.",
+};
+
+/** What was being attempted, so an untranslated error still says what failed. */
+export type ErrorContext = keyof Omit<Messages["errors"], "detail">;
+
+export interface DescribedError {
+  /** Text in the UI language. */
+  text: string;
+  /** The original backend message, kept when it could not be translated. */
+  detail: string | null;
+}
+
+/** Straight vs typographic apostrophes and stray whitespace must not defeat a match. */
+const normalize = (raw: string) => raw.trim().replace(/'/gu, "’");
+const lookup = new Map(
+  Object.entries(french).map(([english, text]) => [normalize(english), text]),
+);
+
+export function knownErrors() {
+  return Object.keys(french);
+}
+
+export function describeError(
+  locale: Locale,
+  raw: string,
+  context: ErrorContext = "general",
+): DescribedError {
+  const original = raw.trim();
+  if (locale === "en")
+    return { text: original || catalogues.en.errors[context], detail: null };
+  const translated = lookup.get(normalize(original));
+  if (translated) return { text: translated, detail: null };
+  // Never show unexplained English in a French UI, but keep the backend's
+  // wording as a labelled detail so the meaning is not lost.
+  return {
+    text: catalogues.fr.errors[context],
+    detail: original || null,
+  };
+}

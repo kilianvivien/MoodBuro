@@ -1,164 +1,270 @@
-import { useEffect, useState } from "react";
+import { useEffect, useEffectEvent, useReducer, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
-import {
-  ArrowLeft,
-  ArrowRight,
-  ExternalLink,
-  Plus,
-  RotateCw,
-  BookOpen,
-  PanelsTopLeft,
-} from "lucide-react";
-import { ipc, desktop } from "./ipc";
+import { desktop, ipc, message, type NavAction } from "./ipc";
 import { useSites } from "./stores/sites";
+import { useSettings } from "./stores/settings";
+import { connection as reduce, idle } from "./lib/connection";
+import { Sidebar, type View } from "./components/Sidebar";
+import { Toolbar } from "./components/Toolbar";
 import { AddSite } from "./views/AddSite";
+import { Settings, type Notice } from "./views/Settings";
+import { I18nProvider } from "./i18n/context";
+import { resolveLocale, systemLanguages } from "./i18n/locale";
+import { catalogues } from "./i18n/messages";
+
+/** Last removal: the site's name on success, else the raw backend error. */
+type Removal = { name: string | undefined } | { error: string };
+
 export default function App() {
   const { sites, active, refresh, select } = useSites();
-  const [pending, setPending] = useState(false);
+  const settings = useSettings();
+  const [view, setView] = useState<View>("onboarding");
+  const [ready, setReady] = useState(false);
+  const [connection, dispatch] = useReducer(reduce, idle);
+  // Raw backend messages: translated when rendered, so a language switch
+  // also translates what is already on screen.
   const [error, setError] = useState<string | null>(null);
-  const selected = sites.find((site) => site.id === active);
-  function failed(cause: unknown) {
-    setError(cause instanceof Error ? cause.message : String(cause));
-  }
+  // Outcome of the last removal, shown in Settings.
+  const [removed, setRemoved] = useState<Removal | null>(null);
+  const [preferred, setPreferred] = useState(systemLanguages);
+  const locale = resolveLocale(settings.language, preferred);
+  const t = catalogues[locale];
+  const site = sites.find((s) => s.id === active);
+
   useEffect(() => {
-    void refresh().catch(failed);
-    if (!desktop) return;
-    const listeners = [
-      listen<string>("sites://changed", (event) => {
-        select(event.payload);
-        void refresh().catch(failed);
-      }),
-      listen<string | null>("auth://finished", (event) => {
-        setPending(false);
-        setError(event.payload);
-      }),
-    ];
-    return () => {
-      for (const listener of listeners)
-        void listener.then((unlisten) => unlisten());
-    };
-  }, [refresh, select]);
-  async function addSite(url: string) {
-    setPending(true);
-    setError(null);
-    try {
-      await ipc.addSite(url);
-    } catch (cause) {
-      failed(cause);
-      setPending(false);
-    }
+    document.documentElement.lang = locale;
+  }, [locale]);
+
+  function failed(cause: unknown) {
+    setError(message(cause));
   }
-  async function switchSite(id: string) {
+
+  async function openSite(id: string) {
     setError(null);
     try {
       await ipc.switchSite(id);
       select(id);
+      setView("site");
     } catch (cause) {
       failed(cause);
     }
   }
+
   async function showOnboarding() {
+    setError(null);
+    dispatch({ type: "dismiss" });
     try {
       await ipc.onboarding();
-      select(null);
-      setError(null);
+      setView("onboarding");
     } catch (cause) {
       failed(cause);
     }
   }
+
+  async function showSettings() {
+    setError(null);
+    setRemoved(null);
+    dispatch({ type: "dismiss" });
+    try {
+      // The remote view sits above the shell; hide it before showing Settings.
+      await ipc.shellView("settings");
+      setView("settings");
+    } catch (cause) {
+      failed(cause);
+    }
+  }
+
+  /** Done/Cancel/Escape: back to the last site, else the onboarding view. */
+  function leave() {
+    const target = site?.id ?? sites[0]?.id;
+    if (target) void openSite(target);
+    else void showOnboarding();
+  }
+
+  async function addSite(url: string) {
+    dispatch({ type: "add" });
+    try {
+      await ipc.addSite(url);
+      dispatch({ type: "window-opened" });
+    } catch (cause) {
+      dispatch({ type: "failed", error: message(cause) });
+    }
+  }
+
+  async function reauthenticate(id: string) {
+    setRemoved(null);
+    dispatch({ type: "reauthenticate", siteId: id });
+    try {
+      await ipc.reauthenticate(id);
+      dispatch({ type: "window-opened" });
+    } catch (cause) {
+      dispatch({ type: "failed", error: message(cause) });
+    }
+  }
+
+  async function removeSite(id: string) {
+    const name = sites.find((s) => s.id === id)?.name;
+    setRemoved(null);
+    dispatch({ type: "dismiss" });
+    try {
+      await ipc.removeSite(id);
+    } catch (cause) {
+      setRemoved({ error: message(cause) });
+      return false;
+    }
+    setRemoved({ name });
+    await refresh().catch(failed);
+    return true;
+  }
+
+  const onSitesChanged = useEffectEvent((id: string) => {
+    void refresh().catch(failed);
+    if (view === "settings") {
+      // Rust may have revealed the site; keep Settings on top.
+      void ipc.shellView("settings").catch(failed);
+      return;
+    }
+    select(id);
+    setView("site");
+  });
+  const onSiteRemoved = useEffectEvent(() => {
+    void refresh().catch(failed);
+    // Rust hid every site view; Settings stays, anything else falls back.
+    if (view !== "settings") setView("onboarding");
+  });
+  /** App-menu commands (Settings…, Add Organisation…); Rust already hid sites. */
+  const onNavigate = useEffectEvent((target: string) => {
+    if (target === "settings") void showSettings();
+    else if (target === "onboarding") void showOnboarding();
+  });
+  const onAuthFinished = useEffectEvent((result: string | null) =>
+    dispatch({ type: "finished", error: result }),
+  );
+  const onLaunch = useEffectEvent(async (cancelled: () => boolean) => {
+    // Load the language before the first view renders, without delaying sites.
+    const settingsLoaded = settings.load();
+    try {
+      await refresh();
+    } catch (cause) {
+      failed(cause);
+    }
+    await settingsLoaded;
+    if (cancelled()) return;
+    // Reopen the first organisation instead of the empty onboarding view.
+    const first = useSites.getState().sites[0];
+    if (first) await openSite(first.id);
+    if (!cancelled()) setReady(true);
+  });
+  const onKey = useEffectEvent((event: KeyboardEvent) => {
+    if (event.key !== "Escape" || event.defaultPrevented) return;
+    if (view === "settings" || (view === "onboarding" && sites.length > 0))
+      leave();
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    void onLaunch(() => cancelled);
+    const keydown = (event: KeyboardEvent) => onKey(event);
+    // Automatic language follows changes to the system's preferred languages.
+    const languagechange = () => setPreferred(systemLanguages());
+    window.addEventListener("keydown", keydown);
+    window.addEventListener("languagechange", languagechange);
+    const stop = () => {
+      cancelled = true;
+      window.removeEventListener("keydown", keydown);
+      window.removeEventListener("languagechange", languagechange);
+    };
+    if (!desktop) return stop;
+    const listeners = [
+      listen<string>("sites://changed", (e) => onSitesChanged(e.payload)),
+      listen<string>("sites://removed", () => onSiteRemoved()),
+      listen<string>("shell://navigate", (e) => onNavigate(e.payload)),
+      listen<string>("shell://error", (e) => setError(e.payload)),
+      listen<string | null>("auth://finished", (e) =>
+        onAuthFinished(e.payload),
+      ),
+    ];
+    return () => {
+      stop();
+      for (const listener of listeners)
+        void listener.then((unlisten) => unlisten());
+    };
+  }, []);
+
+  const reauthOutcome =
+    connection.phase === "idle" && connection.last?.siteId
+      ? connection.last
+      : null;
+  const reauthName = sites.find((s) => s.id === reauthOutcome?.siteId)?.name;
+  const accountMessage: Notice | null = removed
+    ? "error" in removed
+      ? { tone: "error", error: removed.error, context: "remove" }
+      : {
+          tone: "success",
+          text: removed.name
+            ? t.settings.removed(removed.name)
+            : t.settings.removedUnnamed,
+        }
+    : reauthOutcome
+      ? reauthOutcome.error
+        ? { tone: "error", error: reauthOutcome.error, context: "signIn" }
+        : {
+            tone: "success",
+            text: reauthName
+              ? t.settings.reauthenticated(reauthName)
+              : t.settings.reauthenticatedUnnamed,
+          }
+      : null;
+
   return (
-    <div className="app">
-      <aside className="sidebar" aria-label="Moodle sites">
-        <button
-          className="brand"
-          aria-label="MoodBuro home"
-          onClick={() => void showOnboarding()}
-        >
-          <BookOpen size={25} />
-        </button>
-        <div className="site-list">
-          {sites.map((site) => (
-            <button
-              key={site.id}
-              title={site.name}
-              aria-label={`Open ${site.name}`}
-              aria-pressed={site.id === active}
-              className={`site-avatar ${site.id === active ? "selected" : ""}`}
-              onClick={() => void switchSite(site.id)}
-            >
-              {site.name.slice(0, 2).toUpperCase()}
-            </button>
-          ))}
-          <button
-            className={`add-site ${!active ? "selected" : ""}`}
-            aria-label="Add organisation"
-            onClick={() => void showOnboarding()}
-          >
-            <Plus size={22} />
-          </button>
-        </div>
-        <span className="sidebar-bottom" title="Alpha foundation">
-          <PanelsTopLeft size={20} />
-        </span>
-      </aside>
-      <header className="toolbar">
-        <div className="navigation">
-          <button
-            aria-label="Go back"
-            disabled={!active}
-            onClick={() => void ipc.nav("back").catch(failed)}
-          >
-            <ArrowLeft size={16} />
-          </button>
-          <button
-            aria-label="Go forward"
-            disabled={!active}
-            onClick={() => void ipc.nav("forward").catch(failed)}
-          >
-            <ArrowRight size={16} />
-          </button>
-          <button
-            aria-label="Reload"
-            disabled={!active}
-            onClick={() => void ipc.nav("reload").catch(failed)}
-          >
-            <RotateCw size={14} />
-          </button>
-        </div>
-        <span className="toolbar-title">
-          {selected?.name ?? "Welcome to MoodBuro"}
-        </span>
-        <button
-          className="external"
-          aria-label="Open current page in browser"
-          disabled={!active}
-          onClick={() => void ipc.nav("open_in_browser").catch(failed)}
-        >
-          <ExternalLink size={15} />
-        </button>
-      </header>
-      <main>
-        {!active && (
-          <AddSite
-            pending={pending}
-            error={error}
-            onSubmit={(url) => void addSite(url)}
-          />
-        )}
-        {active && error && (
-          <p role="alert" className="error">
-            {error}
-          </p>
-        )}
-        {!active && (
-          <footer>
-            <span>
-              MoodBuro <b>·</b> A home for your Moodle
-            </span>
-            <span>Made for your desktop</span>
-          </footer>
-        )}
-      </main>
-    </div>
+    <I18nProvider locale={locale}>
+      <div className="app">
+        <Sidebar
+          sites={sites}
+          active={active}
+          view={view}
+          onSite={(id) => void openSite(id)}
+          onAdd={() => void showOnboarding()}
+          onSettings={() => void showSettings()}
+        />
+        <Toolbar
+          view={view}
+          site={site}
+          error={error}
+          canLeave={view === "settings" || sites.length > 0}
+          onNav={(action: NavAction) => void ipc.nav(action).catch(failed)}
+          onDismissError={() => setError(null)}
+          onLeave={leave}
+        />
+        <main className="content" aria-busy={!ready}>
+          {ready && view === "onboarding" && (
+            <AddSite
+              connection={connection}
+              firstRun={sites.length === 0}
+              onSubmit={(url) => void addSite(url)}
+            />
+          )}
+          {ready && view === "settings" && (
+            <Settings
+              desktop={desktop}
+              sites={sites}
+              appearance={settings.appearance}
+              appearanceSaving={settings.saving.appearance}
+              language={settings.language}
+              languageSaving={settings.saving.language}
+              settingsError={settings.error}
+              connection={connection}
+              accountMessage={accountMessage}
+              onAppearance={(value) => void settings.setAppearance(value)}
+              onLanguage={(value) => void settings.setLanguage(value)}
+              onOpenSite={(id) => void openSite(id)}
+              onReauthenticate={(id) => void reauthenticate(id)}
+              onRemove={removeSite}
+              onAdd={() => void showOnboarding()}
+            />
+          )}
+        </main>
+      </div>
+    </I18nProvider>
   );
 }

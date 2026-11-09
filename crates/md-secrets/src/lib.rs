@@ -28,3 +28,19 @@ pub fn delete_site(site: &str) -> Result<(), keyring::Error> {
     }
     Ok(())
 }
+
+pub fn delete(site: &str, kind: Kind) -> Result<(), keyring::Error> {
+    match entry(site, kind)?.delete_credential() {
+        Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+        Err(error) => Err(error),
+    }
+}
+
+/// Distinguish absent credentials from a locked/unavailable credential store.
+pub fn get_optional(site: &str, kind: Kind) -> Result<Option<Zeroizing<String>>, keyring::Error> {
+    match get(site, kind) {
+        Ok(value) => Ok(Some(value)),
+        Err(keyring::Error::NoEntry) => Ok(None),
+        Err(error) => Err(error),
+    }
+}

@@ -8,17 +8,17 @@ beforeEach(() => {
 it("refreshes metadata from Rust and preserves the selected site", async () => {
   vi.mocked(ipc.sites).mockResolvedValue([
     {
-      id: "insp",
-      wwwroot: "https://moodle.insp.gouv.fr/",
-      name: "INSP",
+      id: "campus",
+      wwwroot: "https://moodle.example.edu/",
+      name: "Example Campus",
       userId: 1,
       fullName: "Learner",
     },
   ]);
-  useSites.getState().select("insp");
+  useSites.getState().select("campus");
   await useSites.getState().refresh();
-  expect(useSites.getState().sites[0].name).toBe("INSP");
-  expect(useSites.getState().active).toBe("insp");
+  expect(useSites.getState().sites[0].name).toBe("Example Campus");
+  expect(useSites.getState().active).toBe("campus");
 });
 it("keeps saved sites intact when storage fails", async () => {
   vi.mocked(ipc.sites).mockRejectedValue(new Error("Storage unavailable"));
@@ -26,4 +26,10 @@ it("keeps saved sites intact when storage fails", async () => {
     "Storage unavailable",
   );
   expect(useSites.getState().sites).toEqual([]);
+});
+it("clears the selection when the active site was removed", async () => {
+  vi.mocked(ipc.sites).mockResolvedValue([]);
+  useSites.getState().select("campus");
+  await useSites.getState().refresh();
+  expect(useSites.getState().active).toBeNull();
 });

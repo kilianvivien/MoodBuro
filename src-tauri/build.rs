@@ -6,6 +6,11 @@ fn main() {
             "site_switch",
             "show_onboarding",
             "nav",
+            "site_reauthenticate",
+            "site_remove",
+            "shell_view",
+            "settings_get",
+            "settings_set",
         ]),
     ))
     .expect("Tauri build failed");

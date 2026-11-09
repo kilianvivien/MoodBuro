@@ -1,6 +1,23 @@
 {
-  "$schema": "../gen/schemas/desktop-schema.json", "identifier": "shell",
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "shell",
   "description": "Only the bundled local UI can invoke application commands. Remote views and auth windows have no grants.",
-  "local": true, "webviews": ["shell"],
-  "permissions": ["core:event:allow-listen", "core:event:allow-unlisten", "allow-sites-list", "allow-site-add", "allow-site-switch", "allow-show-onboarding", "allow-nav"]
+  "local": true,
+  "webviews": [
+    "shell"
+  ],
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "allow-sites-list",
+    "allow-site-add",
+    "allow-site-switch",
+    "allow-show-onboarding",
+    "allow-nav",
+    "allow-site-reauthenticate",
+    "allow-site-remove",
+    "allow-shell-view",
+    "allow-settings-get",
+    "allow-settings-set"
+  ]
 }

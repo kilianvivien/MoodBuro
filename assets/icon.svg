@@ -1,1 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect x="24" y="24" width="464" height="464" rx="112" fill="#365e4d"/><g fill="none" stroke="#f3f6ed" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"><path d="M256 166c-42-30-91-37-142-24v206c51-13 100-6 142 24 42-30 91-37 142-24V142c-51-13-100-6-142 24Z"/><path d="M256 166v206"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+<linearGradient id="surface" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#65b5ff"/><stop offset=".5" stop-color="#218bfa"/><stop offset="1" stop-color="#0062d6"/></linearGradient>
+<linearGradient id="paper" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#e7f3ff"/></linearGradient>
+</defs>
+<rect x="24" y="24" width="464" height="464" rx="108" fill="url(#surface)"/>
+<rect x="27" y="27" width="458" height="458" rx="105" fill="none" stroke="#ffffff" stroke-opacity=".22" stroke-width="3"/>
+<path d="M256 176c-41-28-86-36-139-25v205c53-11 98-3 139 25 41-28 86-36 139-25V151c-53-11-98-3-139 25Z" fill="#004ea8" opacity=".2" transform="translate(0 8)"/>
+<path d="M246 174c-35-23-76-31-119-23v193c43-7 84 1 119 24Zm20 0c35-23 76-31 119-23v193c-43-7-84 1-119 24Z" fill="url(#paper)"/>
+<g fill="none" stroke="#92c7ff" stroke-width="8" stroke-linecap="round"><path d="M155 200c22-1 40 3 60 12m-60 22c22-1 40 3 60 12m82-34c20-9 38-13 60-12m-60 46c20-9 38-13 60-12"/></g>
+</svg>

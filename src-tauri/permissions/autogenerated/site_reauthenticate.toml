@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-site-reauthenticate"
+description = "Enables the site_reauthenticate command without any pre-configured scope."
+commands.allow = ["site_reauthenticate"]
+
+[[permission]]
+identifier = "deny-site-reauthenticate"
+description = "Denies the site_reauthenticate command without any pre-configured scope."
+commands.deny = ["site_reauthenticate"]
