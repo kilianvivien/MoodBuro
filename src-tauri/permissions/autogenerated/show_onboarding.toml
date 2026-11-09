@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-show-onboarding"
+description = "Enables the show_onboarding command without any pre-configured scope."
+commands.allow = ["show_onboarding"]
+
+[[permission]]
+identifier = "deny-show-onboarding"
+description = "Denies the show_onboarding command without any pre-configured scope."
+commands.deny = ["show_onboarding"]

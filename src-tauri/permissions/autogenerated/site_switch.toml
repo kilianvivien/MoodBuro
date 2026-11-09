@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-site-switch"
+description = "Enables the site_switch command without any pre-configured scope."
+commands.allow = ["site_switch"]
+
+[[permission]]
+identifier = "deny-site-switch"
+description = "Denies the site_switch command without any pre-configured scope."
+commands.deny = ["site_switch"]
