@@ -1,5 +1,7 @@
 # Alpha implementation status
 
+Use [the working plan](plan.md) to track completed tasks and next priorities.
+
 ## Delivered
 
 The first two implementation slices cover the workspace/CI foundation, organisation-URL onboarding, the macOS shell and settings, account lifecycle and session-restoration infrastructure. This does **not** close M0 or claim the entire W1/W2 plan. `md-notifier` and `md-os` remain extension points.

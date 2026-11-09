@@ -2,7 +2,7 @@
 
 Nov 9, 2026 · @Kilian
 
-Implementation progress: see [current status](implementation-status.md) for delivered slices and remaining gates.
+Implementation progress: use [the working checklist](plan.md) and see [current status](implementation-status.md) for delivered slices and remaining gates.
 
 ## 1. Scope, team and exit criteria
 

@@ -51,7 +51,7 @@ Next: INSP and Moodle 4.5/5.3 SAML/OIDC validation, installed-app security/profi
 
 Downloads are currently blocked. Closing the window exits until background/tray support exists. No institution is hard-coded; INSP is the first integration target.
 
-[PRD](docs/prd.md) · [Alpha plan](docs/alpha-plan.md) · [Implementation status](docs/implementation-status.md) · [Architecture decisions](docs/adr/0001-alpha-foundation.md) · [UI decisions](docs/ui-design.md)
+[Progress tracker](docs/plan.md) · [PRD](docs/prd.md) · [Alpha plan](docs/alpha-plan.md) · [Implementation status](docs/implementation-status.md) · [Architecture decisions](docs/adr/0001-alpha-foundation.md) · [UI decisions](docs/ui-design.md)
 
 The original documents use the historical working name “Moodle Desk”; the implementation uses MoodBuro. This project is independent of Moodle HQ.
 
