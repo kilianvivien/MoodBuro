@@ -2378,6 +2378,7 @@ dependencies = [
 name = "moodburo"
 version = "0.1.0-alpha.0"
 dependencies = [
+ "block2",
  "md-moodle",
  "md-notifier",
  "md-os",

@@ -124,6 +124,13 @@ pub fn navigation(site: &Url, target: &Url) -> Navigation {
     }
 }
 
+/// Embedded frames (Genially, video players, H5P…) render HTTPS content in place.
+/// Only top-level navigations may leave the app, so a frame never opens the browser.
+/// Anything else falls back to the top-level policy.
+pub fn embeddable(target: &Url) -> bool {
+    target.scheme() == "https" && target.username().is_empty() && target.password().is_none()
+}
+
 /// Blank bootstrap pages and one-use authentication URLs are not useful history.
 pub fn history_url_allowed(base: &Url, target: &Url) -> bool {
     navigation(base, target) == Navigation::Allow
@@ -568,6 +575,26 @@ mod tests {
             "https://example.org/#secret",
         ] {
             assert!(normalize_site(input).is_err(), "{input}");
+        }
+    }
+    #[test]
+    fn frames_embed_https_in_place_and_nothing_else() {
+        for target in [
+            "https://view.genially.com/6262b06babb7e60011feced0",
+            "https://www.youtube-nocookie.com/embed/x",
+            "https://example.org/mod/h5pactivity/view.php?id=1",
+        ] {
+            assert!(embeddable(&Url::parse(target).unwrap()), "{target}");
+        }
+        for target in [
+            "http://view.genially.com/",
+            "https://user:pass@example.org/",
+            "javascript:alert(1)",
+            "file:///tmp/a",
+            "about:blank",
+            "data:text/html,x",
+        ] {
+            assert!(!embeddable(&Url::parse(target).unwrap()), "{target}");
         }
     }
     #[test]

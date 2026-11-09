@@ -557,6 +557,8 @@ async fn complete_sign_in(
     if let Some(view) = app.get_webview(&format!("site-{id}")) {
         #[cfg(target_os = "macos")]
         crate::pdf_save::remove(app, view.label());
+        #[cfg(target_os = "macos")]
+        crate::frame_guard::remove(app, view.label());
         view.close()
             .map_err(|_| "Could not renew the Moodle view.")?;
     }

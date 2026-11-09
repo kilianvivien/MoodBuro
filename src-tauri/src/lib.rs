@@ -1,6 +1,8 @@
 mod auth_log;
 mod commands;
 mod downloads;
+#[cfg(target_os = "macos")]
+mod frame_guard;
 mod library;
 mod links;
 mod menus;
@@ -107,6 +109,7 @@ pub fn run() {
                 #[cfg(target_os = "macos")]
                 if window.label().starts_with("popup-") {
                     pdf_save::remove(window.app_handle(), window.label());
+                    frame_guard::remove(window.app_handle(), window.label());
                 }
                 if let Some(id) = window.label().strip_prefix("auth-") {
                     let state = window.state::<AppState>();

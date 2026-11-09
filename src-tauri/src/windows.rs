@@ -159,6 +159,7 @@ pub fn switch_at(app: &AppHandle, id: &str, target: Option<url::Url>) -> Result<
     if let Some(view) = app.get_webview(&label) {
         crate::pdf_save::install(app, &view, id, site.user_id)
             .map_err(|_| "Could not prepare PDF saving.")?;
+        crate::frame_guard::install(&view).map_err(|_| "Could not prepare the Moodle view.")?;
     }
     resize(app).map_err(|_| "Could not resize the Moodle view.")?;
     hide_sites(app).map_err(|_| "Could not switch sites.")?;
@@ -252,11 +253,15 @@ pub fn remove_session(app: &AppHandle, site: &md_store::Site) -> Result<(), Stri
             .map_err(|_| "Could not close the Moodle view.")?;
         #[cfg(target_os = "macos")]
         crate::pdf_save::remove(app, &label);
+        #[cfg(target_os = "macos")]
+        crate::frame_guard::remove(app, &label);
     } else if let Some(view) = app.get_webview(&label) {
         view.close()
             .map_err(|_| "Could not close the Moodle view.")?;
         #[cfg(target_os = "macos")]
         crate::pdf_save::remove(app, &label);
+        #[cfg(target_os = "macos")]
+        crate::frame_guard::remove(app, &label);
     }
     // Also clear matching legacy cookies from foundation builds using the default store.
     // Keep cookies that another saved site shares (old macOS profiles can share an IdP).
@@ -478,6 +483,8 @@ fn popup(
             let _ = resize_popup(&remote.window());
             #[cfg(target_os = "macos")]
             let _ = crate::pdf_save::install(app, window.as_ref(), &site.id, site.user_id);
+            #[cfg(target_os = "macos")]
+            let _ = crate::frame_guard::install(window.as_ref());
             NewWindowResponse::Create { window }
         }
         Err(_) => NewWindowResponse::Deny,
