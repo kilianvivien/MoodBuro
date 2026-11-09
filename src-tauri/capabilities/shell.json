@@ -18,6 +18,9 @@
     "allow-site-remove",
     "allow-shell-view",
     "allow-settings-get",
-    "allow-settings-set"
+    "allow-settings-set",
+    "core:window:allow-start-dragging",
+    "core:window:allow-internal-toggle-maximize",
+    "allow-site-label-set"
   ]
 }

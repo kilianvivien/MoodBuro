@@ -26,3 +26,7 @@ Status: accepted for scaffolding; platform spike results pending.
 - One-use autologin URLs stay Rust-side. The Rust client identifies `MoodBuro/<version> MoodleMobile`: Moodle's stock `is_moodle_app()` requires that compatibility marker, while MoodBuro's own identity remains explicit. Key minting is never retried automatically. Unavailable/rate-limited keys fall back to an existing browser session; invalid tokens ask the user to reconnect in Settings.
 - Public discovery supports same-origin HTTPS redirects and an explicit `/public/` fallback. Cross-origin canonical sites still require the user to enter the canonical URL; credentials are never forwarded across origins.
 - Contract tests use synthetic stock-Moodle-shaped responses, not recordings from authenticated INSP accounts. Moodle 4.5/5.3 rigs and live SSO remain necessary before M0.
+
+## Titlebar correction
+
+The transparent/Expanded native titlebar failed in the running dev app. It is superseded by an opaque window with native overlay traffic lights and a locally painted 32-point centered title/drag strip. Window-wide Liquid Glass and the macOS private-API transparency feature are removed. This trades desktop translucency for reliable contrast and geometry. A user-supplied screenshot confirms the visual repair.

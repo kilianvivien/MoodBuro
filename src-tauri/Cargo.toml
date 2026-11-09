@@ -9,7 +9,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 [dependencies]
-tauri = { version = "~2.12.0", features = ["unstable", "macos-private-api"] }
+tauri = { version = "~2.12.0", features = ["unstable"] }
 tauri-plugin-opener = "2"
 serde.workspace = true
 url.workspace = true
@@ -22,4 +22,3 @@ md-store = { path = "../crates/md-store" }
 objc2 = "0.6"
 
 objc2-foundation = { version = "0.3", features = ["NSLocale", "NSArray", "NSString"] }
-objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSWindow", "NSResponder", "NSView"] }

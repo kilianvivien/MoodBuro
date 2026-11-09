@@ -9,11 +9,11 @@ MoodBuro hosts the **real Moodle site** in a macOS-first Tauri application. Ente
 
 ## Current features
 
-- A compact macOS shell with real window controls, native menus and shortcuts, Liquid Glass on supported macOS with an AppKit material fallback, and consistent icons.
+- A compact macOS shell with real window controls, native menus and shortcuts, an opaque integrated centered titlebar and drag area, and consistent icons.
 - Full French/English shell UI from onboarding, system-language detection, language selection and automatic/light/dark appearance.
 - Organisation URL discovery, a dedicated login window, one-use callback verification, server-side token validation and OS credential storage.
 - Multiple sites, lazy child webviews, session restoration and reconnect. macOS 14+ uses a dedicated persistent WebKit store per organisation.
-- Account removal with confirmation, credential/metadata cleanup and asynchronous isolated-profile deletion. Some shared browser data and SSO sessions can remain on older macOS; full legacy cleanup is still a validation gate.
+- Editable organisation abbreviations and account removal with confirmation, credential/metadata cleanup and asynchronous isolated-profile deletion. Some shared browser data and SSO sessions can remain on older macOS; full legacy cleanup is still a validation gate.
 - Rust and UI tests, mock HTTP contracts, shell-only IPC permission checks and Linux/macOS CI.
 
 ## Development

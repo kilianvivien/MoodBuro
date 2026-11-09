@@ -285,18 +285,39 @@ ol {
   margin-top: auto;
 }
 
-/* Desktop: the window is transparent over the native macOS sidebar material,
-   so the sidebar shows it directly; content keeps an opaque window background. */
-.desktop,
-.desktop body {
-  background: transparent;
+/* macOS uses an opaque backing all the way into the native titlebar.
+   Keep these 32 logical pixels in sync with TITLEBAR in windows.rs. */
+.window-titlebar {
+  display: none;
+}
+.desktop .window-titlebar {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inset: 0 0 auto;
+  height: 32px;
+  padding-inline: 96px;
+  z-index: 5;
+  background: var(--window);
+  color: var(--label);
+  font-size: 13px;
+  font-weight: 600;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.window-titlebar span {
+  pointer-events: none;
 }
 .desktop .sidebar {
-  background: transparent;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
+  top: 32px;
+}
+.desktop .toolbar {
+  top: 32px;
+  background: var(--window);
 }
 .desktop .content {
+  top: 32px;
   background: var(--window);
 }
 
@@ -874,4 +895,25 @@ ol {
   .row-actions .button {
     padding: 0 8px;
   }
+}
+
+.site-label-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 16px 14px 58px;
+  font-size: 11px;
+}
+.site-label-editor input {
+  width: 64px;
+  border: 1px solid var(--control-border);
+  border-radius: 5px;
+  padding: 4px 6px;
+  background: var(--control);
+  text-transform: uppercase;
+}
+.site-label-editor .label-hint {
+  color: var(--label-2);
+  flex-basis: 100%;
 }

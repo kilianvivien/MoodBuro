@@ -61,6 +61,25 @@ impl Store {
         })?;
         rows.collect()
     }
+    pub fn short_label(&self, id: &str) -> rusqlite::Result<Option<String>> {
+        use rusqlite::OptionalExtension;
+        self.0
+            .query_row(
+                "SELECT value FROM settings WHERE key=?1",
+                [format!("site-label:{id}")],
+                |r| r.get(0),
+            )
+            .optional()
+    }
+    pub fn set_short_label(&self, id: &str, label: Option<&str>) -> rusqlite::Result<()> {
+        let key = format!("site-label:{id}");
+        if let Some(label) = label {
+            self.0.execute("INSERT INTO settings(key,value) VALUES (?1,?2) ON CONFLICT(key) DO UPDATE SET value=excluded.value", params![key,label])?;
+        } else {
+            self.0.execute("DELETE FROM settings WHERE key=?1", [key])?;
+        }
+        Ok(())
+    }
     pub fn settings(&self) -> rusqlite::Result<Settings> {
         let mut settings = Settings::default();
         let mut stmt = self.0.prepare("SELECT key,value FROM settings")?;
@@ -130,8 +149,13 @@ impl Store {
         Ok(())
     }
     pub fn remove(&self, id: &str) -> rusqlite::Result<()> {
-        self.0.execute("DELETE FROM sites WHERE id=?1", [id])?;
-        Ok(())
+        let tx = self.0.unchecked_transaction()?;
+        tx.execute("DELETE FROM sites WHERE id=?1", [id])?;
+        tx.execute(
+            "DELETE FROM settings WHERE key=?1",
+            [format!("site-label:{id}")],
+        )?;
+        tx.commit()
     }
 
     pub fn insert(&self, site: &Site) -> rusqlite::Result<()> {
@@ -224,5 +248,22 @@ mod language_tests {
         let settings = store.set_preferences(None, Some(Language::En)).unwrap();
         assert_eq!(settings.appearance, Appearance::Dark);
         assert_eq!(settings.language, Language::En);
+    }
+}
+
+#[cfg(test)]
+mod label_tests {
+    use super::*;
+    #[test]
+    fn labels_are_per_site_and_removed_with_account() {
+        let store = Store::open(":memory:").unwrap();
+        store.set_short_label("one", Some("TEST")).unwrap();
+        store.set_short_label("two", Some("ABC")).unwrap();
+        assert_eq!(store.short_label("one").unwrap().as_deref(), Some("TEST"));
+        store.remove("one").unwrap();
+        assert!(store.short_label("one").unwrap().is_none());
+        assert_eq!(store.short_label("two").unwrap().as_deref(), Some("ABC"));
+        store.set_short_label("two", None).unwrap();
+        assert!(store.short_label("two").unwrap().is_none());
     }
 }

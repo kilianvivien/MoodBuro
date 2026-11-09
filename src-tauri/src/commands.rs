@@ -1,4 +1,7 @@
-use crate::{windows, AppState};
+use crate::{
+    auth_log::{record, Event as AuthEvent},
+    windows, AppState,
+};
 use md_moodle::{normalize_site, parse_launch_token, Client, Tokens};
 use md_secrets::Kind;
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl};
@@ -23,18 +26,56 @@ fn saved_site(app: &AppHandle, id: &str) -> Result<md_store::Site, String> {
         .find(|s| s.id == id)
         .ok_or("Unknown site.".into())
 }
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SiteSummary {
+    #[serde(flatten)]
+    site: md_store::Site,
+    short_label: Option<String>,
+}
 #[tauri::command]
 pub fn sites_list(
     webview: tauri::Webview,
     state: tauri::State<AppState>,
-) -> Result<Vec<md_store::Site>, String> {
+) -> Result<Vec<SiteSummary>, String> {
     shell(&webview)?;
-    state
+    let store = state
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?;
+    store
+        .sites()
+        .map_err(|_| "Could not read saved sites.")?
+        .into_iter()
+        .map(|site| {
+            let short_label = store
+                .short_label(&site.id)
+                .map_err(|_| "Could not read settings.")?;
+            Ok(SiteSummary { site, short_label })
+        })
+        .collect()
+}
+#[tauri::command]
+pub fn site_label_set(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+    label: String,
+) -> Result<Option<String>, String> {
+    shell(&webview)?;
+    saved_site(&app, &id)?;
+    let label = label.trim().to_uppercase();
+    if label.chars().count() > 4 || !label.chars().all(char::is_alphanumeric) {
+        return Err("Use up to 4 letters or numbers for the short label.".into());
+    }
+    let label = if label.is_empty() { None } else { Some(label) };
+    app.state::<AppState>()
         .store
         .lock()
         .map_err(|_| "Site storage unavailable.")?
-        .sites()
-        .map_err(|_| "Could not read saved sites.".into())
+        .set_short_label(&id, label.as_deref())
+        .map_err(|_| "Could not save settings.")?;
+    Ok(label)
 }
 #[tauri::command]
 pub async fn site_add(webview: tauri::Webview, app: AppHandle, url: String) -> Result<(), String> {
@@ -109,6 +150,7 @@ async fn begin_sign_in(app: &AppHandle, url: &str, existing: Option<String>) -> 
         }
         *pending = Some(attempt.clone());
     }
+    record(AuthEvent::Started);
     let passport = attempt.clone();
     let mut launch = launch;
     launch
@@ -154,6 +196,11 @@ async fn begin_sign_in(app: &AppHandle, url: &str, existing: Option<String>) -> 
                     return false;
                 }
                 let parsed = parse_launch_token(target, base.as_str(), &passport);
+                record(if parsed.is_ok() {
+                    AuthEvent::CallbackVerified
+                } else {
+                    AuthEvent::CallbackRejected
+                });
                 let app = handle.clone();
                 let id = id.clone();
                 let base = base.clone();
@@ -215,6 +262,7 @@ async fn complete_sign_in(
         .site_info(&tokens.token)
         .await
         .map_err(|e| e.to_string())?;
+    record(AuthEvent::TokenVerified);
     let state = app.state::<AppState>();
     let _switch = state.switching.lock().await;
     // Hold this reservation through persistence so cancellation/removal cannot race a late callback.
@@ -273,6 +321,7 @@ async fn complete_sign_in(
         }
         return Err(error);
     }
+    record(AuthEvent::CredentialsSaved);
     drop(pending);
     if let Some(view) = app.get_webview(&format!("site-{id}")) {
         view.close()
@@ -293,19 +342,25 @@ pub async fn site_switch(
     let _switch = state.switching.lock().await;
     let site = saved_site(&app, &id)?;
     // Only request a new autologin key when creating a view; warm switches are local.
-    if app.get_webview(&format!("site-{id}")).is_none() {
+    let cold = app.get_webview(&format!("site-{id}")).is_none();
+    if cold {
         let base = normalize_site(&site.wwwroot).map_err(|e| e.to_string())?;
         let token = md_secrets::get(&id, Kind::Token)
             .map_err(|_| "Reconnect this organisation in Settings to restore its credentials.")?;
         let client = Client::new(base.clone()).map_err(|e| e.to_string())?;
         // Validate first; an invalid token must prompt re-auth rather than silently showing a login page.
-        client.site_info(&token).await.map_err(|e| e.to_string())?;
+        record(AuthEvent::SessionRestoring);
+        let info = client.site_info(&token).await.map_err(|e| e.to_string())?;
+        if info.userid != site.user_id {
+            return Err(md_moodle::Error::InvalidToken.to_string());
+        }
         if let Ok(private) = md_secrets::get(&id, Kind::Private) {
             match client.autologin_key(&token, &private).await {
                 Ok(key) => {
                     let target = md_moodle::autologin_target(&base, &key, site.user_id)
                         .map_err(|e| e.to_string())?;
                     windows::switch_at(&app, &id, Some(target))?;
+                    record(AuthEvent::SessionRestored);
                     return Ok(());
                 }
                 Err(md_moodle::Error::InvalidToken) => {
@@ -315,6 +370,9 @@ pub async fn site_switch(
                 Err(_) => {}
             }
         }
+    }
+    if cold {
+        record(AuthEvent::BrowserSessionFallback);
     }
     windows::switch(&app, &id)
 }

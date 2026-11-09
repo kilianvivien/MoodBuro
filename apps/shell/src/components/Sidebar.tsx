@@ -59,7 +59,9 @@ export function Sidebar({
                 aria-current={current ? "page" : undefined}
                 onClick={() => onSite(site.id)}
               >
-                <span aria-hidden="true">{initials(site.name)}</span>
+                <span aria-hidden="true">
+                  {site.shortLabel || initials(site.name)}
+                </span>
               </button>
             </li>
           );

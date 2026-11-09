@@ -9,7 +9,14 @@ import {
   Plus,
   Sun,
 } from "lucide-react";
-import type { Appearance, Language, Site } from "../ipc";
+import {
+  ipc,
+  message,
+  type Appearance,
+  type Language,
+  type Site,
+} from "../ipc";
+import { useSites } from "../stores/sites";
 import type { Connection } from "../lib/connection";
 import { displayHost, initials } from "../lib/site";
 import { useI18n } from "../i18n/context";
@@ -142,6 +149,27 @@ function SiteRow({
   onRemove: () => Promise<boolean>;
 }) {
   const { t } = useI18n();
+  const refresh = useSites((state) => state.refresh);
+  const [shortLabel, setShortLabel] = useState(site.shortLabel ?? "");
+  const [labelBusy, setLabelBusy] = useState(false);
+  const [labelError, setLabelError] = useState<string | null>(null);
+  const [labelSaved, setLabelSaved] = useState(false);
+  async function saveLabel(event: React.FormEvent) {
+    event.preventDefault();
+    setLabelBusy(true);
+    setLabelError(null);
+    setLabelSaved(false);
+    try {
+      const saved = await ipc.setShortLabel(site.id, shortLabel);
+      setShortLabel(saved ?? "");
+      await refresh();
+      setLabelSaved(true);
+    } catch (cause) {
+      setLabelError(message(cause));
+    } finally {
+      setLabelBusy(false);
+    }
+  }
   const [confirming, setConfirming] = useState(false);
   const [removing, setRemoving] = useState(false);
   const removeButton = useRef<HTMLButtonElement>(null);
@@ -163,7 +191,7 @@ function SiteRow({
     <li className="site-row">
       <div className="site-row-main">
         <span className="row-avatar" aria-hidden="true">
-          {initials(site.name)}
+          {site.shortLabel || initials(site.name)}
         </span>
         <div className="row-text">
           <span className="row-title">{site.name}</span>
@@ -211,6 +239,43 @@ function SiteRow({
           </div>
         )}
       </div>
+      {!confirming && (
+        <form
+          className="site-label-editor"
+          onSubmit={(event) => void saveLabel(event)}
+        >
+          <label htmlFor={`label-${site.id}`}>{t.settings.shortLabel}</label>
+          <input
+            id={`label-${site.id}`}
+            value={shortLabel}
+            maxLength={4}
+            placeholder={initials(site.name)}
+            onChange={(event) => {
+              setShortLabel(event.target.value);
+              setLabelSaved(false);
+            }}
+            disabled={labelBusy}
+            aria-describedby={`label-hint-${site.id}`}
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <button
+            className="button"
+            disabled={labelBusy || shortLabel === (site.shortLabel ?? "")}
+          >
+            {t.settings.saveLabel}
+          </button>
+          <span id={`label-hint-${site.id}`} className="label-hint">
+            {t.settings.shortLabelHint}
+          </span>
+          {labelSaved && <span role="status">{t.settings.labelSaved}</span>}
+          {labelError && (
+            <span role="alert">
+              <ErrorText error={labelError} context="settings" />
+            </span>
+          )}
+        </form>
+      )}
       {confirming && (
         <RemoveConfirmation
           site={site}

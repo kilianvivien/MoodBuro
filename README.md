@@ -19,10 +19,10 @@ MoodBuro affiche **le vrai site Moodle** dans une application macOS, avec une in
 ## Une interface pensée pour macOS
 
 - **Une coque discrète :** barre latérale, barre d’outils compacte, icônes cohérentes et vrais contrôles de fenêtre macOS.
-- **Matériaux natifs :** Liquid Glass sur les versions compatibles, avec un matériau AppKit de remplacement sur les versions antérieures. Le contenu reste lisible et opaque.
+- **Barre de titre intégrée :** titre centré, surface continue et lisible, zone de déplacement et véritables boutons macOS.
 - **Français et anglais dès l’accueil :** langue du système par défaut, choix explicite dans Réglages, modes automatique/clair/sombre et prise en compte des préférences d’accessibilité.
 - **Plusieurs organisations :** ajout d’une URL Moodle, changement de site et retour rapide à vos cours.
-- **Des réglages utiles :** apparence, langue, reconnexion et retrait d’une organisation avec confirmation.
+- **Des réglages utiles :** apparence, langue, abréviation personnalisable pour chaque organisation, reconnexion et retrait avec confirmation.
 
 ## Ce qui fonctionne déjà
 

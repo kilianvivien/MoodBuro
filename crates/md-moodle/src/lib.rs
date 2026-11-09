@@ -62,6 +62,10 @@ pub fn parse_launch_token(callback: &Url, wwwroot: &str, passport: &str) -> Resu
         .split_once("://token=")
         .ok_or(Error::InvalidCallback)?
         .1;
+    // Stock callbacks are a few hundred bytes. Bound input before allocating.
+    if encoded.len() > 2048 {
+        return Err(Error::InvalidCallback);
+    }
     let bytes = zeroize::Zeroizing::new(
         STANDARD
             .decode(encoded)
@@ -509,5 +513,18 @@ mod contract_tests {
             assert!(error.to_string().contains(expected));
             assert!(!error.to_string().contains("secret"));
         }
+    }
+}
+
+#[cfg(test)]
+mod callback_limits {
+    use super::*;
+    #[test]
+    fn oversized_callback_is_rejected_before_decoding() {
+        let url = Url::parse(&format!("moodlemobile://token={}", "A".repeat(4096))).unwrap();
+        assert!(matches!(
+            parse_launch_token(&url, "https://example.org", "passport"),
+            Err(Error::InvalidCallback)
+        ));
     }
 }

@@ -4,9 +4,9 @@ The local shell (`apps/shell`) should feel like a native macOS app that hosts Mo
 
 ## Principles
 
-- **Native first.** The real macOS titlebar and traffic lights stay; the shell never draws imitation window controls. Menu commands (Settings… ⌘,, Add Organisation… ⌘N, Back/Forward/Reload) live in the native menu bar and reach the shell through `shell://navigate` / `shell://error`.
+- **Native first.** The real macOS traffic lights stay; the integrated title strip supplies the centered title and drag region; the shell never draws imitation window controls. Menu commands (Settings… ⌘,, Add Organisation… ⌘N, Back/Forward/Reload) live in the native menu bar and reach the shell through `shell://navigate` / `shell://error`.
 - **System typography and colour.** `system-ui` (SF Pro) at 13 px, AppKit-like semantic tokens (`--label`, `--label-2`, `--separator`, `--fill`…) and the system blue accent (`#007aff` / `#0a84ff`).
-- **Materials sparingly.** On desktop the window is transparent over the native sidebar material, so the 72 px sidebar shows it directly. The 44 px toolbar is a translucent blurred bar over scrolling content. Everything else is opaque.
+- **Materials sparingly.** The desktop window has an opaque backing; the 72 px sidebar uses a semantic tinted surface. The 44 px toolbar shares the opaque titlebar surface on macOS; controls use subtle fills and semantic colours. Everything else is opaque.
 - **Honest controls.** Every control works. Navigation buttons appear only when a site is shown. The browser preview says what it cannot do instead of pretending.
 
 ## Geometry
@@ -51,4 +51,10 @@ The shell is fully translated into English and French (`src/i18n/`): every visib
 
 ## Integrated titlebar
 
-The main window uses Tauri's transparent native titlebar plus AppKit's explicit `Expanded` toolbar style, keeping the title centered. The titlebar separator is removed to blend it into the material-backed shell. AppKit continues to own the title and its drag surface, native double-click behaviour, traffic lights and window-management controls. No borderless window or JavaScript drag surface is introduced. The centered transparent style is compiled but still needs visual confirmation after relaunch; native UI access was denied at the end of the preceding UI checks.
+The main macOS window is opaque. `TitleBarStyle::Overlay` retains native traffic lights and hides the native leading title. The local shell paints a 32-point title strip with a centered MoodBuro label and `data-tauri-drag-region`; only the local shell gets start-dragging/internal-double-click permissions. Sidebar and toolbar start below this strip, and Rust positions Moodle views at 32 + 44 points. Other platforms keep their native titlebar geometry.
+
+Whole-window transparency and window-wide Liquid Glass were removed after they left the titlebar without a reliable backing. The user's subsequent screenshot confirms the solid centered title and correct Moodle content alignment. Drag-region interaction still needs a manual check.
+
+## Organisation short labels
+
+Réglages → Organisations provides an editable abbreviation (up to four letters/numbers). It replaces automatic initials in the sidebar and account avatar, while the full site name remains in labels/tooltips. Clearing it restores automatic initials. Labels persist independently of credentials, survive reconnect, and are deleted with the local account. No institution is hard-coded.

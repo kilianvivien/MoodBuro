@@ -110,6 +110,9 @@ const french: Record<string, string> = {
   "Unknown navigation action.": "Action de navigation inconnue.",
   "Navigation failed.": "La navigation a échoué.",
 
+  "Use up to 4 letters or numbers for the short label.":
+    "Utilisez au maximum 4 lettres ou chiffres pour l’abréviation.",
+
   // Browser preview (ipc.ts)
   "Open the desktop app with pnpm tauri dev to manage sign-in.":
     "Ouvrez l’app de bureau avec pnpm tauri dev pour gérer les connexions.",

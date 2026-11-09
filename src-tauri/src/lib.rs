@@ -1,3 +1,4 @@
+mod auth_log;
 mod commands;
 mod menus;
 mod windows;
@@ -52,6 +53,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::sites_list,
+            commands::site_label_set,
             commands::site_add,
             commands::site_switch,
             commands::show_onboarding,

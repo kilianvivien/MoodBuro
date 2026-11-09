@@ -220,3 +220,19 @@ describe("French", () => {
     expect(sidebar).toContain('aria-label="Réglages"');
   });
 });
+
+it("uses a custom short label while retaining the full accessible site name", () => {
+  const html = inLocale(
+    "fr",
+    <Sidebar
+      sites={[{ ...site, shortLabel: "TEST" }]}
+      active="a"
+      view="site"
+      onSite={vi.fn()}
+      onAdd={vi.fn()}
+      onSettings={vi.fn()}
+    />,
+  );
+  expect(html).toContain('aria-hidden="true">TEST</span>');
+  expect(html).toContain('aria-label="Example University"');
+});

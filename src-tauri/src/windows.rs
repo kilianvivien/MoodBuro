@@ -7,37 +7,23 @@ use tauri_plugin_opener::OpenerExt;
 
 pub const SIDEBAR: f64 = 72.;
 pub const TOOLBAR: f64 = 44.;
+#[cfg(target_os = "macos")]
+pub const TITLEBAR: f64 = 32.;
+#[cfg(not(target_os = "macos"))]
+pub const TITLEBAR: f64 = 0.;
+const CONTENT_TOP: f64 = TITLEBAR + TOOLBAR;
 pub fn create_shell(app: &AppHandle) -> tauri::Result<()> {
     let builder = tauri::WindowBuilder::new(app, "main")
         .title("MoodBuro")
         .inner_size(1120., 760.)
         .min_inner_size(760., 540.);
-    // Keep genuine native titlebar, traffic lights and window behaviours.
+    // The window stays opaque. AppKit overlays its real traffic lights while
+    // the local shell paints the titlebar backing and centered title.
     #[cfg(target_os = "macos")]
     let builder = builder
-        .title_bar_style(tauri::TitleBarStyle::Transparent)
-        .transparent(true)
-        .effects(
-            tauri::window::EffectsBuilder::new()
-                .effects([
-                    tauri::window::Effect::LiquidGlassRegular,
-                    tauri::window::Effect::Sidebar,
-                ])
-                .state(tauri::window::EffectState::FollowsWindowActiveState)
-                .build(),
-        );
+        .title_bar_style(tauri::TitleBarStyle::Overlay)
+        .hidden_title(true);
     let window = builder.build()?;
-    #[cfg(target_os = "macos")]
-    {
-        // setup runs on AppKit's main thread. Tauri guarantees ns_window is a
-        // live NSWindow for the lifetime of this Window handle.
-        let native = unsafe { &*window.ns_window()?.cast::<objc2_app_kit::NSWindow>() };
-        // Explicitly use the traditional centered title layout instead of the
-        // system's automatic leading-title layout. Keep AppKit's drag surface
-        // and all real traffic-light behaviours (no custom IPC drag region).
-        native.setToolbarStyle(objc2_app_kit::NSWindowToolbarStyle::Expanded);
-        native.setTitlebarSeparatorStyle(objc2_app_kit::NSTitlebarSeparatorStyle::None);
-    }
     let appearance = app
         .state::<AppState>()
         .store
@@ -48,9 +34,7 @@ pub fn create_shell(app: &AppHandle) -> tauri::Result<()> {
         .appearance;
     apply_appearance(app, appearance)?;
     window.add_child(
-        WebviewBuilder::new("shell", WebviewUrl::App("index.html".into()))
-            .transparent(true)
-            .auto_resize(),
+        WebviewBuilder::new("shell", WebviewUrl::App("index.html".into())).auto_resize(),
         LogicalPosition::new(0., 0.),
         LogicalSize::new(1120., 760.),
     )?;
@@ -63,10 +47,10 @@ pub fn resize(app: &AppHandle) -> tauri::Result<()> {
         .to_logical::<f64>(window.scale_factor()?);
     for (label, view) in app.webviews() {
         if label.starts_with("site-") {
-            view.set_position(LogicalPosition::new(SIDEBAR, TOOLBAR))?;
+            view.set_position(LogicalPosition::new(SIDEBAR, CONTENT_TOP))?;
             view.set_size(LogicalSize::new(
                 (size.width - SIDEBAR).max(1.),
-                (size.height - TOOLBAR).max(1.),
+                (size.height - CONTENT_TOP).max(1.),
             ))?;
         }
     }
@@ -121,7 +105,7 @@ pub fn switch_at(app: &AppHandle, id: &str, target: Option<url::Url>) -> Result<
             .ok_or("Main window missing.")?
             .add_child(
                 builder,
-                LogicalPosition::new(SIDEBAR, TOOLBAR),
+                LogicalPosition::new(SIDEBAR, CONTENT_TOP),
                 LogicalSize::new(1., 1.),
             )
             .map_err(|_| "Could not create the Moodle view.")?;
@@ -192,7 +176,7 @@ pub fn remove_session(app: &AppHandle, site: &md_store::Site) -> Result<(), Stri
                     .ok_or("Main window missing.")?
                     .add_child(
                         builder,
-                        LogicalPosition::new(SIDEBAR, TOOLBAR),
+                        LogicalPosition::new(SIDEBAR, CONTENT_TOP),
                         LogicalSize::new(1., 1.),
                     )
                     .map_err(|_| "Could not access the site’s browser data.")?;

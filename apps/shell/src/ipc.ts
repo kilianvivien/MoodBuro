@@ -6,6 +6,7 @@ export interface Site {
   name: string;
   userId: number;
   fullName: string;
+  shortLabel?: string | null;
 }
 
 export type Appearance = "system" | "light" | "dark";
@@ -45,6 +46,10 @@ export function settingsFrom(raw: Partial<Settings> | null | undefined) {
 let previewSettings: Settings = settingsFrom(null);
 
 export const ipc = {
+  setShortLabel: (id: string, label: string) =>
+    desktop
+      ? invoke<string | null>("site_label_set", { id, label })
+      : desktopOnly(),
   sites: () => (desktop ? invoke<Site[]>("sites_list") : Promise.resolve([])),
   addSite: (url: string) =>
     desktop ? invoke<void>("site_add", { url }) : desktopOnly(),

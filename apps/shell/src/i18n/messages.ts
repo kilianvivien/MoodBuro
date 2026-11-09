@@ -45,6 +45,11 @@ const en = {
     previewBanner:
       "Browser preview: appearance and language changes last until reload, and accounts can only be managed in the desktop app.",
     general: "General",
+    shortLabel: "Short label",
+    shortLabelHint:
+      "Up to 4 letters or numbers; leave blank for automatic initials.",
+    saveLabel: "Save",
+    labelSaved: "Saved",
     theme: "Theme",
     themeHint: "Automatic matches your Mac’s appearance setting.",
     appearance: { system: "Automatic", light: "Light", dark: "Dark" },
@@ -130,6 +135,11 @@ const fr: Messages = {
     previewBanner:
       "Aperçu dans le navigateur\u00a0: les changements d’apparence et de langue durent jusqu’au rechargement, et les comptes ne peuvent être gérés que dans l’app de bureau.",
     general: "Général",
+    shortLabel: "Abréviation",
+    shortLabelHint:
+      "4 lettres ou chiffres maximum ; laisser vide pour les initiales automatiques.",
+    saveLabel: "Enregistrer",
+    labelSaved: "Enregistré",
     theme: "Thème",
     themeHint: "Automatique suit le réglage d’apparence de votre Mac.",
     appearance: { system: "Automatique", light: "Clair", dark: "Sombre" },
