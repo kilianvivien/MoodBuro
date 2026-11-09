@@ -1,6 +1,12 @@
 import { useEffect, useEffectEvent, useReducer, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { desktop, ipc, message, type NavAction } from "./ipc";
+import {
+  desktop,
+  ipc,
+  message,
+  type NavAction,
+  type UnreadStatus,
+} from "./ipc";
 import { useSites } from "./stores/sites";
 import { useSettings } from "./stores/settings";
 import { connection as reduce, idle } from "./lib/connection";
@@ -19,6 +25,7 @@ export default function App() {
   const { sites, active, refresh, select } = useSites();
   const settings = useSettings();
   const [view, setView] = useState<View>("onboarding");
+  const [unread, setUnread] = useState<UnreadStatus[]>([]);
   const [ready, setReady] = useState(false);
   const [connection, dispatch] = useReducer(reduce, idle);
   // Raw backend messages: translated when rendered, so a language switch
@@ -175,7 +182,9 @@ export default function App() {
       window.removeEventListener("languagechange", languagechange);
     };
     if (!desktop) return stop;
+    void ipc.unread().then(setUnread).catch(failed);
     const listeners = [
+      listen<UnreadStatus[]>("unread://changed", (e) => setUnread(e.payload)),
       listen<string>("sites://changed", (e) => onSitesChanged(e.payload)),
       listen<string>("sites://removed", () => onSiteRemoved()),
       listen<string>("shell://navigate", (e) => onNavigate(e.payload)),
@@ -221,6 +230,7 @@ export default function App() {
       <div className="app">
         <Sidebar
           sites={sites}
+          unread={unread}
           active={active}
           view={view}
           onSite={(id) => void openSite(id)}

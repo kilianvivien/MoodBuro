@@ -154,6 +154,20 @@ pub fn autologin_target(base: &Url, login: &AutologinKey, user_id: i64) -> Resul
     Ok(target)
 }
 
+/// Stock message_popup response. Full HTML bodies are intentionally not retained.
+#[derive(Clone, Deserialize)]
+pub struct PopupNotification {
+    pub id: i64,
+    pub subject: String,
+    pub contexturl: Option<String>,
+    pub timecreated: i64,
+    pub read: bool,
+}
+#[derive(Deserialize)]
+pub struct PopupNotifications {
+    pub notifications: Vec<PopupNotification>,
+}
+
 pub struct Client {
     base: Url,
     http: reqwest::Client,
@@ -276,6 +290,39 @@ impl Client {
             false,
         )
         .await
+    }
+    pub async fn popup_notifications(
+        &self,
+        token: &str,
+        user_id: i64,
+    ) -> Result<PopupNotifications, Error> {
+        self.call(
+            token,
+            "message_popup_get_popup_notifications",
+            &[
+                ("useridto", &user_id.to_string()),
+                ("newestfirst", "1"),
+                ("limit", "20"),
+                ("offset", "0"),
+            ],
+            true,
+        )
+        .await
+    }
+    pub async fn mark_notification_read(
+        &self,
+        token: &str,
+        notification_id: i64,
+    ) -> Result<(), Error> {
+        let _: serde_json::Value = self
+            .call(
+                token,
+                "core_message_mark_notification_read",
+                &[("notificationid", &notification_id.to_string())],
+                false,
+            )
+            .await?;
+        Ok(())
     }
     pub async fn unread_notifications(&self, token: &str, user_id: i64) -> Result<u64, Error> {
         self.call(
@@ -418,6 +465,54 @@ mod contract_tests {
             permits: tokio::sync::Semaphore::new(4),
         };
         (server, client)
+    }
+    #[tokio::test]
+    async fn notifications_and_counts_match_stock_moodle_shapes() {
+        let (server, client) = client().await;
+        for (function, response) in [
+            (
+                "message_popup_get_unread_popup_notification_count",
+                serde_json::json!(3),
+            ),
+            (
+                "core_message_get_unread_conversations_count",
+                serde_json::json!(2),
+            ),
+            (
+                "message_popup_get_popup_notifications",
+                serde_json::json!({"notifications":[{"id":12,"subject":"Course update","contexturl":"https://example.org/course/view.php?id=2","timecreated":123,"read":false}],"unreadcount":3}),
+            ),
+        ] {
+            Mock::given(method("POST"))
+                .and(body_string_contains(format!("wsfunction={function}")))
+                .and(body_string_contains("useridto=42"))
+                .respond_with(ResponseTemplate::new(200).set_body_json(response))
+                .expect(1)
+                .mount(&server)
+                .await;
+        }
+        assert_eq!(client.unread_notifications("test", 42).await.unwrap(), 3);
+        assert_eq!(client.unread_conversations("test", 42).await.unwrap(), 2);
+        let items = client.popup_notifications("test", 42).await.unwrap();
+        assert_eq!(items.notifications[0].id, 12);
+        assert!(!items.notifications[0].read);
+        let requests = server.received_requests().await.unwrap();
+        let body = String::from_utf8_lossy(&requests[2].body);
+        assert!(body.contains("limit=20") && body.contains("newestfirst=1"));
+    }
+    #[tokio::test]
+    async fn mark_read_is_not_retried() {
+        let (server, client) = client().await;
+        Mock::given(method("POST"))
+            .and(body_string_contains(
+                "wsfunction=core_message_mark_notification_read",
+            ))
+            .and(body_string_contains("notificationid=12"))
+            .respond_with(ResponseTemplate::new(503))
+            .expect(1)
+            .mount(&server)
+            .await;
+        assert!(client.mark_notification_read("test", 12).await.is_err());
     }
     #[tokio::test]
     async fn site_info_posts_token_in_body_and_decodes_response() {

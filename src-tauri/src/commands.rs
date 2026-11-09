@@ -34,6 +34,14 @@ pub struct SiteSummary {
     short_label: Option<String>,
 }
 #[tauri::command]
+pub fn unread_list(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Vec<crate::notifications::Status>, String> {
+    shell(&webview)?;
+    Ok(crate::notifications::statuses(&app))
+}
+#[tauri::command]
 pub fn sites_list(
     webview: tauri::Webview,
     state: tauri::State<AppState>,
@@ -278,6 +286,8 @@ async fn complete_sign_in(
     })?;
     let previous_private = md_secrets::get_optional(id, Kind::Private)
         .map_err(|_| "Could not access the existing private credential.")?;
+    // Invalidate the old worker before changing account identity or credentials.
+    crate::notifications::stop(app, id);
     let save = || -> Result<(), String> {
         md_secrets::put(id, Kind::Token, &tokens.token)
             .map_err(|_| "Could not save the token in the OS credential store.")?;
@@ -309,18 +319,25 @@ async fn complete_sign_in(
     };
     if let Err(error) = save() {
         // Restore existing credentials rather than destroying a working account on re-auth failure.
+        let mut restored = true;
         for (kind, previous) in [
             (Kind::Token, previous_token),
             (Kind::Private, previous_private),
         ] {
             if let Some(value) = previous {
-                let _ = md_secrets::put(id, kind, &value);
+                restored &= md_secrets::put(id, kind, &value).is_ok();
             } else {
-                let _ = md_secrets::delete(id, kind);
+                restored &= md_secrets::delete(id, kind).is_ok();
+            }
+        }
+        if reauth && restored {
+            if let Ok(site) = saved_site(app, id) {
+                crate::notifications::start(app, site);
             }
         }
         return Err(error);
     }
+    crate::notifications::start(app, saved_site(app, id)?);
     record(AuthEvent::CredentialsSaved);
     drop(pending);
     if let Some(view) = app.get_webview(&format!("site-{id}")) {
@@ -338,14 +355,17 @@ pub async fn site_switch(
     id: String,
 ) -> Result<(), String> {
     shell(&webview)?;
+    restore_site(&app, &id).await
+}
+pub async fn restore_site(app: &AppHandle, id: &str) -> Result<(), String> {
     let state = app.state::<AppState>();
     let _switch = state.switching.lock().await;
-    let site = saved_site(&app, &id)?;
+    let site = saved_site(app, id)?;
     // Only request a new autologin key when creating a view; warm switches are local.
     let cold = app.get_webview(&format!("site-{id}")).is_none();
     if cold {
         let base = normalize_site(&site.wwwroot).map_err(|e| e.to_string())?;
-        let token = md_secrets::get(&id, Kind::Token)
+        let token = md_secrets::get(id, Kind::Token)
             .map_err(|_| "Reconnect this organisation in Settings to restore its credentials.")?;
         let client = Client::new(base.clone()).map_err(|e| e.to_string())?;
         // Validate first; an invalid token must prompt re-auth rather than silently showing a login page.
@@ -354,12 +374,12 @@ pub async fn site_switch(
         if info.userid != site.user_id {
             return Err(md_moodle::Error::InvalidToken.to_string());
         }
-        if let Ok(private) = md_secrets::get(&id, Kind::Private) {
+        if let Ok(private) = md_secrets::get(id, Kind::Private) {
             match client.autologin_key(&token, &private).await {
                 Ok(key) => {
                     let target = md_moodle::autologin_target(&base, &key, site.user_id)
                         .map_err(|e| e.to_string())?;
-                    windows::switch_at(&app, &id, Some(target))?;
+                    windows::switch_at(app, id, Some(target))?;
                     record(AuthEvent::SessionRestored);
                     return Ok(());
                 }
@@ -374,7 +394,7 @@ pub async fn site_switch(
     if cold {
         record(AuthEvent::BrowserSessionFallback);
     }
-    windows::switch(&app, &id)
+    windows::switch(app, id)
 }
 #[tauri::command]
 pub fn show_onboarding(webview: tauri::Webview, app: AppHandle) -> Result<(), String> {
@@ -446,6 +466,7 @@ pub fn settings_set(
         let _ = crate::menus::rebuild(&app, previous.language);
         return Err("Could not apply the application preferences.".into());
     }
+    crate::notifications::publish(&app);
     Ok(settings)
 }
 #[tauri::command]
@@ -476,6 +497,7 @@ pub async fn site_remove(
         .map_err(|_| "Site storage unavailable.")?
         .remove(&id)
         .map_err(|_| "Could not remove the saved organisation.")?;
+    crate::notifications::stop(&app, &id);
     *app.state::<AppState>()
         .active
         .lock()

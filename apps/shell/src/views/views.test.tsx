@@ -236,3 +236,24 @@ it("uses a custom short label while retaining the full accessible site name", ()
   expect(html).toContain('aria-hidden="true">TEST</span>');
   expect(html).toContain('aria-label="Example University"');
 });
+
+it("labels unread counts and reconnection state in both languages", () => {
+  const render = (locale: Locale, connection: "online" | "reauth") =>
+    inLocale(
+      locale,
+      <Sidebar
+        sites={[site]}
+        active="a"
+        view="site"
+        unread={[{ siteId: "a", unread: 123, connection }]}
+        onSite={vi.fn()}
+        onAdd={vi.fn()}
+        onSettings={vi.fn()}
+      />,
+    );
+  expect(render("en", "online")).toContain("123 unread");
+  expect(render("en", "online")).toContain("99+");
+  expect(render("fr", "reauth")).toContain("Reconnecter dans Réglages");
+  expect(render("fr", "reauth")).toContain("123 non lus");
+  expect(render("fr", "reauth")).toContain('data-warning="true"');
+});

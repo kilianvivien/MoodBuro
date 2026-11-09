@@ -21,6 +21,7 @@
     "allow-settings-set",
     "core:window:allow-start-dragging",
     "core:window:allow-internal-toggle-maximize",
-    "allow-site-label-set"
+    "allow-site-label-set",
+    "allow-unread-list"
   ]
 }

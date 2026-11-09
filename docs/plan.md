@@ -11,7 +11,7 @@ This is the working checklist for project advancement. The [PRD](prd.md) defines
 | Milestone | Status | Remaining gate |
 | --- | --- | --- |
 | M0 — architecture and sign-in spike | In progress | Repeatable three-site login/SSO tests, platform/security validation and D1–D5 decisions |
-| M1 — Alpha core shell | Partially implemented | Notifications, badge/tray/background lifecycle, deep links, downloads and release qualification |
+| M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, deep links, downloads and release qualification |
 | First tester Alpha | Not ready for distribution | All Alpha exit criteria, universal packaging and private distribution setup |
 
 The INSP dashboard has been observed authenticated in the app. This is a successful real-site observation; it does not close the complete SSO, session-restoration or security test matrix.
@@ -62,7 +62,7 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 - [x] Grant privileged IPC only to the local shell, with explicit command permissions and caller checks.
 - [x] Enforce origin-based navigation policy; block unmanaged downloads and popups for now.
 - [x] Add unit/contract tests for callback and URL policies, HTTP behavior, metadata/settings/lifecycle and localization.
-- [x] Pass the latest local frontend build, lint/format checks, **42 UI tests**, **19 Rust tests**, workspace Clippy and shell-capability regression checks.
+- [x] Pass the latest local frontend build, lint/format checks, **43 UI tests**, **24 Rust tests**, workspace Clippy and shell-capability regression checks.
 - [x] Build a local ad-hoc-signed macOS app bundle; this is not a notarized distribution release.
 - [x] Review available dev logs and metadata schema without exposing credentials; record findings in the [auth review](auth-review.md).
 
@@ -85,12 +85,15 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 ### 2. Finish multi-site behavior and build background notifications
 
 - [ ] Add site reorder and explicit offline/re-auth/unread indicators.
-- [ ] Complete typed notification/message wrappers and read-state operations.
-- [ ] Implement per-site polling, first-poll seeding, deduplication, backoff and sleep/wake handling.
-- [ ] Persist notification state and emit unread updates to the shell.
-- [ ] Deliver native notifications, aggregate dock badge and menu-bar unread state.
-- [ ] Implement tray/menu-bar controls, check-now action and notification click routing (D4).
-- [ ] Implement hide-on-close/background operation and regular/menu-bar-only activation behavior.
+- [x] Add typed popup notification and unread-conversation count wrappers plus a mark-notification-read API (not yet exposed in the shell).
+- [x] Implement cancellable per-site polling, silent first-poll seeding, restart deduplication and capped backoff.
+- [ ] Verify sleep/wake and add explicit OS lifecycle hooks if needed (relative sleeps currently avoid catch-up bursts).
+- [x] Persist notification checkpoints/counts and a bounded subject/read-state cache; emit unread/status updates to the shell.
+- [x] Wire native notifications (five plus a summary per poll), aggregate dock badge and menu-bar unread state; installed-app delivery remains a QA gate.
+- [x] Implement tray open/settings/quit/check-now controls and per-site counts/status; wire notification clicks to the saved site’s notifications page.
+- [ ] Qualify notification click delivery (D4), tray behavior and the latest-unread menu on installed macOS builds.
+- [x] Hide the main window on close, retain background polling, and reopen through the tray or Dock.
+- [ ] Add menu-bar-only activation preference and window-state persistence.
 - [ ] Verify resource usage, accessibility and three-site behavior with the background services running.
 
 ### 3. Add deep links and safe download capture
@@ -123,7 +126,7 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 - [ ] Developer ID signing/notarization and managed deployment work.
 - [ ] Windows and Linux platform validation and releases.
 
-These are roadmap items, not enabled features. Downloads are currently blocked in Moodle views, and closing the window exits until tray/background operation is implemented.
+These are roadmap items, not enabled features. Downloads are currently blocked in Moodle views. Closing the window now hides it and keeps polling active; Quit ends the process.
 
 ## Evidence and related documents
 
@@ -140,3 +143,9 @@ These are roadmap items, not enabled features. Downloads are currently blocked i
 | `88adb27` | Workspace, shell and secure-sign-in foundation |
 | `76a73f7` | Bilingual macOS shell, session/account lifecycle and READMEs |
 | `4413c62` | Titlebar repair, organisation abbreviations and auth diagnostics/safeguards |
+
+## Background notification delivery slice
+
+Implemented on 9 November 2026. One cancellable worker per saved account polls every 120 seconds, backs off to 15 minutes, and stops for missing/invalid tokens. Check Now coalesces requests. New items are checked even when the unread total is unchanged. SQLite schema v3 migrates existing sites, stores metadata without credentials/context URLs, caps history at 100 rows per site, and deletes notification state with the account. Reconnect preserves checkpoints for the same account and resets them for a different Moodle user. The old worker is invalidated before credential changes.
+
+Verification: 43 UI tests, 24 Rust tests, frontend production build, lint/format, workspace Clippy and shell-only IPC regression checks pass. HTTP contracts match the published Moodle 4.5 API but remain synthetic. [Background QA](background-qa.md) records the required live/installed-app tests. M0 and release gates remain open; no credentials, certificates or hosting setup were requested.

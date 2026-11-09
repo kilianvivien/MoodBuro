@@ -1,12 +1,15 @@
 mod auth_log;
 mod commands;
 mod menus;
+mod notifications;
+mod tray;
 mod windows;
 use std::sync::Mutex;
 use tauri::{Emitter, Manager};
 
 pub struct AppState {
     store: Mutex<md_store::Store>,
+    workers: Mutex<notifications::Workers>,
     active: Mutex<Option<String>>,
     pending: Mutex<Option<String>>,
     switching: tauri::async_runtime::Mutex<()>,
@@ -15,17 +18,30 @@ pub struct AppState {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
             app.manage(AppState {
                 store: Mutex::new(md_store::Store::open(dir.join("index.db"))?),
+                workers: Mutex::new(Default::default()),
                 active: Mutex::new(None),
                 pending: Mutex::new(None),
                 switching: tauri::async_runtime::Mutex::new(()),
             });
             windows::create_shell(app.handle())?;
             menus::install(app.handle())?;
+            tray::install(app.handle())?;
+            notifications::install_click_handler(app.handle())?;
+            let sites = app
+                .state::<AppState>()
+                .store
+                .lock()
+                .expect("store")
+                .sites()?;
+            for site in sites {
+                notifications::start(app.handle(), site);
+            }
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -41,6 +57,10 @@ pub fn run() {
             }
             if window.label() == "main" {
                 match event {
+                    tauri::WindowEvent::CloseRequested { api, .. } => {
+                        api.prevent_close();
+                        let _ = window.hide();
+                    }
                     // Inactive windows dim selection and toolbar text, as AppKit does.
                     tauri::WindowEvent::Focused(focused) => {
                         let _ = window.emit_to("shell", "window://focused", *focused);
@@ -68,6 +88,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::sites_list,
+            commands::unread_list,
             commands::site_label_set,
             commands::site_add,
             commands::site_switch,
@@ -79,6 +100,14 @@ pub fn run() {
             commands::settings_get,
             commands::settings_set
         ])
-        .run(tauri::generate_context!())
-        .expect("Could not run MoodBuro");
+        .build(tauri::generate_context!())
+        .expect("Could not build MoodBuro")
+        .run(|app, event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { .. } = event {
+                tray::show(app);
+            }
+            #[cfg(not(target_os = "macos"))]
+            let _ = (app, event);
+        });
 }

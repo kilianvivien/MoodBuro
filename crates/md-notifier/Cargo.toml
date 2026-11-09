@@ -3,3 +3,5 @@ name = "md-notifier"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+[dependencies]
+md-moodle = { path = "../md-moodle" }

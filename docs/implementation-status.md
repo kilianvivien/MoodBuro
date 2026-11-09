@@ -4,7 +4,7 @@ Use [the working plan](plan.md) to track completed tasks and next priorities.
 
 ## Delivered
 
-The first two implementation slices cover the workspace/CI foundation, organisation-URL onboarding, the macOS shell and settings, account lifecycle and session-restoration infrastructure. This does **not** close M0 or claim the entire W1/W2 plan. `md-notifier` and `md-os` remain extension points.
+The first two implementation slices cover the workspace/CI foundation, organisation-URL onboarding, the macOS shell and settings, account lifecycle and session-restoration infrastructure. This does **not** close M0 or claim the entire W1/W2 plan. `md-notifier` now implements polling decisions; `md-os` remains an extension point.
 
 - Generic organisation URL onboarding, confirmed by the product owner; no institution is hard-coded.
 - Public Moodle discovery, same-origin HTTPS redirects and `/public/` fallback. First integration target: `https://moodle.insp.gouv.fr/`; its public mobile config was checked without credentials.
@@ -17,8 +17,8 @@ The first two implementation slices cover the workspace/CI foundation, organisat
 
 ## Verification
 
-- 42 UI/store/reducer/helper/localization tests; production frontend build, ESLint and Prettier pass.
-- 19 Rust tests (including mock HTTP contracts, URL/callback policy, SQLite migration/settings/reconnect, cookie domain boundaries); workspace Clippy with warnings denied passes.
+- 43 UI/store/reducer/helper/localization tests; production frontend build, ESLint and Prettier pass.
+- 24 Rust tests (including mock HTTP contracts, URL/callback policy, SQLite migration/settings/reconnect, cookie domain boundaries); workspace Clippy with warnings denied passes.
 - Native debug build/ad-hoc app packaging and shell-only IPC configuration/caller regression checks pass. Generated ACLs grant application commands individually to the local shell only.
 - HTTP tests use synthetic stock-Moodle-shaped data, not authenticated recordings from INSP or the planned 4.5/5.3 rigs.
 - JavaScript dependencies were not changed in the second slice. The previous audit had no high/critical findings and one moderate development-only minimatch advisory upstream. Rust advisory auditing remains to configure.
@@ -33,7 +33,20 @@ The first two implementation slices cover the workspace/CI foundation, organisat
 2. Provision Moodle 4.5/5.3 + Keycloak fixtures and test SAML/OIDC. Verify version-specific public roots, rate-limit behaviour and missing-private-token fallback.
 3. D1/D2: three simultaneous sites, warm-switch timing, resize, focus, cookies/profile separation on macOS 12, 15 and current macOS.
 4. Inject a remote-webview IPC probe; configuration checks do not prove runtime isolation. Verify Keychain prompts, deletion and app identity across installed updates.
-5. Finish typed notification wrappers and notification/tray work (W4), then deep links/download capture (W5) and universal packaging/distribution (W6). Downloads remain blocked; closing the window exits until a real tray/background lifecycle exists.
+5. Qualify the implemented notification/tray worker lifecycle (W4), finish reorder/menu-bar-only controls, then deep links/download capture (W5) and universal packaging/distribution (W6). Downloads remain blocked. Closing the window hides it while polling continues; Quit exits.
 6. Record D1–D5 results before claiming M0. Full legacy browser-data deletion remains an explicit privacy/platform gate.
 
 See [authentication check](auth-review.md), [UI decisions](ui-design.md) and [architecture decisions](adr/0001-alpha-foundation.md).
+
+## Background notification implementation
+
+- Typed popup/count/read API wrappers, first-poll seeding, ID deduplication, persisted checkpoints, capped retries, invalid-token stop, and worker replacement/removal guards.
+- Schema v3 stores counts and up to 100 notification subjects/read states per account. Context URLs and message bodies are not persisted. Same-account reconnect retains checkpoints; changing Moodle users clears them atomically.
+- Rust-only native notification delivery (five subjects plus summary), dock badge, bilingual sidebar unread/offline/reconnect/error indicators and menu-bar counts. Tray supports Open, Check Now, Settings and Quit. The main window hides on close and reopens through the tray or Dock.
+- Notification clicks are wired through the plugin’s Rust action callback to the saved account’s own notifications page; no server-supplied context URL is followed. Actual installed-app click delivery remains D4 validation.
+- Defaults remain fixed at 120 seconds, backing off to 15 minutes. Relative sleeps avoid missed-tick bursts; explicit sleep/wake hooks and immediate-on-wake timing remain unverified. The newest 20 items are fetched each poll, even if the count stays equal; older arrivals outside that window are not delivered individually.
+- Still pending: latest-unread tray items/read controls, notification preference controls, menu-bar-only mode, window-state persistence, resource measurements and live multi-site/native notification testing. Native submission success does not prove Notification Center delivery or Focus behavior.
+
+See [background QA](background-qa.md) for the repeatable installed-app test script.
+
+Local packaging for this slice: `CARGO_NET_OFFLINE=true pnpm tauri build --debug --bundles app` completed. The reused debug bundle initially failed resource-signature verification; re-signing it with `codesign --force --deep --sign -` restored a valid ad-hoc signature, verified with `codesign --verify --deep --strict`. This is a local development bundle, not a universal or distribution-qualified installer. No live account or desktop session was used for native QA.

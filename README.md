@@ -67,7 +67,8 @@ src-tauri/        Fenêtres natives, menus, commandes et permissions
 crates/md-moodle/ Protocole Moodle, HTTP et politiques de navigation
 crates/md-secrets/ Trousseau du système
 crates/md-store/  Métadonnées SQLite et préférences
-crates/md-notifier/ et md-os/  Points d’extension pour les étapes suivantes
+crates/md-notifier/ Décisions de suivi des notifications
+crates/md-os/     Point d’extension pour les adaptateurs système
 docs/             PRD, plan Alpha, décisions et état d’implémentation
 ```
 
@@ -93,11 +94,11 @@ Les contrats HTTP utilisent des réponses simulées. Ils complètent les essais 
 
 - Valider la connexion INSP et les environnements Moodle 4.5/5.3 avec SAML et OIDC.
 - Vérifier les profils, le trousseau et l’isolation IPC dans l’application installée.
-- Ajouter notifications, badge et présence dans la barre des menus.
+- Qualifier les notifications, le badge et les contrôles de barre des menus désormais implémentés.
 - Implémenter les liens profonds et la capture des téléchargements.
 - Préparer les distributions universelles macOS, puis la signature et la notarisation.
 
-Les téléchargements sont actuellement bloqués dans les vues Moodle. Fermer la fenêtre quitte l’application tant que le fonctionnement en arrière-plan n’est pas implémenté. Windows et Linux sont des cibles ultérieures, pas des plateformes validées de cette Alpha.
+Les téléchargements sont actuellement bloqués dans les vues Moodle. Fermer la fenêtre la masque et conserve le suivi des notifications en arrière-plan. Utiliser Quitter pour arrêter l’application. La livraison native et les clics restent à qualifier avec le [script de test](docs/background-qa.md). Windows et Linux sont des cibles ultérieures, pas des plateformes validées de cette Alpha.
 
 ## Documentation
 

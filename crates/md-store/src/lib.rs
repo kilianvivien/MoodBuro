@@ -1,4 +1,5 @@
-//! SQLite holds site metadata only. Never credentials, callback URLs or page content.
+//! SQLite holds account/preferences and bounded notification metadata. Never credentials,
+//! callback URLs, notification context URLs or message bodies.
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Serialize)]
@@ -32,19 +33,54 @@ pub struct Settings {
     #[serde(default)]
     pub language: Language,
 }
+pub struct Notification {
+    pub id: i64,
+    pub subject: String,
+    pub time_created: i64,
+    pub read: bool,
+}
 pub struct Store(Connection);
 impl Store {
     pub fn open(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 2 {
+        if version > 3 {
             return Err(rusqlite::Error::InvalidQuery);
         }
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; BEGIN;
             CREATE TABLE IF NOT EXISTS sites (id TEXT PRIMARY KEY, wwwroot TEXT NOT NULL UNIQUE, name TEXT NOT NULL, user_id INTEGER NOT NULL, full_name TEXT NOT NULL, position INTEGER NOT NULL DEFAULT 0);
             CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-            PRAGMA user_version=2; COMMIT;")?;
+            CREATE TABLE IF NOT EXISTS notification_state (site_id TEXT PRIMARY KEY REFERENCES sites(id) ON DELETE CASCADE, checkpoint INTEGER NOT NULL, unread INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS notifications (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, moodle_id INTEGER NOT NULL, subject TEXT NOT NULL, time_created INTEGER NOT NULL, read INTEGER NOT NULL, PRIMARY KEY(site_id,moodle_id));
+            PRAGMA user_version=3; COMMIT;")?;
         Ok(Self(connection))
+    }
+    pub fn notification_state(&self, id: &str) -> rusqlite::Result<Option<(i64, u64)>> {
+        use rusqlite::OptionalExtension;
+        self.0
+            .query_row(
+                "SELECT checkpoint,unread FROM notification_state WHERE site_id=?1",
+                [id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .optional()
+    }
+    /// State and history advance together; an interrupted write cannot advance the checkpoint.
+    pub fn save_notifications(
+        &self,
+        id: &str,
+        checkpoint: i64,
+        unread: u64,
+        items: &[Notification],
+    ) -> rusqlite::Result<()> {
+        let tx = self.0.unchecked_transaction()?;
+        for item in items {
+            tx.execute("INSERT INTO notifications VALUES (?1,?2,?3,?4,?5) ON CONFLICT(site_id,moodle_id) DO UPDATE SET read=excluded.read", params![id,item.id,item.subject,item.time_created,item.read])?;
+        }
+        tx.execute("INSERT INTO notification_state VALUES (?1,?2,?3) ON CONFLICT(site_id) DO UPDATE SET checkpoint=excluded.checkpoint,unread=excluded.unread", params![id,checkpoint,unread.min(i64::MAX as u64)])?;
+        // Keep the metadata cache bounded per organisation.
+        tx.execute("DELETE FROM notifications WHERE site_id=?1 AND moodle_id NOT IN (SELECT moodle_id FROM notifications WHERE site_id=?1 ORDER BY moodle_id DESC LIMIT 100)", [id])?;
+        tx.commit()
     }
     pub fn sites(&self) -> rusqlite::Result<Vec<Site>> {
         let mut statement = self.0.prepare(
@@ -136,7 +172,12 @@ impl Store {
         self.set_preferences(Some(appearance), None)
     }
     pub fn update(&self, site: &Site) -> rusqlite::Result<()> {
-        self.0.execute(
+        let tx = self.0.unchecked_transaction()?;
+        // A different account must start with a fresh, silent notification seed.
+        for table in ["notifications", "notification_state"] {
+            tx.execute(&format!("DELETE FROM {table} WHERE site_id=?1 AND EXISTS (SELECT 1 FROM sites WHERE id=?1 AND user_id<>?2)"), params![site.id, site.user_id])?;
+        }
+        tx.execute(
             "UPDATE sites SET name=?2,user_id=?3,full_name=?4,wwwroot=?5 WHERE id=?1",
             params![
                 site.id,
@@ -146,7 +187,7 @@ impl Store {
                 site.wwwroot
             ],
         )?;
-        Ok(())
+        tx.commit()
     }
     pub fn remove(&self, id: &str) -> rusqlite::Result<()> {
         let tx = self.0.unchecked_transaction()?;
@@ -227,11 +268,15 @@ mod lifecycle_tests {
             full_name: "Old".into(),
         };
         store.insert(&site).unwrap();
+        store.save_notifications("one", 8, 3, &[]).unwrap();
+        store.update(&site).unwrap();
+        assert_eq!(store.notification_state("one").unwrap(), Some((8, 3)));
         site.user_id = 2;
         site.full_name = "New".into();
         store.update(&site).unwrap();
         assert_eq!(store.sites().unwrap().len(), 1);
         assert_eq!(store.sites().unwrap()[0].user_id, 2);
+        assert!(store.notification_state("one").unwrap().is_none());
     }
 }
 
@@ -265,5 +310,48 @@ mod label_tests {
         assert_eq!(store.short_label("two").unwrap().as_deref(), Some("ABC"));
         store.set_short_label("two", None).unwrap();
         assert!(store.short_label("two").unwrap().is_none());
+    }
+}
+
+#[cfg(test)]
+mod notification_tests {
+    use super::*;
+    #[test]
+    fn checkpoint_history_and_account_cleanup_are_atomic() {
+        let store = Store::open(":memory:").unwrap();
+        store
+            .insert(&Site {
+                id: "one".into(),
+                wwwroot: "https://example.org/".into(),
+                name: "Example".into(),
+                user_id: 1,
+                full_name: "Learner".into(),
+            })
+            .unwrap();
+        assert!(store.notification_state("one").unwrap().is_none());
+        let items: Vec<_> = (1..=110)
+            .map(|id| Notification {
+                id,
+                subject: "Notice".into(),
+                time_created: 1,
+                read: false,
+            })
+            .collect();
+        store.save_notifications("one", 110, 4, &items).unwrap();
+        assert_eq!(store.notification_state("one").unwrap(), Some((110, 4)));
+        let count: i64 = store
+            .0
+            .query_row("SELECT COUNT(*) FROM notifications", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(count, 100);
+        assert!(store.save_notifications("missing", 111, 5, &items).is_err());
+        assert_eq!(store.notification_state("one").unwrap(), Some((110, 4)));
+        store.remove("one").unwrap();
+        assert!(store.notification_state("one").unwrap().is_none());
+        let count: i64 = store
+            .0
+            .query_row("SELECT COUNT(*) FROM notifications", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(count, 0);
     }
 }

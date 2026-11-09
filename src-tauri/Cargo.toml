@@ -9,8 +9,11 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 [dependencies]
-tauri = { version = "~2.12.0", features = ["unstable"] }
+tauri = { version = "~2.12.0", features = ["unstable", "tray-icon"] }
 tauri-plugin-opener = "2"
+tauri-plugin-notification = "=2.8.0"
+tokio = { version = "1", features = ["time", "sync", "macros"] }
+md-notifier = { path = "../crates/md-notifier" }
 serde.workspace = true
 url.workspace = true
 uuid.workspace = true

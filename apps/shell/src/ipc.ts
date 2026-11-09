@@ -10,6 +10,12 @@ export interface Site {
   shortLabel?: string | null;
 }
 
+export interface UnreadStatus {
+  siteId: string;
+  unread: number;
+  connection: "checking" | "online" | "offline" | "reauth" | "error";
+}
+
 export type Appearance = "system" | "light" | "dark";
 /** UI language; "system" follows the Mac's preferred languages. */
 export type Language = "system" | "fr" | "en";
@@ -68,6 +74,8 @@ export function settingsFrom(raw: Partial<Settings> | null | undefined) {
 let previewSettings: Settings = settingsFrom(null);
 
 export const ipc = {
+  unread: () =>
+    desktop ? invoke<UnreadStatus[]>("unread_list") : Promise.resolve([]),
   setShortLabel: (id: string, label: string) =>
     desktop
       ? invoke<string | null>("site_label_set", { id, label })

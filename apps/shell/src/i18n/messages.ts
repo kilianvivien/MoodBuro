@@ -8,6 +8,14 @@ import { formatNumber, plural, type Locale } from "./locale";
 const en = {
   sidebar: {
     label: "Moodle sites",
+    unread: (count: number) => `${formatNumber("en", count)} unread`,
+    connection: {
+      checking: "Checking for updates",
+      online: "",
+      offline: "Offline",
+      reauth: "Reconnect in Settings",
+      error: "Could not check for updates",
+    },
     add: "Add organisation",
     settings: "Settings",
   },
@@ -96,6 +104,15 @@ export type Messages = typeof en;
 
 const fr: Messages = {
   sidebar: {
+    unread: (count: number) =>
+      `${formatNumber("fr", count)} non lu${count > 1 ? "s" : ""}`,
+    connection: {
+      checking: "Vérification en cours",
+      online: "",
+      offline: "Hors ligne",
+      reauth: "Reconnecter dans Réglages",
+      error: "Impossible de vérifier les mises à jour",
+    },
     label: "Sites Moodle",
     add: "Ajouter une organisation",
     settings: "Réglages",
