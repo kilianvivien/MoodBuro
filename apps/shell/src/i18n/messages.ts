@@ -20,6 +20,10 @@ const en = {
     settings: "Settings",
   },
   toolbar: {
+    home: "Moodle Home",
+    backToMoodle: "Back to Moodle",
+    popup: "Moodle window",
+    downloads: "Downloads",
     navigation: "Navigation",
     back: "Back",
     forward: "Forward",
@@ -31,6 +35,27 @@ const en = {
     addOrganisation: "Add Organisation",
     done: "Done",
     cancel: "Cancel",
+  },
+  downloads: {
+    openLabel: (name: string) => `Open ${name}`,
+    revealLabel: (name: string) => `Show ${name} in Finder`,
+    title: "Recent downloads",
+    empty: "No downloads yet.",
+    loading: "Loading downloads…",
+    location:
+      "Files are saved in ~/Moodle, in a folder for each organisation. Removing an organisation keeps its downloaded files.",
+    open: "Open",
+    reveal: "Show in Finder",
+    cancel: "Cancel",
+    confirm: "Open File",
+    confirmTitle: (name: string) => `Open ${name}?`,
+    confirmBody:
+      "This file type may run software or contain active content. Open it only if you trust its source.",
+    states: {
+      downloading: "Downloading…",
+      complete: "Complete",
+      failed: "Failed — download again from Moodle",
+    },
   },
   onboarding: {
     welcome: "Welcome to MoodBuro",
@@ -118,6 +143,10 @@ const fr: Messages = {
     settings: "Réglages",
   },
   toolbar: {
+    home: "Accueil Moodle",
+    backToMoodle: "Retour à Moodle",
+    popup: "Fenêtre Moodle",
+    downloads: "Téléchargements",
     navigation: "Navigation",
     back: "Précédent",
     forward: "Suivant",
@@ -129,6 +158,27 @@ const fr: Messages = {
     addOrganisation: "Ajouter une organisation",
     done: "Terminé",
     cancel: "Annuler",
+  },
+  downloads: {
+    openLabel: (name: string) => `Ouvrir ${name}`,
+    revealLabel: (name: string) => `Afficher ${name} dans le Finder`,
+    title: "Téléchargements récents",
+    empty: "Aucun téléchargement pour le moment.",
+    loading: "Chargement des téléchargements…",
+    location:
+      "Les fichiers sont enregistrés dans ~/Moodle, dans un dossier par organisation. Retirer une organisation conserve ses fichiers téléchargés.",
+    open: "Ouvrir",
+    reveal: "Afficher dans le Finder",
+    cancel: "Annuler",
+    confirm: "Ouvrir le fichier",
+    confirmTitle: (name: string) => `Ouvrir ${name}\u00a0?`,
+    confirmBody:
+      "Ce type de fichier peut exécuter un logiciel ou contenir du contenu actif. Ouvrez-le uniquement si sa source est fiable.",
+    states: {
+      downloading: "Téléchargement…",
+      complete: "Terminé",
+      failed: "Échec — téléchargez à nouveau depuis Moodle",
+    },
   },
   onboarding: {
     welcome: "Bienvenue dans MoodBuro",

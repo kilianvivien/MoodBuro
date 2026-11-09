@@ -1,7 +1,11 @@
 mod auth_log;
 mod commands;
+mod downloads;
+mod links;
 mod menus;
 mod notifications;
+#[cfg(target_os = "macos")]
+mod pdf_save;
 mod tray;
 mod windows;
 use std::sync::Mutex;
@@ -10,6 +14,7 @@ use tauri::{Emitter, Manager};
 pub struct AppState {
     store: Mutex<md_store::Store>,
     workers: Mutex<notifications::Workers>,
+    downloads: Mutex<downloads::Transfers>,
     active: Mutex<Option<String>>,
     pending: Mutex<Option<String>>,
     switching: tauri::async_runtime::Mutex<()>,
@@ -17,6 +22,17 @@ pub struct AppState {
 
 pub fn run() {
     tauri::Builder::default()
+        .manage(Mutex::new(links::Inbox::default()))
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            tray::show(app);
+            for arg in args
+                .iter()
+                .skip(1)
+                .filter(|arg| arg.to_ascii_lowercase().starts_with("moodledesk:"))
+            {
+                links::receive(app, arg);
+            }
+        }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .setup(|app| {
@@ -25,10 +41,16 @@ pub fn run() {
             app.manage(AppState {
                 store: Mutex::new(md_store::Store::open(dir.join("index.db"))?),
                 workers: Mutex::new(Default::default()),
+                downloads: Mutex::new(Default::default()),
                 active: Mutex::new(None),
                 pending: Mutex::new(None),
                 switching: tauri::async_runtime::Mutex::new(()),
             });
+            app.state::<AppState>()
+                .store
+                .lock()
+                .expect("store")
+                .downloads_interrupt()?;
             windows::create_shell(app.handle())?;
             menus::install(app.handle())?;
             tray::install(app.handle())?;
@@ -42,12 +64,21 @@ pub fn run() {
             for site in sites {
                 notifications::start(app.handle(), site);
             }
+            for arg in std::env::args()
+                .skip(1)
+                .filter(|arg| arg.to_ascii_lowercase().starts_with("moodledesk:"))
+            {
+                links::receive(app.handle(), &arg);
+            }
             Ok(())
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Resized(_) | tauri::WindowEvent::ScaleFactorChanged { .. } =
                 event
             {
+                if window.label().starts_with("popup-") {
+                    let _ = windows::resize_popup(window);
+                }
                 if window.label() == "main" {
                     let _ = windows::resize(window.app_handle());
                     // Full screen hides the traffic lights; the toolbar reclaims their inset.
@@ -72,6 +103,10 @@ pub fn run() {
                 }
             }
             if let tauri::WindowEvent::Destroyed = event {
+                #[cfg(target_os = "macos")]
+                if window.label().starts_with("popup-") {
+                    pdf_save::remove(window.app_handle(), window.label());
+                }
                 if let Some(id) = window.label().strip_prefix("auth-") {
                     let state = window.state::<AppState>();
                     let mut pending = state.pending.lock().expect("pending state");
@@ -88,6 +123,12 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::sites_list,
+            commands::popup_context,
+            commands::popup_nav,
+            commands::deep_link_open,
+            commands::downloads_recent,
+            commands::download_open,
+            commands::download_reveal,
             commands::unread_list,
             commands::site_label_set,
             commands::site_add,
@@ -104,8 +145,14 @@ pub fn run() {
         .expect("Could not build MoodBuro")
         .run(|app, event| {
             #[cfg(target_os = "macos")]
-            if let tauri::RunEvent::Reopen { .. } = event {
-                tray::show(app);
+            match event {
+                tauri::RunEvent::Reopen { .. } => tray::show(app),
+                tauri::RunEvent::Opened { urls } => {
+                    for url in urls {
+                        links::receive(app, url.as_str());
+                    }
+                }
+                _ => {}
             }
             #[cfg(not(target_os = "macos"))]
             let _ = (app, event);

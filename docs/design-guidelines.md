@@ -192,3 +192,11 @@ Icons: [lucide-react](https://lucide.dev), stroke width **1.75** (2 at ≤ 14 px
 - [ ] Every new string exists in English and French; no institution names.
 - [ ] Commands also reachable from the menu bar with a standard shortcut.
 - [ ] Native window checked with `pnpm tauri dev` when chrome or geometry changed.
+
+## Moodle popup windows
+
+Same-origin Moodle popups preserve their opener and WebKit configuration/session in separate native windows (at most three per site). Their local toolbar is 44 pt high (`windows::resize_popup` and `.popup-bar`), below a standard native titlebar. Remote content has no IPC grants; `chrome-popup-*` local toolbars have a separate capability granting only popup context/navigation and event listening. Caller checks bind each toolbar to its own window.
+
+Back uses WKWebView history. At the start of a popup's history the label becomes “Back to Moodle” / « Retour à Moodle » and the action closes it, restoring its originating site view. Home explicitly returns the parent window to the site dashboard. Main-window PDF navigation also uses native history, with dashboard fallback when no earlier item exists. Every site toolbar includes a Home control; the native Go menu exposes the same command with ⌘⇧H.
+
+Menu-bar rows use the saved abbreviation or bounded organisation text, count and a per-site submenu. Recent Downloads is a submenu with five bounded filenames plus the full list entry. Clicking a filename reveals it in Finder, never opens it; risky-file confirmation remains in the local Downloads view.

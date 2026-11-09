@@ -11,8 +11,10 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "~2.12.0", features = ["unstable", "tray-icon"] }
 tauri-plugin-opener = "2"
+tauri-plugin-single-instance = "=2.5.5"
 tauri-plugin-notification = "=2.8.0"
 tokio = { version = "1", features = ["time", "sync", "macros"] }
+md-os = { path = "../crates/md-os" }
 md-notifier = { path = "../crates/md-notifier" }
 serde.workspace = true
 url.workspace = true
@@ -23,5 +25,6 @@ md-store = { path = "../crates/md-store" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"
+objc2-web-kit = { version = "0.3", default-features = false, features = ["WKWebView", "WKNavigation", "WKUIDelegate", "WKBackForwardList", "WKBackForwardListItem"] }
 
-objc2-foundation = { version = "0.3", features = ["NSLocale", "NSArray", "NSString"] }
+objc2-foundation = { version = "0.3", features = ["NSLocale", "NSArray", "NSString", "NSData", "NSURL"] }

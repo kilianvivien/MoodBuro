@@ -10,6 +10,24 @@ export interface Site {
   shortLabel?: string | null;
 }
 
+export interface PopupContext extends Settings {
+  siteName: string;
+  canGoBack: boolean;
+  canGoForward: boolean;
+}
+
+export interface Download {
+  id: string;
+  siteId: string;
+  filename: string;
+  state: "downloading" | "complete" | "failed";
+  startedAt: number;
+  needsConfirmation: boolean;
+}
+
+export type DeepLinkOutcome =
+  { kind: "site"; siteId: string } | { kind: "onboarding"; url: string };
+
 export interface UnreadStatus {
   siteId: string;
   unread: number;
@@ -23,8 +41,9 @@ export interface Settings {
   appearance: Appearance;
   language: Language;
 }
-export type ShellView = "onboarding" | "settings";
-export type NavAction = "back" | "forward" | "reload" | "open_in_browser";
+export type ShellView = "onboarding" | "settings" | "downloads";
+export type NavAction =
+  "back" | "forward" | "reload" | "home" | "open_in_browser";
 
 export const desktop = isTauri();
 
@@ -74,6 +93,19 @@ export function settingsFrom(raw: Partial<Settings> | null | undefined) {
 let previewSettings: Settings = settingsFrom(null);
 
 export const ipc = {
+  popupContext: () => invoke<PopupContext>("popup_context"),
+  popupNav: (action: NavAction | "downloads") =>
+    invoke<void>("popup_nav", { action }),
+  downloads: () =>
+    desktop ? invoke<Download[]>("downloads_recent") : Promise.resolve([]),
+  openDownload: (id: string, confirmed = false) =>
+    desktop ? invoke<void>("download_open", { id, confirmed }) : desktopOnly(),
+  revealDownload: (id: string) =>
+    desktop ? invoke<void>("download_reveal", { id }) : desktopOnly(),
+  deepLink: () =>
+    desktop
+      ? invoke<DeepLinkOutcome | null>("deep_link_open")
+      : Promise.resolve(null),
   unread: () =>
     desktop ? invoke<UnreadStatus[]>("unread_list") : Promise.resolve([]),
   setShortLabel: (id: string, label: string) =>

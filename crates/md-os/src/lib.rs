@@ -1,7 +1,8 @@
-//! OS adapters are implemented in W4, after the macOS notification spike.
+//! Platform types and filesystem policy for desktop integration.
 #[derive(Debug, Clone, Copy)]
 pub enum Platform {
     MacOs,
     Windows,
     Linux,
 }
+pub mod downloads;

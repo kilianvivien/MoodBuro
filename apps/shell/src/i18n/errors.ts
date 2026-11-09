@@ -8,6 +8,35 @@ import { catalogues, type Messages } from "./messages";
  * exact text. Keep this list in step with the Rust messages.
  */
 const french: Record<string, string> = {
+  "This Moodle link is invalid or does not match a saved organisation.":
+    "Ce lien Moodle est invalide ou ne correspond pas à une organisation enregistrée.",
+  "This file was requested twice. Restart MoodBuro before downloading it again.":
+    "Ce fichier a été demandé deux fois. Relancez MoodBuro avant de le télécharger à nouveau.",
+  "Download folder unavailable.": "Dossier de téléchargement indisponible.",
+  "Download unavailable.": "Téléchargement indisponible.",
+  "This file is already downloading or the download queue is full.":
+    "Ce fichier est déjà en cours de téléchargement ou la file est pleine.",
+  "This download is outside the organisation’s secure site.":
+    "Ce téléchargement se trouve en dehors du site sécurisé de l’organisation.",
+  "Could not save download history.":
+    "Impossible d’enregistrer l’historique des téléchargements.",
+  "Could not read download history.":
+    "Impossible de lire l’historique des téléchargements.",
+  "This download is unavailable.": "Ce téléchargement est indisponible.",
+  "Confirm opening this file first.":
+    "Confirmez d’abord l’ouverture de ce fichier.",
+  "Could not open the downloaded file.":
+    "Impossible d’ouvrir le fichier téléchargé.",
+  "Could not reveal the downloaded file.":
+    "Impossible d’afficher le fichier téléchargé dans le Finder.",
+  "Could not prepare PDF saving.":
+    "Impossible de préparer l’enregistrement des PDF.",
+  "This PDF could not be saved. Use Moodle’s file download link.":
+    "Impossible d’enregistrer ce PDF. Utilisez le lien de téléchargement du fichier dans Moodle.",
+  "This command is restricted to the popup toolbar.":
+    "Cette commande est réservée à la barre d’outils de la fenêtre Moodle.",
+  "Close a Moodle popup window before opening another.":
+    "Fermez une fenêtre Moodle avant d’en ouvrir une autre.",
   // md-moodle::Error
   "Enter an HTTPS Moodle base URL, without a query or fragment.":
     "Saisissez l’adresse HTTPS de base du Moodle, sans paramètres ni fragment.",

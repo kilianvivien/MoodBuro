@@ -33,6 +33,117 @@ pub struct SiteSummary {
     site: md_store::Site,
     short_label: Option<String>,
 }
+fn popup_shell(view: &tauri::Webview) -> Result<(), String> {
+    if view.window().label().starts_with("popup-")
+        && view.label() == format!("chrome-{}", view.window().label())
+    {
+        Ok(())
+    } else {
+        Err("This command is restricted to the popup toolbar.".into())
+    }
+}
+fn popup_target(
+    app: &AppHandle,
+    chrome: &tauri::Webview,
+) -> Result<(md_store::Site, tauri::Webview), String> {
+    let label = chrome.window().label().to_owned();
+    let site = app
+        .state::<AppState>()
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?
+        .sites()
+        .map_err(|_| "Could not read sites.")?
+        .into_iter()
+        .find(|s| label.starts_with(&format!("popup-{}-", s.id)))
+        .ok_or("Unknown site.")?;
+    let target = app.get_webview(&label).ok_or("Moodle view missing.")?;
+    Ok((site, target))
+}
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PopupContext {
+    site_name: String,
+    #[serde(flatten)]
+    settings: md_store::Settings,
+    can_go_back: bool,
+    can_go_forward: bool,
+}
+#[tauri::command]
+pub async fn popup_context(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<PopupContext, String> {
+    popup_shell(&webview)?;
+    let (site, target) = popup_target(&app, &webview)?;
+    let settings = app
+        .state::<AppState>()
+        .store
+        .lock()
+        .map_err(|_| "Settings unavailable.")?
+        .settings()
+        .map_err(|_| "Could not read settings.")?;
+    let (can_go_back, can_go_forward) = windows::history_state(
+        &target,
+        normalize_site(&site.wwwroot).map_err(|e| e.to_string())?,
+    )
+    .await?;
+    Ok(PopupContext {
+        site_name: site.name,
+        settings,
+        can_go_back,
+        can_go_forward,
+    })
+}
+#[tauri::command]
+pub fn popup_nav(webview: tauri::Webview, app: AppHandle, action: String) -> Result<(), String> {
+    popup_shell(&webview)?;
+    let (site, target) = popup_target(&app, &webview)?;
+    if action == "downloads" {
+        windows::hide_sites(&app).map_err(|_| "Could not show the local shell.")?;
+        crate::tray::show(&app);
+        let _ = app.emit_to("shell", "shell://navigate", "downloads");
+        return Ok(());
+    }
+    navigate_view(&app, &site.id, &target, &action)
+}
+#[tauri::command]
+pub fn downloads_recent(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Vec<crate::downloads::Summary>, String> {
+    shell(&webview)?;
+    crate::downloads::recent(&app)
+}
+#[tauri::command]
+pub fn download_open(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+    confirmed: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    let path = crate::downloads::path(&app, &id, confirmed, true)?;
+    app.opener()
+        .open_path(path.to_string_lossy(), None::<&str>)
+        .map_err(|_| "Could not open the downloaded file.".into())
+}
+#[tauri::command]
+pub fn download_reveal(webview: tauri::Webview, app: AppHandle, id: String) -> Result<(), String> {
+    shell(&webview)?;
+    let path = crate::downloads::path(&app, &id, false, false)?;
+    app.opener()
+        .reveal_item_in_dir(path)
+        .map_err(|_| "Could not reveal the downloaded file.".into())
+}
+#[tauri::command]
+pub async fn deep_link_open(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Option<crate::links::Outcome>, String> {
+    shell(&webview)?;
+    crate::links::open(&app).await
+}
 #[tauri::command]
 pub fn unread_list(
     webview: tauri::Webview,
@@ -288,6 +399,13 @@ async fn complete_sign_in(
         .map_err(|_| "Could not access the existing private credential.")?;
     // Invalidate the old worker before changing account identity or credentials.
     crate::notifications::stop(app, id);
+    for (label, view) in app.webviews() {
+        if label.starts_with(&format!("popup-{id}-")) {
+            view.window()
+                .close()
+                .map_err(|_| "Could not close the Moodle view.")?;
+        }
+    }
     let save = || -> Result<(), String> {
         md_secrets::put(id, Kind::Token, &tokens.token)
             .map_err(|_| "Could not save the token in the OS credential store.")?;
@@ -341,6 +459,8 @@ async fn complete_sign_in(
     record(AuthEvent::CredentialsSaved);
     drop(pending);
     if let Some(view) = app.get_webview(&format!("site-{id}")) {
+        #[cfg(target_os = "macos")]
+        crate::pdf_save::remove(app, view.label());
         view.close()
             .map_err(|_| "Could not renew the Moodle view.")?;
     }
@@ -358,6 +478,13 @@ pub async fn site_switch(
     restore_site(&app, &id).await
 }
 pub async fn restore_site(app: &AppHandle, id: &str) -> Result<(), String> {
+    restore_site_at(app, id, None).await
+}
+pub async fn restore_site_at(
+    app: &AppHandle,
+    id: &str,
+    destination: Option<Url>,
+) -> Result<(), String> {
     let state = app.state::<AppState>();
     let _switch = state.switching.lock().await;
     let site = saved_site(app, id)?;
@@ -377,8 +504,14 @@ pub async fn restore_site(app: &AppHandle, id: &str) -> Result<(), String> {
         if let Ok(private) = md_secrets::get(id, Kind::Private) {
             match client.autologin_key(&token, &private).await {
                 Ok(key) => {
-                    let target = md_moodle::autologin_target(&base, &key, site.user_id)
-                        .map_err(|e| e.to_string())?;
+                    let dashboard = base.join("my/").map_err(|_| "Invalid site URL.")?;
+                    let target = md_moodle::autologin_target_to(
+                        &base,
+                        &key,
+                        site.user_id,
+                        destination.as_ref().unwrap_or(&dashboard),
+                    )
+                    .map_err(|e| e.to_string())?;
                     windows::switch_at(app, id, Some(target))?;
                     record(AuthEvent::SessionRestored);
                     return Ok(());
@@ -394,7 +527,7 @@ pub async fn restore_site(app: &AppHandle, id: &str) -> Result<(), String> {
     if cold {
         record(AuthEvent::BrowserSessionFallback);
     }
-    windows::switch(app, id)
+    windows::switch_at(app, id, destination)
 }
 #[tauri::command]
 pub fn show_onboarding(webview: tauri::Webview, app: AppHandle) -> Result<(), String> {
@@ -412,7 +545,7 @@ fn show_local(app: &AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub fn shell_view(webview: tauri::Webview, app: AppHandle, view: String) -> Result<(), String> {
     shell(&webview)?;
-    if !matches!(view.as_str(), "onboarding" | "settings") {
+    if !matches!(view.as_str(), "onboarding" | "settings" | "downloads") {
         return Err("Unknown shell view.".into());
     }
     show_local(&app)
@@ -467,6 +600,11 @@ pub fn settings_set(
         return Err("Could not apply the application preferences.".into());
     }
     crate::notifications::publish(&app);
+    for (label, _) in app.webviews() {
+        if label.starts_with("chrome-popup-") {
+            let _ = app.emit_to(label, "navigation://changed", ());
+        }
+    }
     Ok(settings)
 }
 #[tauri::command]
@@ -514,21 +652,34 @@ pub fn nav(webview: tauri::Webview, app: AppHandle, action: String) -> Result<()
     navigate(&app, &action)
 }
 pub fn navigate(app: &AppHandle, action: &str) -> Result<(), String> {
-    let id = app
-        .state::<AppState>()
-        .active
-        .lock()
-        .map_err(|_| "Site state unavailable.")?
-        .clone()
-        .ok_or("Choose a site first.")?;
-    let view = app
-        .get_webview(&format!("site-{id}"))
-        .ok_or("Moodle view missing.")?;
+    let (id, view) = windows::navigation_target(app)?;
+    navigate_view(app, &id, &view, action)
+}
+pub fn navigate_view(
+    app: &AppHandle,
+    id: &str,
+    view: &tauri::Webview,
+    action: &str,
+) -> Result<(), String> {
+    let site = saved_site(app, id)?;
+    let dashboard = normalize_site(&site.wwwroot)
+        .map_err(|e| e.to_string())?
+        .join("my/")
+        .map_err(|_| "Invalid site URL.")?;
     match action {
-        "back" => view.eval("history.back()"), "forward" => view.eval("history.forward()"), "reload" => view.reload(),
+        "back" => return windows::history(app, view, false, dashboard, id),
+        "forward" => return windows::history(app, view, true, dashboard, id),
+        "home" => {
+            if view.label().starts_with("popup-") { let _ = view.window().close(); }
+            windows::switch_at(app, id, Some(dashboard))?;
+            crate::tray::show(app);
+            let _ = app.emit_to("shell", "navigation://site-opened", id);
+            return Ok(());
+        }
+        "reload" => view.reload(),
         "open_in_browser" => {
             let url = view.url().map_err(|_| "Could not read the current page.")?;
-            if url.scheme() != "https" || url.query_pairs().any(|(k,_)| matches!(k.as_ref(), "key" | "token" | "wstoken" | "privatetoken")) { return Err("This sign-in page cannot be shared with the browser. Open the organisation’s base URL instead.".into()); }
+            if !md_moodle::shareable_url(&url) { return Err("This sign-in page cannot be shared with the browser. Open the organisation’s base URL instead.".into()); }
             return app.opener().open_url(url.as_str(), None::<&str>).map_err(|_| "Could not open the browser.".into());
         }
         _ => return Err("Unknown navigation action.".into()),

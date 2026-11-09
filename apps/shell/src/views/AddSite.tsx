@@ -42,14 +42,16 @@ export function AddSite({
   connection,
   firstRun,
   onSubmit,
+  initialUrl = "",
 }: {
+  initialUrl?: string;
   connection: Connection;
   /** No organisation connected yet: use the welcoming copy. */
   firstRun: boolean;
   onSubmit: (url: string) => void;
 }) {
   const { t } = useI18n();
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(initialUrl);
   const adding = connection.phase !== "idle" && connection.siteId === null;
   // A re-authentication from Settings also holds the single sign-in slot.
   const blocked = connection.phase !== "idle" && !adding;

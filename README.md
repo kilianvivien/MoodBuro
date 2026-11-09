@@ -72,7 +72,7 @@ crates/md-os/     Point d’extension pour les adaptateurs système
 docs/             PRD, plan Alpha, décisions et état d’implémentation
 ```
 
-Seule l’interface locale possède des permissions IPC. Les pages Moodle et les fenêtres de connexion n’ont aucun accès aux commandes privilégiées. Les jetons restent côté Rust et dans le trousseau ; les erreurs HTTP sont filtrées et les URL d’autoconnexion ne sont pas transmises à l’interface.
+Seule l’interface locale possède des permissions IPC ; les barres d’outils des fenêtres Moodle disposent de droits distincts limités à leur propre navigation. Les pages Moodle et les fenêtres de connexion n’ont aucun accès aux commandes privilégiées. Les jetons restent côté Rust et dans le trousseau ; les erreurs HTTP sont filtrées et les URL d’autoconnexion ne sont pas transmises à l’interface.
 
 Le retrait d’un site supprime ses identifiants et ses métadonnées, et demande l’effacement de son profil isolé. L’effacement WebKit est asynchrone. Sur les anciennes versions de macOS utilisant le stockage partagé, certaines données de navigateur et sessions SSO partagées peuvent subsister : c’est un point de validation encore ouvert.
 
@@ -95,10 +95,10 @@ Les contrats HTTP utilisent des réponses simulées. Ils complètent les essais 
 - Valider la connexion INSP et les environnements Moodle 4.5/5.3 avec SAML et OIDC.
 - Vérifier les profils, le trousseau et l’isolation IPC dans l’application installée.
 - Qualifier les notifications, le badge et les contrôles de barre des menus désormais implémentés.
-- Implémenter les liens profonds et la capture des téléchargements.
+- Qualifier les liens profonds et la capture des téléchargements désormais implémentés, puis ajouter le classement par cours.
 - Préparer les distributions universelles macOS, puis la signature et la notarisation.
 
-Les téléchargements sont actuellement bloqués dans les vues Moodle. Fermer la fenêtre la masque et conserve le suivi des notifications en arrière-plan. Utiliser Quitter pour arrêter l’application. La livraison native et les clics restent à qualifier avec le [script de test](docs/background-qa.md). Windows et Linux sont des cibles ultérieures, pas des plateformes validées de cette Alpha.
+Les téléchargements HTTPS de même origine sont capturés dans un dossier par organisation, avec historique, ouverture, affichage dans le Finder et confirmation des types risqués. Le classement par cours et la validation des transferts natifs restent à réaliser. Fermer la fenêtre la masque et conserve le suivi des notifications en arrière-plan. Utiliser Quitter pour arrêter l’application. La livraison native et les clics restent à qualifier avec le [script de test](docs/background-qa.md). Windows et Linux sont des cibles ultérieures, pas des plateformes validées de cette Alpha.
 
 ## Documentation
 
@@ -109,3 +109,5 @@ Le nom « Moodle Desk » présent dans les documents initiaux est le nom de trav
 ## Licence
 
 [MIT](LICENSE) — © 2026 Kilian Vivien.
+
+Le bouton Accueil Moodle permet de quitter un PDF indépendamment de son historique. Les fenêtres contextuelles Moodle conservent leur page parente et disposent de leur propre barre d’outils. L’adaptateur d’enregistrement du lecteur PDF natif utilise un rappel privé de WebKit : sa compatibilité reste à valider sur les versions macOS prises en charge.

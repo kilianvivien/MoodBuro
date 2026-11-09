@@ -45,6 +45,11 @@ pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<(
     )
     .accelerator("CmdOrCtrl+N")
     .build(app)?;
+    let home = MenuItemBuilder::with_id("home", text("Moodle Home", "Accueil Moodle"))
+        .accelerator("CmdOrCtrl+Shift+H")
+        .build(app)?;
+    let downloads =
+        MenuItemBuilder::with_id("downloads", text("Downloads", "Téléchargements")).build(app)?;
     let reload = MenuItemBuilder::with_id("reload", text("Reload Page", "Recharger la page"))
         .accelerator("CmdOrCtrl+R")
         .build(app)?;
@@ -87,9 +92,11 @@ pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<(
         .build()?;
     let view = SubmenuBuilder::new(app, text("View", "Présentation"))
         .item(&reload)
+        .item(&downloads)
         .fullscreen_with_text(text("Enter Full Screen", "Activer le plein écran"))
         .build()?;
     let go = SubmenuBuilder::new(app, text("Go", "Aller"))
+        .item(&home)
         .item(&back)
         .item(&forward)
         .separator()
@@ -118,18 +125,17 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
     rebuild(app, language)?;
     app.on_menu_event(|app, event| {
         let id = event.id().as_ref();
-        if matches!(id, "settings" | "add-site") {
+        if matches!(id, "settings" | "add-site" | "downloads") {
             let _ = crate::windows::hide_sites(app);
             if let Ok(mut active) = app.state::<crate::AppState>().active.lock() {
                 *active = None;
             }
-            let view = if id == "settings" {
-                "settings"
-            } else {
-                "onboarding"
-            };
+            let view = if id == "add-site" { "onboarding" } else { id };
             let _ = app.emit_to("shell", "shell://navigate", view);
-        } else if matches!(id, "back" | "forward" | "reload" | "open_in_browser") {
+        } else if matches!(
+            id,
+            "home" | "back" | "forward" | "reload" | "open_in_browser"
+        ) {
             if let Err(error) = crate::commands::navigate(app, id) {
                 let _ = app.emit_to("shell", "shell://error", error);
             }

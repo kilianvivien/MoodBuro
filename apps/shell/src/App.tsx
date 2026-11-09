@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useReducer, useState } from "react";
+import { useEffect, useEffectEvent, useReducer, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import {
   desktop,
@@ -12,6 +12,7 @@ import { useSettings } from "./stores/settings";
 import { connection as reduce, idle } from "./lib/connection";
 import { Sidebar, type View } from "./components/Sidebar";
 import { Toolbar } from "./components/Toolbar";
+import { Downloads } from "./views/Downloads";
 import { AddSite } from "./views/AddSite";
 import { Settings, type Notice } from "./views/Settings";
 import { I18nProvider } from "./i18n/context";
@@ -24,6 +25,10 @@ type Removal = { name: string | undefined } | { error: string };
 export default function App() {
   const { sites, active, refresh, select } = useSites();
   const settings = useSettings();
+  const [linkRequest, setLinkRequest] = useState(0);
+  const [prefill, setPrefill] = useState({ url: "", revision: 0 });
+  const consumingLink = useRef(false);
+  const linkAgain = useRef(false);
   const [view, setView] = useState<View>("onboarding");
   const [unread, setUnread] = useState<UnreadStatus[]>([]);
   const [ready, setReady] = useState(false);
@@ -81,6 +86,16 @@ export default function App() {
     }
   }
 
+  async function showDownloads() {
+    setError(null);
+    try {
+      await ipc.shellView("downloads");
+      setView("downloads");
+    } catch (cause) {
+      failed(cause);
+    }
+  }
+
   /** Done/Cancel/Escape: back to the last site, else the onboarding view. */
   function leave() {
     const target = site?.id ?? sites[0]?.id;
@@ -124,11 +139,54 @@ export default function App() {
     return true;
   }
 
+  async function consumeLink() {
+    if (consumingLink.current) {
+      linkAgain.current = true;
+      return true;
+    }
+    consumingLink.current = true;
+    try {
+      const result = await ipc.deepLink();
+      if (!result) return false;
+      setError(null);
+      dispatch({ type: "dismiss" });
+      if (result.kind === "site") {
+        select(result.siteId);
+        setView("site");
+      } else {
+        setPrefill(({ revision }) => ({
+          url: result.url,
+          revision: revision + 1,
+        }));
+        setView("onboarding");
+      }
+      return true;
+    } catch (cause) {
+      await ipc.shellView("settings").catch(() => {});
+      setView("settings");
+      failed(cause);
+      return true;
+    } finally {
+      consumingLink.current = false;
+      if (linkAgain.current) {
+        linkAgain.current = false;
+        setLinkRequest((revision) => revision + 1);
+      }
+    }
+  }
+  const onLinkPending = useEffectEvent(() => {
+    void consumeLink();
+  });
+  useEffect(() => {
+    if (ready) onLinkPending();
+  }, [ready, linkRequest]);
+
   const onSitesChanged = useEffectEvent((id: string) => {
     void refresh().catch(failed);
-    if (view === "settings") {
+    setLinkRequest((revision) => revision + 1);
+    if (view === "settings" || view === "downloads") {
       // Rust may have revealed the site; keep Settings on top.
-      void ipc.shellView("settings").catch(failed);
+      void ipc.shellView(view).catch(failed);
       return;
     }
     select(id);
@@ -137,12 +195,13 @@ export default function App() {
   const onSiteRemoved = useEffectEvent(() => {
     void refresh().catch(failed);
     // Rust hid every site view; Settings stays, anything else falls back.
-    if (view !== "settings") setView("onboarding");
+    if (view !== "settings" && view !== "downloads") setView("onboarding");
   });
   /** App-menu commands (Settings…, Add Organisation…); Rust already hid sites. */
   const onNavigate = useEffectEvent((target: string) => {
     if (target === "settings") void showSettings();
     else if (target === "onboarding") void showOnboarding();
+    else if (target === "downloads") void showDownloads();
   });
   const onAuthFinished = useEffectEvent((result: string | null) =>
     dispatch({ type: "finished", error: result }),
@@ -159,12 +218,17 @@ export default function App() {
     if (cancelled()) return;
     // Reopen the first organisation instead of the empty onboarding view.
     const first = useSites.getState().sites[0];
-    if (first) await openSite(first.id);
+    const linked = await consumeLink();
+    if (!linked && first) await openSite(first.id);
     if (!cancelled()) setReady(true);
   });
   const onKey = useEffectEvent((event: KeyboardEvent) => {
     if (event.key !== "Escape" || event.defaultPrevented) return;
-    if (view === "settings" || (view === "onboarding" && sites.length > 0))
+    if (
+      view === "settings" ||
+      view === "downloads" ||
+      (view === "onboarding" && sites.length > 0)
+    )
       leave();
   });
 
@@ -184,7 +248,15 @@ export default function App() {
     if (!desktop) return stop;
     void ipc.unread().then(setUnread).catch(failed);
     const listeners = [
+      listen("deep-link://pending", () =>
+        setLinkRequest((revision) => revision + 1),
+      ),
       listen<UnreadStatus[]>("unread://changed", (e) => setUnread(e.payload)),
+      listen<string>("navigation://site-opened", (e) => {
+        select(e.payload);
+        setView("site");
+        void refresh().catch(failed);
+      }),
       listen<string>("sites://changed", (e) => onSitesChanged(e.payload)),
       listen<string>("sites://removed", () => onSiteRemoved()),
       listen<string>("shell://navigate", (e) => onNavigate(e.payload)),
@@ -241,19 +313,25 @@ export default function App() {
           view={view}
           site={site}
           error={error}
-          canLeave={view === "settings" || sites.length > 0}
+          canLeave={
+            view === "settings" || view === "downloads" || sites.length > 0
+          }
           onNav={(action: NavAction) => void ipc.nav(action).catch(failed)}
           onDismissError={() => setError(null)}
           onLeave={leave}
+          onDownloads={() => void showDownloads()}
         />
         <main className="content" aria-busy={!ready}>
           {ready && view === "onboarding" && (
             <AddSite
+              key={prefill.revision}
+              initialUrl={prefill.url}
               connection={connection}
               firstRun={sites.length === 0}
               onSubmit={(url) => void addSite(url)}
             />
           )}
+          {ready && view === "downloads" && <Downloads sites={sites} />}
           {ready && view === "settings" && (
             <Settings
               desktop={desktop}

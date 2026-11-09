@@ -3,4 +3,8 @@
 <plist version="1.0"><dict>
 <key>CFBundleDevelopmentRegion</key><string>en</string>
 <key>CFBundleLocalizations</key><array><string>fr</string><string>en</string></array>
+<key>CFBundleURLTypes</key><array><dict>
+<key>CFBundleURLName</key><string>app.moodburo</string>
+<key>CFBundleURLSchemes</key><array><string>moodledesk</string></array>
+</dict></array>
 </dict></plist>

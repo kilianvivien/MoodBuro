@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
+import { DownloadList } from "./Downloads";
 import { AddSite } from "./AddSite";
 import { Settings } from "./Settings";
 import { idle, type Connection } from "../lib/connection";
 import type { Site } from "../ipc";
 import { I18nProvider } from "../i18n/context";
 import { Toolbar } from "../components/Toolbar";
+import { PopupBar } from "../components/PopupBar";
 import { Sidebar } from "../components/Sidebar";
 import type { Locale } from "../i18n/locale";
 import type { ReactNode } from "react";
@@ -256,4 +258,86 @@ it("labels unread counts and reconnection state in both languages", () => {
   expect(render("fr", "reauth")).toContain("Reconnecter dans Réglages");
   expect(render("fr", "reauth")).toContain("123 non lus");
   expect(render("fr", "reauth")).toContain('data-warning="true"');
+});
+
+it("prefills an unknown organisation link without starting sign-in", () => {
+  const submit = vi.fn();
+  const html = inLocale(
+    "en",
+    <AddSite
+      initialUrl="https://new.example.edu/"
+      connection={idle}
+      firstRun
+      onSubmit={submit}
+    />,
+  );
+  expect(html).toContain('value="https://new.example.edu/"');
+  expect(submit).not.toHaveBeenCalled();
+});
+
+it("blocks incomplete downloads and shows explicit risky-file confirmation", () => {
+  const props = {
+    sites: [site],
+    busy: false,
+    onOpen: vi.fn(),
+    onReveal: vi.fn(),
+    onCancel: vi.fn(),
+    onConfirm: vi.fn(),
+  };
+  const items = [
+    {
+      id: "one",
+      siteId: site.id,
+      filename: "installer.dmg",
+      state: "complete" as const,
+      startedAt: 1,
+      needsConfirmation: true,
+    },
+  ];
+  const normal = inLocale(
+    "en",
+    <DownloadList {...props} items={items} confirming={null} />,
+  );
+  expect(normal).toContain('aria-label="Open installer.dmg"');
+  expect(normal).not.toContain("alertdialog");
+  const confirmed = inLocale(
+    "fr",
+    <DownloadList {...props} items={items} confirming="one" />,
+  );
+  expect(confirmed).toContain('role="alertdialog"');
+  expect(confirmed).toContain("Ouvrir le fichier");
+  const pending = inLocale(
+    "en",
+    <DownloadList
+      {...props}
+      items={[{ ...items[0], state: "downloading" }]}
+      confirming={null}
+    />,
+  );
+  expect(pending.match(/disabled=""/g)).toHaveLength(2);
+});
+
+it("provides a Home button and a popup escape path independent of PDF JavaScript", () => {
+  for (const locale of ["en", "fr"] as const) {
+    const html = inLocale(
+      locale,
+      <Toolbar
+        view="site"
+        site={site}
+        error={null}
+        canLeave
+        onNav={vi.fn()}
+        onDismissError={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
+    expect(html).toContain(
+      locale === "fr"
+        ? 'aria-label="Accueil Moodle"'
+        : 'aria-label="Moodle Home"',
+    );
+  }
+  const popup = renderToStaticMarkup(<PopupBar />);
+  expect(popup).toMatch(/Back to Moodle|Retour à Moodle/);
+  expect(popup).toContain('disabled=""');
 });

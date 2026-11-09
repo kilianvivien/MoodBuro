@@ -39,12 +39,23 @@ pub struct Notification {
     pub time_created: i64,
     pub read: bool,
 }
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Download {
+    pub id: String,
+    pub site_id: String,
+    pub filename: String,
+    #[serde(skip_serializing)]
+    pub local_path: String,
+    pub state: String,
+    pub started_at: i64,
+}
 pub struct Store(Connection);
 impl Store {
     pub fn open(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 3 {
+        if version > 4 {
             return Err(rusqlite::Error::InvalidQuery);
         }
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; BEGIN;
@@ -52,8 +63,74 @@ impl Store {
             CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS notification_state (site_id TEXT PRIMARY KEY REFERENCES sites(id) ON DELETE CASCADE, checkpoint INTEGER NOT NULL, unread INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS notifications (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, moodle_id INTEGER NOT NULL, subject TEXT NOT NULL, time_created INTEGER NOT NULL, read INTEGER NOT NULL, PRIMARY KEY(site_id,moodle_id));
-            PRAGMA user_version=3; COMMIT;")?;
+            CREATE TABLE IF NOT EXISTS downloads (id TEXT PRIMARY KEY, site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, filename TEXT NOT NULL, local_path TEXT NOT NULL, state TEXT NOT NULL, started_at INTEGER NOT NULL);
+            PRAGMA user_version=4; COMMIT;")?;
         Ok(Self(connection))
+    }
+    pub fn download_insert(&self, item: &Download) -> rusqlite::Result<()> {
+        self.0.execute(
+            "INSERT INTO downloads VALUES (?1,?2,?3,?4,?5,?6)",
+            params![
+                item.id,
+                item.site_id,
+                item.filename,
+                item.local_path,
+                item.state,
+                item.started_at
+            ],
+        )?;
+        Ok(())
+    }
+    pub fn download_insert_for_user(&self, item: &Download, user_id: i64) -> rusqlite::Result<()> {
+        let inserted = self.0.execute(
+            "INSERT INTO downloads SELECT ?1,?2,?3,?4,?5,?6 FROM sites WHERE id=?2 AND user_id=?7",
+            params![
+                item.id,
+                item.site_id,
+                item.filename,
+                item.local_path,
+                item.state,
+                item.started_at,
+                user_id
+            ],
+        )?;
+        if inserted == 1 {
+            Ok(())
+        } else {
+            Err(rusqlite::Error::InvalidQuery)
+        }
+    }
+    pub fn download_finish(&self, id: &str, path: &str, state: &str) -> rusqlite::Result<()> {
+        let filename = std::path::Path::new(path)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("download");
+        self.0.execute(
+            "UPDATE downloads SET local_path=?2,state=?3,filename=?4 WHERE id=?1",
+            params![id, path, state, filename],
+        )?;
+        Ok(())
+    }
+    pub fn downloads_recent(&self) -> rusqlite::Result<Vec<Download>> {
+        let mut stmt = self.0.prepare("SELECT id,site_id,filename,local_path,state,started_at FROM downloads ORDER BY started_at DESC,rowid DESC LIMIT 20")?;
+        let items = stmt.query_map([], |r| {
+            Ok(Download {
+                id: r.get(0)?,
+                site_id: r.get(1)?,
+                filename: r.get(2)?,
+                local_path: r.get(3)?,
+                state: r.get(4)?,
+                started_at: r.get(5)?,
+            })
+        })?;
+        items.collect()
+    }
+    pub fn downloads_interrupt(&self) -> rusqlite::Result<()> {
+        self.0.execute(
+            "UPDATE downloads SET state='failed' WHERE state='downloading'",
+            [],
+        )?;
+        Ok(())
     }
     pub fn notification_state(&self, id: &str) -> rusqlite::Result<Option<(i64, u64)>> {
         use rusqlite::OptionalExtension;
@@ -174,7 +251,7 @@ impl Store {
     pub fn update(&self, site: &Site) -> rusqlite::Result<()> {
         let tx = self.0.unchecked_transaction()?;
         // A different account must start with a fresh, silent notification seed.
-        for table in ["notifications", "notification_state"] {
+        for table in ["notifications", "notification_state", "downloads"] {
             tx.execute(&format!("DELETE FROM {table} WHERE site_id=?1 AND EXISTS (SELECT 1 FROM sites WHERE id=?1 AND user_id<>?2)"), params![site.id, site.user_id])?;
         }
         tx.execute(
@@ -353,5 +430,60 @@ mod notification_tests {
             .query_row("SELECT COUNT(*) FROM notifications", [], |r| r.get(0))
             .unwrap();
         assert_eq!(count, 0);
+    }
+}
+
+#[cfg(test)]
+mod download_tests {
+    use super::*;
+    #[test]
+    fn interrupted_history_final_names_and_cascade_cleanup() {
+        let store = Store::open(":memory:").unwrap();
+        let mut site = Site {
+            id: "site".into(),
+            wwwroot: "https://example.org/".into(),
+            name: "Example".into(),
+            user_id: 1,
+            full_name: "Learner".into(),
+        };
+        store.insert(&site).unwrap();
+        for n in 0..21 {
+            store
+                .download_insert(&Download {
+                    id: n.to_string(),
+                    site_id: site.id.clone(),
+                    filename: "notes.pdf".into(),
+                    local_path: "/private/staging/notes.pdf".into(),
+                    state: "downloading".into(),
+                    started_at: n,
+                })
+                .unwrap();
+        }
+        assert_eq!(store.downloads_recent().unwrap().len(), 20);
+        store
+            .download_finish("20", "/home/Moodle/notes (2).pdf", "complete")
+            .unwrap();
+        store.downloads_interrupt().unwrap();
+        let recent = store.downloads_recent().unwrap();
+        assert_eq!(recent[0].filename, "notes (2).pdf");
+        assert_eq!(recent[0].state, "complete");
+        assert_eq!(recent[1].state, "failed");
+        store.update(&site).unwrap();
+        assert_eq!(store.downloads_recent().unwrap().len(), 20);
+        site.user_id = 2;
+        store.update(&site).unwrap();
+        assert!(store.downloads_recent().unwrap().is_empty());
+        store
+            .download_insert(&Download {
+                id: "new".into(),
+                site_id: site.id.clone(),
+                filename: "file.pdf".into(),
+                local_path: "/home/Moodle/file.pdf".into(),
+                state: "complete".into(),
+                started_at: 22,
+            })
+            .unwrap();
+        store.remove("site").unwrap();
+        assert!(store.downloads_recent().unwrap().is_empty());
     }
 }

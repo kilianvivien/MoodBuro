@@ -3,6 +3,8 @@ import {
   ArrowRight,
   CircleAlert,
   ExternalLink,
+  Download,
+  House,
   RotateCw,
   X,
 } from "lucide-react";
@@ -21,6 +23,7 @@ export function Toolbar({
   onNav,
   onDismissError,
   onLeave,
+  onDownloads,
 }: {
   view: View;
   site: Site | undefined;
@@ -34,6 +37,7 @@ export function Toolbar({
   onNav: (action: NavAction) => void;
   onDismissError: () => void;
   onLeave: () => void;
+  onDownloads?: () => void;
 }) {
   const i18n = useI18n();
   const { t } = i18n;
@@ -74,6 +78,14 @@ export function Toolbar({
           >
             <button
               className="tool"
+              title={t.toolbar.home}
+              aria-label={t.toolbar.home}
+              onClick={() => onNav("home")}
+            >
+              <House {...icon} />
+            </button>
+            <button
+              className="tool"
               title={t.toolbar.back}
               aria-label={t.toolbar.back}
               onClick={() => onNav("back")}
@@ -102,6 +114,16 @@ export function Toolbar({
             <span>{displayHost(site.wwwroot)}</span>
           </div>
           {alert}
+          {onDownloads && (
+            <button
+              className="tool"
+              title={t.toolbar.downloads}
+              aria-label={t.toolbar.downloads}
+              onClick={onDownloads}
+            >
+              <Download {...icon} />
+            </button>
+          )}
           <button
             className="tool"
             title={t.toolbar.openInBrowser}
@@ -117,13 +139,15 @@ export function Toolbar({
             <h1>
               {view === "settings"
                 ? t.toolbar.settings
-                : t.toolbar.addOrganisation}
+                : view === "downloads"
+                  ? t.toolbar.downloads
+                  : t.toolbar.addOrganisation}
             </h1>
           </div>
           {alert}
           {canLeave && (
             <button className="button" onClick={onLeave}>
-              {view === "settings" ? t.toolbar.done : t.toolbar.cancel}
+              {view === "onboarding" ? t.toolbar.cancel : t.toolbar.done}
             </button>
           )}
         </>

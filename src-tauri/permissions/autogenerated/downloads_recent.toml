@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-downloads-recent"
+description = "Enables the downloads_recent command without any pre-configured scope."
+commands.allow = ["downloads_recent"]
+
+[[permission]]
+identifier = "deny-downloads-recent"
+description = "Denies the downloads_recent command without any pre-configured scope."
+commands.deny = ["downloads_recent"]

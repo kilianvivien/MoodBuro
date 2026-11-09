@@ -4,7 +4,7 @@ import type { Site, UnreadStatus } from "../ipc";
 import { displayHost, initials } from "../lib/site";
 import { useI18n } from "../i18n/context";
 
-export type View = "site" | "onboarding" | "settings";
+export type View = "site" | "onboarding" | "settings" | "downloads";
 
 /** Up/Down/Home/End move focus between sidebar items, like a native source list. */
 function moveFocus(event: KeyboardEvent<HTMLElement>) {

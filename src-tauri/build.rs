@@ -2,6 +2,12 @@ fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
             "sites_list",
+            "popup_context",
+            "popup_nav",
+            "deep_link_open",
+            "downloads_recent",
+            "download_open",
+            "download_reveal",
             "unread_list",
             "site_label_set",
             "site_add",

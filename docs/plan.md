@@ -11,7 +11,7 @@ This is the working checklist for project advancement. The [PRD](prd.md) defines
 | Milestone | Status | Remaining gate |
 | --- | --- | --- |
 | M0 — architecture and sign-in spike | In progress | Repeatable three-site login/SSO tests, platform/security validation and D1–D5 decisions |
-| M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, deep links, downloads and release qualification |
+| M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, course download routing, installed-app validation and release qualification |
 | First tester Alpha | Not ready for distribution | All Alpha exit criteria, universal packaging and private distribution setup |
 
 The INSP dashboard has been observed authenticated in the app. This is a successful real-site observation; it does not close the complete SSO, session-restoration or security test matrix.
@@ -60,9 +60,9 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 ### Security boundaries and automated verification
 
 - [x] Grant privileged IPC only to the local shell, with explicit command permissions and caller checks.
-- [x] Enforce origin-based navigation policy; block unmanaged downloads and popups for now.
+- [x] Enforce origin-based navigation policy; capture managed downloads and isolate controlled same-origin popups behind separate local toolbar permissions.
 - [x] Add unit/contract tests for callback and URL policies, HTTP behavior, metadata/settings/lifecycle and localization.
-- [x] Pass the latest local frontend build, lint/format checks, **43 UI tests**, **24 Rust tests**, workspace Clippy and shell-capability regression checks.
+- [x] Pass the latest local frontend build, lint/format checks, **46 UI tests**, **34 Rust tests**, workspace Clippy and shell-capability regression checks.
 - [x] Build a local ad-hoc-signed macOS app bundle; this is not a notarized distribution release.
 - [x] Review available dev logs and metadata schema without exposing credentials; record findings in the [auth review](auth-review.md).
 
@@ -98,12 +98,13 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 
 ### 3. Add deep links and safe download capture
 
-- [ ] Register `moodledesk://` and single-instance forwarding; route links only to an accepted site/path.
-- [ ] Prefill onboarding for an unknown site opened through a deep link.
+- [x] Register `moodledesk://` on macOS and single-instance argument forwarding; queue validated links until the shell is ready and route to the accepted installation root.
+- [x] Prefill HTTPS onboarding for unknown deep-link origins without starting sign-in automatically.
 - [ ] Validate WKWebView download destination/finish behavior (D5).
-- [ ] Route downloads into the correct site/course folder with safe names and collision handling.
-- [ ] Persist download history and expose recent downloads with open/reveal actions.
-- [ ] Require confirmation for risky file types and prevent automatic opening.
+- [x] Capture same-origin authenticated downloads into a per-site Downloads folder, sanitize names and publish atomically without overwriting collisions.
+- [ ] Add course discovery/context mapping and course-folder routing.
+- [x] Migrate download history, mark interrupted transfers failed on restart, and expose recent downloads with Open/Show in Finder from the toolbar, native menu and tray.
+- [x] Require inline confirmation for risky/unknown file types, revalidate paths in Rust and never auto-open downloads.
 - [ ] Verify installed-app deep links and session-authenticated downloads across the test rigs.
 
 ### 4. Prepare the tester Alpha
@@ -126,7 +127,7 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 - [ ] Developer ID signing/notarization and managed deployment work.
 - [ ] Windows and Linux platform validation and releases.
 
-These are roadmap items, not enabled features. Downloads are currently blocked in Moodle views. Closing the window now hides it and keeps polling active; Quit ends the process.
+These are roadmap items, not enabled features. Same-origin HTTPS downloads are captured into per-site Downloads folders. Course routing and native transfer qualification remain open. Closing the window hides it and keeps polling active; Quit ends the process.
 
 ## Evidence and related documents
 
@@ -149,3 +150,20 @@ These are roadmap items, not enabled features. Downloads are currently blocked i
 Implemented on 9 November 2026. One cancellable worker per saved account polls every 120 seconds, backs off to 15 minutes, and stops for missing/invalid tokens. Check Now coalesces requests. New items are checked even when the unread total is unchanged. SQLite schema v3 migrates existing sites, stores metadata without credentials/context URLs, caps history at 100 rows per site, and deletes notification state with the account. Reconnect preserves checkpoints for the same account and resets them for a different Moodle user. The old worker is invalidated before credential changes.
 
 Verification: 43 UI tests, 24 Rust tests, frontend production build, lint/format, workspace Clippy and shell-only IPC regression checks pass. HTTP contracts match the published Moodle 4.5 API but remain synthetic. [Background QA](background-qa.md) records the required live/installed-app tests. M0 and release gates remain open; no credentials, certificates or hosting setup were requested.
+
+## Deep links and download capture slice
+
+Implemented on 9 November 2026. Native macOS URL events and single-instance CLI forwarding share a bounded Rust inbox. Deep links preserve query/fragment, select the longest saved installation root, reject credentials/traversal/credential-bearing parameters and keep the target inside the autologin exchange. Unknown hosts prefill their HTTPS origin for user review. Failed restoration retains the destination for reconnect. No raw link enters logs or SQLite.
+
+Downloads use WebKit's authenticated session and a private staging directory within `~/Moodle/<site-name>-<uuid>/Downloads/`. Completion URLs map to staged files because macOS omits the completion path. Atomic hard-link publication avoids overwrites and preserves the downloaded inode. Same-URL overlaps are conservatively reserved until restart to avoid mistaking a rejected request's late callback for a later transfer. History excludes source/page URLs and frontend payloads exclude local paths. Schema v4 handles interruption and account cleanup; downloaded files remain on disk after removal.
+
+Verification: 46 UI tests and 34 Rust tests, frontend production build/lint/format, workspace Clippy and IPC checks pass. [Deep-link/download QA](links-downloads-qa.md) lists native checks, limitations and remaining D5 qualification. No real-account SSO or authenticated-transfer gate is closed by these checks.
+
+## Follow-up: PDF escape paths and usable popups
+
+- [x] Add a persistent Moodle Home button and matching Go-menu shortcut.
+- [x] Replace macOS JavaScript Back/Forward with native WKWebView history, with a dashboard escape path.
+- [x] Preserve the parent Moodle page for same-origin popups and provide a local toolbar with history, parent return, Home and Downloads.
+- [x] Route PDFKit Save bytes through managed download history using a bounded macOS delegate compatibility adapter.
+- [x] Shorten menu-bar site rows and group site actions/recent files in native submenus.
+- [ ] Validate native PDF Save, popup/opener/close/history, blob PDFs and menu sizing in real sessions on the supported macOS matrix. The PDF save-data callback is a WebKit-private API and remains an explicit compatibility gate.

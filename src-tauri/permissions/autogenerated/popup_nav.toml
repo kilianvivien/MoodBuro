@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-popup-nav"
+description = "Enables the popup_nav command without any pre-configured scope."
+commands.allow = ["popup_nav"]
+
+[[permission]]
+identifier = "deny-popup-nav"
+description = "Denies the popup_nav command without any pre-configured scope."
+commands.deny = ["popup_nav"]

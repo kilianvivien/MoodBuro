@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "popup-chrome",
+  "description": "Local popup toolbar only. No remote Moodle/auth view matches this label or has a remote grant.",
+  "local": true,
+  "webviews": ["chrome-popup-*"],
+  "permissions": ["core:event:allow-listen", "core:event:allow-unlisten", "allow-popup-context", "allow-popup-nav"]
+}

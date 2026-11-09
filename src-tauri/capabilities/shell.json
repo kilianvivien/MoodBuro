@@ -22,6 +22,10 @@
     "core:window:allow-start-dragging",
     "core:window:allow-internal-toggle-maximize",
     "allow-site-label-set",
-    "allow-unread-list"
+    "allow-unread-list",
+    "allow-deep-link-open",
+    "allow-downloads-recent",
+    "allow-download-open",
+    "allow-download-reveal"
   ]
 }

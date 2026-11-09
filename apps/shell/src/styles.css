@@ -1042,3 +1042,55 @@ ol {
   background: var(--control);
   color: var(--red-text);
 }
+
+.download-info {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+.download-info strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.download-info span {
+  font-size: var(--text-caption);
+  color: var(--label-2);
+}
+.download-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+/* Popup windows use the standard native titlebar; their local toolbar is 44 pt.
+   Keep this height in sync with windows::resize_popup. */
+.popup-bar {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  background: var(--toolbar);
+  border-bottom: 1px solid var(--separator);
+}
+.popup-bar h1 {
+  flex: 1;
+  min-width: 0;
+  margin: 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+.popup-error {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--red-text);
+  font-size: var(--text-caption);
+}

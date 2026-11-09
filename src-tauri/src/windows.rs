@@ -1,7 +1,7 @@
 use crate::AppState;
 use md_moodle::{navigation, Navigation};
 use tauri::{
-    webview::WebviewBuilder, AppHandle, LogicalPosition, LogicalSize, Manager, WebviewUrl,
+    webview::WebviewBuilder, AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, WebviewUrl,
 };
 use tauri_plugin_opener::OpenerExt;
 
@@ -107,10 +107,19 @@ pub fn switch_at(app: &AppHandle, id: &str, target: Option<url::Url>) -> Result<
         .find(|s| s.id == id)
         .ok_or("Unknown site.")?;
     let label = format!("site-{id}");
-    if app.get_webview(&label).is_none() {
+    if let Some(view) = app.get_webview(&label) {
+        if let Some(target) = target {
+            view.navigate(target).map_err(|_| "Navigation failed.")?;
+        }
+    } else {
         let base = md_moodle::normalize_site(&site.wwwroot).map_err(|e| e.to_string())?;
         let policy_base = base.clone();
         let handle = app.clone();
+        let download_app = app.clone();
+        let download_site = id.to_owned();
+        let download_user = site.user_id;
+        let popup_app = app.clone();
+        let popup_site = site.clone();
         let builder = WebviewBuilder::new(
             &label,
             WebviewUrl::External(
@@ -120,14 +129,22 @@ pub fn switch_at(app: &AppHandle, id: &str, target: Option<url::Url>) -> Result<
         .on_navigation(move |target| match navigation(&policy_base, target) {
             Navigation::Allow => true,
             Navigation::External => {
-                let _ = handle.opener().open_url(target.as_str(), None::<&str>);
+                if md_moodle::shareable_url(target) {
+                    let _ = handle.opener().open_url(target.as_str(), None::<&str>);
+                }
                 false
             }
             Navigation::Block => false,
         })
-        // No unmanaged file downloads before the W5 capture implementation.
-        .on_download(|_, _| false)
-        .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny);
+        .on_download(move |_, event| {
+            crate::downloads::handle_for_user(
+                &download_app,
+                &download_site,
+                event,
+                Some(download_user),
+            )
+        })
+        .on_new_window(move |url, features| popup(&popup_app, &popup_site, url, features));
         let builder = profile(builder, id)?;
         app.get_window("main")
             .ok_or("Main window missing.")?
@@ -137,6 +154,11 @@ pub fn switch_at(app: &AppHandle, id: &str, target: Option<url::Url>) -> Result<
                 LogicalSize::new(1., 1.),
             )
             .map_err(|_| "Could not create the Moodle view.")?;
+    }
+    #[cfg(target_os = "macos")]
+    if let Some(view) = app.get_webview(&label) {
+        crate::pdf_save::install(app, &view, id, site.user_id)
+            .map_err(|_| "Could not prepare PDF saving.")?;
     }
     resize(app).map_err(|_| "Could not resize the Moodle view.")?;
     hide_sites(app).map_err(|_| "Could not switch sites.")?;
@@ -190,6 +212,13 @@ pub fn profile(
 
 pub fn remove_session(app: &AppHandle, site: &md_store::Site) -> Result<(), String> {
     let label = format!("site-{}", site.id);
+    for (label, view) in app.webviews() {
+        if label.starts_with(&format!("popup-{}-", site.id)) {
+            view.window()
+                .close()
+                .map_err(|_| "Could not close the Moodle view.")?;
+        }
+    }
     if isolated_profiles() {
         let view = match app.get_webview(&label) {
             Some(view) => view,
@@ -221,9 +250,13 @@ pub fn remove_session(app: &AppHandle, site: &md_store::Site) -> Result<(), Stri
             .map_err(|_| "Could not clear the site’s browser data.")?;
         view.close()
             .map_err(|_| "Could not close the Moodle view.")?;
+        #[cfg(target_os = "macos")]
+        crate::pdf_save::remove(app, &label);
     } else if let Some(view) = app.get_webview(&label) {
         view.close()
             .map_err(|_| "Could not close the Moodle view.")?;
+        #[cfg(target_os = "macos")]
+        crate::pdf_save::remove(app, &label);
     }
     // Also clear matching legacy cookies from foundation builds using the default store.
     // Keep cookies that another saved site shares (old macOS profiles can share an IdP).
@@ -269,6 +302,252 @@ fn cookie_matches(host: &str, domain: &str) -> bool {
             .to_ascii_lowercase()
             .ends_with(&format!(".{}", domain.to_ascii_lowercase()))
 }
+/// Native menu commands follow the focused Moodle popup; shell controls target
+/// the selected site. Popups never become privileged shell webviews.
+pub fn navigation_target(app: &AppHandle) -> Result<(String, tauri::Webview), String> {
+    let state = app.state::<AppState>();
+    let sites = state
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?
+        .sites()
+        .map_err(|_| "Could not read sites.")?;
+    for (label, view) in app.webviews() {
+        if label.starts_with("popup-") && view.window().is_focused().unwrap_or(false) {
+            if let Some(site) = sites
+                .iter()
+                .find(|site| label.starts_with(&format!("popup-{}-", site.id)))
+            {
+                return Ok((site.id.clone(), view));
+            }
+        }
+    }
+    let id = state
+        .active
+        .lock()
+        .map_err(|_| "Site state unavailable.")?
+        .clone()
+        .ok_or("Choose a site first.")?;
+    let view = app
+        .get_webview(&format!("site-{id}"))
+        .ok_or("Moodle view missing.")?;
+    Ok((id, view))
+}
+
+pub fn history(
+    app: &AppHandle,
+    view: &tauri::Webview,
+    forward: bool,
+    dashboard: url::Url,
+    site_id: &str,
+) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        let fallback = view.clone();
+        let site_id = site_id.to_owned();
+        let app = app.clone();
+        view.with_webview(move |native| unsafe {
+            // Tauri runs this closure on the main thread and keeps WKWebView alive.
+            let webview: &objc2_web_kit::WKWebView = &*native.inner().cast();
+            if let Some(item) = native_history_item(webview, forward, &dashboard) {
+                let _ = webview.goToBackForwardListItem(&item);
+            } else if forward {
+                // No useful forward entry.
+            } else if fallback.label().starts_with("popup-") {
+                let _ = fallback.window().close();
+                let _ = switch(&app, &site_id);
+                let _ = app.emit_to("shell", "navigation://site-opened", &site_id);
+                crate::tray::show(&app);
+            } else {
+                let _ = fallback.navigate(dashboard);
+            }
+        })
+        .map_err(|_| "Navigation failed.".to_owned())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (app, dashboard, site_id);
+        view.eval(if forward {
+            "history.forward()"
+        } else {
+            "history.back()"
+        })
+        .map_err(|_| "Navigation failed.".into())
+    }
+}
+
+fn popup(
+    app: &AppHandle,
+    site: &md_store::Site,
+    url: url::Url,
+    features: tauri::webview::NewWindowFeatures,
+) -> tauri::webview::NewWindowResponse<tauri::Wry> {
+    use tauri::{webview::NewWindowResponse, WebviewWindowBuilder};
+    let Ok(base) = md_moodle::normalize_site(&site.wwwroot) else {
+        return NewWindowResponse::Deny;
+    };
+    let blank = url.as_str() == "about:blank";
+    if !blank && navigation(&base, &url) != Navigation::Allow {
+        if navigation(&base, &url) == Navigation::External && md_moodle::shareable_url(&url) {
+            let _ = app.opener().open_url(url.as_str(), None::<&str>);
+        }
+        return NewWindowResponse::Deny;
+    }
+    let prefix = format!("popup-{}-", site.id);
+    if app
+        .webviews()
+        .keys()
+        .filter(|label| label.starts_with(&prefix))
+        .count()
+        >= 3
+    {
+        let _ = app.emit_to(
+            "shell",
+            "shell://error",
+            "Close a Moodle popup window before opening another.",
+        );
+        return NewWindowResponse::Deny;
+    }
+    let label = format!("{prefix}{}", uuid::Uuid::new_v4());
+    let policy_base = base;
+    let navigation_app = app.clone();
+    let download_app = app.clone();
+    let download_site = site.id.clone();
+    let download_user = site.user_id;
+    let child_app = app.clone();
+    let child_site = site.clone();
+    let builder = WebviewWindowBuilder::new(
+        app,
+        &label,
+        WebviewUrl::External(url::Url::parse("about:blank").expect("blank")),
+    )
+    // Preserves opener/window.close semantics and the originating WebKit session.
+    .window_features(features)
+    .title(&site.name)
+    .inner_size(960., 720.)
+    .min_inner_size(640., 480.)
+    .on_navigation(move |url| {
+        if url.as_str() == "about:blank" {
+            return true;
+        }
+        match navigation(&policy_base, url) {
+            Navigation::Allow => true,
+            Navigation::External => {
+                if md_moodle::shareable_url(url) {
+                    let _ = navigation_app.opener().open_url(url.as_str(), None::<&str>);
+                }
+                false
+            }
+            Navigation::Block => false,
+        }
+    })
+    .on_page_load(|view, _| {
+        let _ = view.emit_to(
+            format!("chrome-{}", view.label()),
+            "navigation://changed",
+            (),
+        );
+    })
+    .on_download(move |_, event| {
+        crate::downloads::handle_for_user(&download_app, &download_site, event, Some(download_user))
+    })
+    .on_new_window(move |url, features| popup(&child_app, &child_site, url, features));
+    match builder.build() {
+        Ok(window) => {
+            let remote: &tauri::Webview = window.as_ref();
+            if remote.set_auto_resize(false).is_err() {
+                let _ = window.close();
+                return NewWindowResponse::Deny;
+            }
+            let chrome = WebviewBuilder::new(
+                format!("chrome-{label}"),
+                WebviewUrl::App("index.html?popup".into()),
+            );
+            if remote
+                .window()
+                .add_child(
+                    chrome,
+                    LogicalPosition::new(0., 0.),
+                    LogicalSize::new(960., 44.),
+                )
+                .is_err()
+            {
+                let _ = window.close();
+                return NewWindowResponse::Deny;
+            }
+            let _ = resize_popup(&remote.window());
+            #[cfg(target_os = "macos")]
+            let _ = crate::pdf_save::install(app, window.as_ref(), &site.id, site.user_id);
+            NewWindowResponse::Create { window }
+        }
+        Err(_) => NewWindowResponse::Deny,
+    }
+}
+
+pub fn resize_popup(window: &tauri::Window) -> tauri::Result<()> {
+    let size = window
+        .inner_size()?
+        .to_logical::<f64>(window.scale_factor()?);
+    if let Some(remote) = window.app_handle().get_webview(window.label()) {
+        remote.set_position(LogicalPosition::new(0., 44.))?;
+        remote.set_size(LogicalSize::new(size.width, (size.height - 44.).max(1.)))?;
+    }
+    if let Some(chrome) = window
+        .app_handle()
+        .get_webview(&format!("chrome-{}", window.label()))
+    {
+        chrome.set_size(LogicalSize::new(size.width, 44.))?;
+    }
+    Ok(())
+}
+#[cfg(target_os = "macos")]
+unsafe fn native_history_item(
+    view: &objc2_web_kit::WKWebView,
+    forward: bool,
+    base: &url::Url,
+) -> Option<objc2::rc::Retained<objc2_web_kit::WKBackForwardListItem>> {
+    // Called only inside with_webview's main-thread closure. Retained list items
+    // stay valid through goToBackForwardListItem without replaying one-use login URLs.
+    unsafe {
+        let list = view.backForwardList();
+        let entries = if forward {
+            list.forwardList()
+        } else {
+            list.backList()
+        };
+        let mut entries: Vec<_> = entries.iter().collect();
+        if !forward {
+            entries.reverse();
+        }
+        entries.into_iter().find(|item| {
+            item.URL()
+                .absoluteString()
+                .and_then(|value| url::Url::parse(&value.to_string()).ok())
+                .is_some_and(|target| md_moodle::history_url_allowed(base, &target))
+        })
+    }
+}
+pub async fn history_state(view: &tauri::Webview, base: url::Url) -> Result<(bool, bool), String> {
+    #[cfg(target_os = "macos")]
+    {
+        let (send, receive) = tokio::sync::oneshot::channel();
+        view.with_webview(move |native| unsafe {
+            let webview: &objc2_web_kit::WKWebView = &*native.inner().cast();
+            let _ = send.send((
+                native_history_item(webview, false, &base).is_some(),
+                native_history_item(webview, true, &base).is_some(),
+            ));
+        })
+        .map_err(|_| "Navigation failed.")?;
+        receive.await.map_err(|_| "Navigation failed.".into())
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (view, base);
+        Ok((true, true))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

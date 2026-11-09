@@ -1,4 +1,5 @@
 //! Moodle protocol and navigation policy. No dependency on Tauri.
+pub mod deep_link;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde::{de::DeserializeOwned, Deserialize};
 use url::Url;
@@ -6,6 +7,8 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("This Moodle link is invalid or does not match a saved organisation.")]
+    InvalidDeepLink,
     #[error("Enter an HTTPS Moodle base URL, without a query or fragment.")]
     InvalidUrl,
     #[error("The sign-in response is invalid or belongs to another sign-in attempt.")]
@@ -98,6 +101,19 @@ pub enum Navigation {
     Block,
 }
 pub fn navigation(site: &Url, target: &Url) -> Navigation {
+    if target.scheme() == "blob" {
+        return match Url::parse(target.path()) {
+            Ok(inner)
+                if inner.scheme() == "https"
+                    && inner.username().is_empty()
+                    && inner.password().is_none()
+                    && inner.origin() == site.origin() =>
+            {
+                Navigation::Allow
+            }
+            _ => Navigation::Block,
+        };
+    }
     if target.scheme() != "https" || !target.username().is_empty() || target.password().is_some() {
         return Navigation::Block;
     }
@@ -106,6 +122,32 @@ pub fn navigation(site: &Url, target: &Url) -> Navigation {
     } else {
         Navigation::External
     }
+}
+
+/// Blank bootstrap pages and one-use authentication URLs are not useful history.
+pub fn history_url_allowed(base: &Url, target: &Url) -> bool {
+    navigation(base, target) == Navigation::Allow
+        && (target.scheme() == "blob" || shareable_url(target))
+        && ![
+            "/admin/tool/mobile/autologin.php",
+            "/admin/tool/mobile/launch.php",
+            "/login/token.php",
+        ]
+        .iter()
+        .any(|path| target.path().ends_with(path))
+}
+
+/// Never send authentication material to another application through a URL.
+pub fn shareable_url(url: &Url) -> bool {
+    url.scheme() == "https"
+        && url.username().is_empty()
+        && url.password().is_none()
+        && !url.query_pairs().any(|(key, _)| {
+            matches!(
+                key.to_ascii_lowercase().as_str(),
+                "key" | "token" | "wstoken" | "privatetoken" | "sesskey" | "passport"
+            )
+        })
 }
 
 #[derive(Deserialize)]
@@ -129,6 +171,21 @@ pub struct AutologinKey {
 
 /// Never expose a one-use login URL to the shell or an unrelated origin.
 pub fn autologin_target(base: &Url, login: &AutologinKey, user_id: i64) -> Result<Url, Error> {
+    let dashboard = base.join("my/").map_err(|_| Error::InvalidUrl)?;
+    autologin_target_to(base, login, user_id, &dashboard)
+}
+
+pub fn autologin_target_to(
+    base: &Url,
+    login: &AutologinKey,
+    user_id: i64,
+    destination: &Url,
+) -> Result<Url, Error> {
+    if navigation(base, destination) != Navigation::Allow
+        || !destination.path().starts_with(base.path())
+    {
+        return Err(Error::InvalidUrl);
+    }
     let mut target = Url::parse(&login.autologinurl).map_err(|_| Error::InvalidUrl)?;
     let expected = base
         .join("admin/tool/mobile/autologin.php")
@@ -147,10 +204,7 @@ pub fn autologin_target(base: &Url, login: &AutologinKey, user_id: i64) -> Resul
         .query_pairs_mut()
         .append_pair("userid", &user_id.to_string())
         .append_pair("key", &login.key)
-        .append_pair(
-            "urltogo",
-            base.join("my/").map_err(|_| Error::InvalidUrl)?.as_str(),
-        );
+        .append_pair("urltogo", destination.as_str());
     Ok(target)
 }
 
@@ -620,6 +674,54 @@ mod callback_limits {
         assert!(matches!(
             parse_launch_token(&url, "https://example.org", "passport"),
             Err(Error::InvalidCallback)
+        ));
+    }
+}
+
+#[cfg(test)]
+mod file_navigation_tests {
+    use super::*;
+    #[test]
+    fn blob_documents_keep_their_site_boundary_and_external_links_drop_secrets() {
+        let base = normalize_site("example.org").unwrap();
+        assert_eq!(
+            navigation(
+                &base,
+                &Url::parse("blob:https://example.org/document").unwrap()
+            ),
+            Navigation::Allow
+        );
+        for target in [
+            "blob:https://other.example/document",
+            "blob:null/document",
+            "blob:https://user:pass@example.org/document",
+        ] {
+            assert_eq!(
+                navigation(&base, &Url::parse(target).unwrap()),
+                Navigation::Block
+            );
+        }
+        for target in [
+            "https://other.example/?%6bey=secret",
+            "https://other.example/?TOKEN=secret",
+            "https://user:pass@example.org/",
+            "blob:https://example.org/document",
+        ] {
+            assert!(!shareable_url(&Url::parse(target).unwrap()));
+        }
+        assert!(shareable_url(
+            &Url::parse("https://other.example/course?id=4").unwrap()
+        ));
+        for target in [
+            "about:blank",
+            "https://example.org/admin/tool/mobile/autologin.php?key=secret",
+            "https://example.org/admin/tool/mobile/launch.php",
+        ] {
+            assert!(!history_url_allowed(&base, &Url::parse(target).unwrap()));
+        }
+        assert!(history_url_allowed(
+            &base,
+            &base.join("course/view.php?id=4").unwrap()
         ));
     }
 }
