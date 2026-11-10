@@ -34,13 +34,13 @@ import {
   Skeleton,
 } from "../components/ui";
 
-function Confirmation({
+export function Confirmation({
   item,
   busy,
   onCancel,
   onOpen,
 }: {
-  item: Download;
+  item: Pick<Download, "filename">;
   busy: boolean;
   onCancel: () => void;
   onOpen: () => void;

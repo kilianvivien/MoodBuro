@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-offline-open"
+description = "Enables the offline_open command without any pre-configured scope."
+commands.allow = ["offline_open"]
+
+[[permission]]
+identifier = "deny-offline-open"
+description = "Denies the offline_open command without any pre-configured scope."
+commands.deny = ["offline_open"]

@@ -40,7 +40,7 @@ fn finish_transfer(
         transfers.remove(key)
     }
 }
-fn folder(
+pub(crate) fn folder(
     app: &AppHandle,
     site: &md_store::Site,
     course: Option<&md_store::Course>,

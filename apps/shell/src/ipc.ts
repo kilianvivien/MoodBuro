@@ -66,6 +66,46 @@ export interface Activity {
   module: string;
   refreshedAt: number;
 }
+export interface OfflineResource {
+  key: string;
+  moduleId: number;
+  sectionId: number;
+  sectionName: string;
+  activityName: string;
+  filename: string;
+  bytes: number | null;
+}
+export interface OfflineCopy {
+  id: string;
+  siteId: string;
+  courseId: number;
+  resourceKey: string;
+  moduleId: number;
+  filename: string;
+  sectionName: string;
+  bytes: number;
+  savedAt: number;
+  available: boolean;
+  needsConfirmation: boolean;
+}
+export interface OfflineOutcome {
+  key: string;
+  reused: boolean;
+  error: string | null;
+}
+export interface OfflineProgress {
+  siteId: string;
+  courseId: number;
+  key: string;
+  received: number;
+  total: number | null;
+}
+export interface OfflineCourse {
+  siteId: string;
+  courseId: number;
+  userId: number;
+}
+
 export type EventKind = "due" | "open" | "user" | "site" | "course" | "other";
 export interface AgendaEvent {
   siteId: string;
@@ -348,7 +388,108 @@ export function settingsFrom(raw: Partial<SavedSettings> | null | undefined) {
 // UI says so instead of pretending they were saved.
 let previewSettings: SavedSettings = settingsFrom(null);
 
+const demoOfflineCopies: OfflineCopy[] = [];
+const demoResources: OfflineResource[] = [
+  {
+    key: "a".repeat(64),
+    moduleId: 31,
+    sectionId: 1,
+    sectionName: "Week 1",
+    activityName: "Reading",
+    filename: "reading.pdf",
+    bytes: 524288,
+  },
+  {
+    key: "b".repeat(64),
+    moduleId: 32,
+    sectionId: 2,
+    sectionName: "Week 2",
+    activityName: "Notes",
+    filename: "notes.txt",
+    bytes: null,
+  },
+];
 export const ipc = {
+  offlineResources: (course: OfflineCourse) =>
+    desktop
+      ? invoke<{ items: OfflineResource[]; skipped: number }>(
+          "offline_resources",
+          { ...course },
+        )
+      : demo
+        ? Promise.resolve({
+            items: demoResources.map((r) => ({ ...r })),
+            skipped: 1,
+          })
+        : desktopFeature(),
+  offlineSaved: (course: OfflineCourse) =>
+    desktop
+      ? invoke<OfflineCopy[]>("offline_saved", { ...course })
+      : Promise.resolve(
+          demo
+            ? demoOfflineCopies
+                .filter(
+                  (c) =>
+                    c.siteId === course.siteId &&
+                    c.courseId === course.courseId,
+                )
+                .map((c) => ({ ...c }))
+            : [],
+        ),
+  offlineSave: async (
+    course: OfflineCourse,
+    keys: string[],
+  ): Promise<OfflineOutcome[]> => {
+    if (desktop)
+      return invoke<OfflineOutcome[]>("offline_save", { ...course, keys });
+    if (!demo) return desktopFeature();
+    await pause(600);
+    return keys.map((key) => {
+      const resource = demoResources.find((r) => r.key === key);
+      if (!resource)
+        return {
+          key,
+          reused: false,
+          error:
+            "This resource is no longer available. Reload the course file list.",
+        };
+      const reused = demoOfflineCopies.some(
+        (c) =>
+          c.resourceKey === key &&
+          c.siteId === course.siteId &&
+          c.courseId === course.courseId,
+      );
+      if (!reused)
+        demoOfflineCopies.push({
+          id: crypto.randomUUID(),
+          siteId: course.siteId,
+          courseId: course.courseId,
+          resourceKey: key,
+          moduleId: resource.moduleId,
+          filename: resource.filename,
+          sectionName: resource.sectionName,
+          bytes: resource.bytes ?? 1024,
+          savedAt: Math.floor(Date.now() / 1000),
+          available: true,
+          needsConfirmation: false,
+        });
+      return { key, reused, error: null };
+    });
+  },
+  offlineOpen: (
+    course: OfflineCourse,
+    copyId: string,
+    reveal = false,
+    confirmed = false,
+  ) =>
+    desktop
+      ? invoke<void>("offline_open", {
+          target: course,
+          copyId,
+          reveal,
+          confirmed,
+        })
+      : desktopFeature(),
   popupContext: () => invoke<PopupContext>("popup_context"),
   popupNav: (action: NavAction | "downloads") =>
     invoke<void>("popup_nav", { action }),

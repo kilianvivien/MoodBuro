@@ -9,6 +9,10 @@
   "permissions": [
     "core:event:allow-listen",
     "core:event:allow-unlisten",
+    "allow-offline-resources",
+    "allow-offline-saved",
+    "allow-offline-save",
+    "allow-offline-open",
     "allow-sites-list",
     "allow-site-move",
     "allow-agenda-export",

@@ -8,6 +8,41 @@ import { catalogues, type Messages } from "./messages";
  * exact text. Keep this list in step with the Rust messages.
  */
 const french: Record<string, string> = {
+  "This resource cannot be saved offline.":
+    "Cette ressource ne peut pas être enregistrée hors connexion.",
+  "Could not download this resource.":
+    "Impossible de télécharger cette ressource. Réessayez avec une connexion active.",
+  "This resource exceeds the 128 MB offline limit.":
+    "Cette ressource dépasse la limite de 128 Mo hors connexion.",
+  "Could not save this resource.":
+    "Impossible d’enregistrer cette ressource. Vérifiez l’espace disque et les autorisations du dossier.",
+  "This offline selection belongs to another account. Reopen the course files.":
+    "Cette sélection appartient à un autre compte. Rouvrez les fichiers du cours.",
+  "The course returned ambiguous file metadata.":
+    "Le cours a renvoyé des métadonnées de fichiers ambiguës.",
+  "This course has too many files. Save files from Moodle instead.":
+    "Ce cours contient trop de fichiers. Enregistrez-les depuis Moodle.",
+  "Could not read offline files.":
+    "Impossible de lire les fichiers hors connexion.",
+  "Could not safely publish this offline file.":
+    "Impossible de finaliser ce fichier hors connexion en toute sécurité.",
+  "Select between 1 and 50 files to save offline.":
+    "Sélectionnez entre 1 et 50 fichiers à enregistrer hors connexion.",
+  "Another offline transfer is running. Wait for it to finish.":
+    "Un autre transfert hors connexion est en cours. Attendez sa fin.",
+  "This resource is no longer available. Reload the course file list.":
+    "Cette ressource n’est plus disponible. Rechargez la liste des fichiers du cours.",
+  "Could not check available disk space.":
+    "Impossible de vérifier l’espace disque disponible.",
+  "Not enough disk space. Free at least 144 MB and try again.":
+    "Espace disque insuffisant. Libérez au moins 144 Mo puis réessayez.",
+  "The file was saved, but its offline index could not be updated. Find it in the course folder.":
+    "Le fichier a été enregistré, mais son index hors connexion n’a pas pu être actualisé. Retrouvez-le dans le dossier du cours.",
+  "This offline file is unavailable. Save a fresh copy from the course.":
+    "Ce fichier hors connexion est indisponible. Enregistrez une nouvelle copie depuis le cours.",
+  "Could not open this offline file.":
+    "Impossible d’ouvrir ce fichier hors connexion.",
+
   "Could not reorder organisations.":
     "Impossible de réordonner les organisations.",
   "Invalid calendar date range.":

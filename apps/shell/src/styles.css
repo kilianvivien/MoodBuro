@@ -1687,3 +1687,15 @@ ol {
   color: var(--red-text);
   font-size: var(--text-caption);
 }
+
+.offline-file-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.offline-file-choice input {
+  accent-color: var(--accent);
+  width: 20px;
+  height: 20px;
+}

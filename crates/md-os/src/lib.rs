@@ -6,3 +6,4 @@ pub enum Platform {
     Linux,
 }
 pub mod downloads;
+pub mod offline;

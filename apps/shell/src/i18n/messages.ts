@@ -62,6 +62,41 @@ const en = {
     footnote:
       "MoodBuro keeps the latest 100 notification subjects per organisation on this Mac. Opening one shows that organisation’s notifications page in Moodle.",
   },
+  offline: {
+    files: "Files…",
+    filesLabel: (name: string) => `Offline files for ${name}`,
+    title: "Course files",
+    back: "Back to Courses",
+    openCourse: "Open Course in Moodle",
+    hint: "Save selected plain files from Moodle resources and folders. Saved copies open without a connection. Loading and refreshing need a connection and permission to download files. Refresh is manual and one-way: changed files are saved alongside existing copies, local edits are kept, and Moodle deletions never delete local files. Account removal keeps files in the course’s Finder folder but clears this list. This is not a complete offline course.",
+    savedTitle: "Saved on This Mac",
+    availableTitle: "Available from Moodle",
+    load: "Load File List",
+    emptySaved:
+      "No saved copies for this course yet. Load the file list to choose files.",
+    noResources:
+      "No supported files were returned. Open the course in Moodle to find other resources.",
+    missing:
+      "This copy was moved or is unavailable. Refresh to save a new copy.",
+    refresh: "Refresh Copy",
+    refreshLabel: (name: string) => `Refresh offline copy of ${name}`,
+    unknownSize: "Size unknown",
+    bytes: (bytes: string) => `${bytes} bytes`,
+    tooLarge: "Exceeds the 128 MB limit. Download this file from Moodle.",
+    limit:
+      "Up to 50 files per selection, 128 MB each. One transfer at a time; at least 144 MB free space required. The latest 2,000 saved copies are shown. Transfers stop when you quit.",
+    saveSelected: (count: number) => `Save Selected (${count})`,
+    working: "Working on course files…",
+    loading: "Loading saved copies…",
+    progress: (bytes: string) =>
+      `${bytes} bytes received for the current file.`,
+    results: "Transfer results",
+    file: "Selected file",
+    unchanged: "Unchanged — existing copy kept.",
+    saved: "Saved a new copy.",
+    skipped: (count: number) =>
+      `${count} unsupported file entries were omitted. Only plain files in Moodle resources and folders are supported.`,
+  },
   courses: {
     refreshActivities: "Refresh Activities",
     title: "Courses",
@@ -362,6 +397,43 @@ const fr: Messages = {
     openMessages: "Ouvrir les messages",
     footnote:
       "MoodBuro conserve sur ce Mac les objets des 100 dernières notifications de chaque organisation. En ouvrir une affiche la page des notifications de cette organisation dans Moodle.",
+  },
+  offline: {
+    files: "Fichiers…",
+    filesLabel: (name: string) => `Fichiers hors connexion de ${name}`,
+    title: "Fichiers du cours",
+    back: "Retour aux cours",
+    openCourse: "Ouvrir le cours dans Moodle",
+    hint: "Enregistrez des fichiers choisis dans les ressources et dossiers Moodle. Les copies s’ouvrent sans connexion. Le chargement et l’actualisation nécessitent une connexion et l’autorisation de télécharger. L’actualisation est manuelle et à sens unique\u00a0: les fichiers modifiés sont enregistrés à côté des copies existantes, les modifications locales sont conservées et les suppressions Moodle ne suppriment aucun fichier local. Retirer un compte conserve les fichiers dans le dossier du cours du Finder mais efface cette liste. Il ne s’agit pas d’un cours hors connexion complet.",
+    savedTitle: "Enregistrés sur ce Mac",
+    availableTitle: "Disponibles dans Moodle",
+    load: "Charger la liste des fichiers",
+    emptySaved:
+      "Aucune copie enregistrée pour ce cours. Chargez la liste pour choisir des fichiers.",
+    noResources:
+      "Aucun fichier pris en charge n’a été renvoyé. Ouvrez le cours dans Moodle pour trouver les autres ressources.",
+    missing:
+      "Cette copie a été déplacée ou est indisponible. Actualisez pour en enregistrer une nouvelle.",
+    refresh: "Actualiser la copie",
+    refreshLabel: (name: string) =>
+      `Actualiser la copie hors connexion de ${name}`,
+    unknownSize: "Taille inconnue",
+    bytes: (bytes: string) => `${bytes} octets`,
+    tooLarge:
+      "Dépasse la limite de 128 Mo. Téléchargez ce fichier depuis Moodle.",
+    limit:
+      "50 fichiers maximum par sélection, 128 Mo chacun. Un transfert à la fois, avec au moins 144 Mo libres. Les 2 000 dernières copies sont affichées. Les transferts s’arrêtent en quittant l’app.",
+    saveSelected: (count: number) => `Enregistrer la sélection (${count})`,
+    working: "Traitement des fichiers du cours…",
+    loading: "Chargement des copies enregistrées…",
+    progress: (bytes: string) =>
+      `${bytes} octets reçus pour le fichier en cours.`,
+    results: "Résultats des transferts",
+    file: "Fichier sélectionné",
+    unchanged: "Inchangé — copie existante conservée.",
+    saved: "Nouvelle copie enregistrée.",
+    skipped: (count: number) =>
+      `${count} entrées non prises en charge ont été omises. Seuls les fichiers simples des ressources et dossiers Moodle sont pris en charge.`,
   },
   courses: {
     refreshActivities: "Actualiser les activités",

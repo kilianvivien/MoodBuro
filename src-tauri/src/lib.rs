@@ -11,6 +11,7 @@ mod menus;
 #[cfg(target_os = "macos")]
 mod native_preview;
 mod notifications;
+mod offline;
 #[cfg(target_os = "macos")]
 mod pdf_save;
 mod shortcut;
@@ -24,6 +25,7 @@ pub const OPEN_PENDING: std::time::Duration = std::time::Duration::from_secs(15)
 
 pub struct AppState {
     store: Mutex<md_store::Store>,
+    offline_job: tauri::async_runtime::Mutex<()>,
     workers: Mutex<notifications::Workers>,
     downloads: Mutex<downloads::Transfers>,
     active: Mutex<Option<String>>,
@@ -56,6 +58,7 @@ pub fn run() {
             std::fs::create_dir_all(&dir)?;
             app.manage(AppState {
                 store: Mutex::new(md_store::Store::open(dir.join("index.db"))?),
+                offline_job: tauri::async_runtime::Mutex::new(()),
                 workers: Mutex::new(Default::default()),
                 downloads: Mutex::new(Default::default()),
                 active: Mutex::new(None),
@@ -147,6 +150,10 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            commands::offline_resources,
+            commands::offline_saved,
+            commands::offline_save,
+            commands::offline_open,
             commands::sites_list,
             commands::site_move,
             commands::agenda_export,

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-offline-saved"
+description = "Enables the offline_saved command without any pre-configured scope."
+commands.allow = ["offline_saved"]
+
+[[permission]]
+identifier = "deny-offline-saved"
+description = "Denies the offline_saved command without any pre-configured scope."
+commands.deny = ["offline_saved"]

@@ -12,7 +12,7 @@ This is the working checklist for project advancement. The [PRD](prd.md) defines
 | --- | --- | --- |
 | M0 — architecture and sign-in spike | In progress | Repeatable three-site login/SSO tests, platform/security validation and D1–D5 decisions |
 | M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, course download routing and installed-app validation |
-| Expanded Alpha features — A1–A5 | A1, A2, the read-only A4 agenda and A5 export implemented against fixtures; A3 and reminders not started | Live/native validation of the built parts; selected offline files, reminders and native Calendar import qualification |
+| Expanded Alpha features — A1–A5 | A1, A2, A3 selected offline files, the read-only A4 agenda and A5 export implemented against fixtures; reminders not started | Live/native validation of the built parts; offline-file qualification, reminders and native Calendar import qualification |
 | A6 — AI assistant | Planned, not started; final Alpha feature | Both BYOK providers, explicit context sharing, bounded tools and isolation checks |
 | First tester Alpha | Not ready for distribution | All Alpha exit criteria, universal packaging and private distribution setup |
 
@@ -64,7 +64,7 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 - [x] Grant privileged IPC only to the local shell, with explicit command permissions and caller checks.
 - [x] Enforce origin-based navigation policy; capture managed downloads and isolate controlled same-origin popups behind separate local toolbar permissions.
 - [x] Add unit/contract tests for callback and URL policies, HTTP behavior, metadata/settings/lifecycle and localization.
-- [x] Pass the latest local frontend build, lint/format checks, **82 UI tests**, **59 Rust tests**, workspace Clippy and shell-capability regression checks.
+- [x] Pass the latest local frontend build, lint/format checks, **87 UI tests**, **66 Rust tests**, workspace Clippy and shell-capability regression checks.
 - [x] Build a local ad-hoc-signed macOS app bundle; this is not a notarized distribution release.
 - [x] Review available dev logs and metadata schema without exposing credentials; record findings in the [auth review](auth-review.md).
 
@@ -130,8 +130,9 @@ The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies 
 - [x] **A2:** ⌘L Quick Open over saved course names, organisations and shell views, from the Go menu, the toolbar and the keyboard.
 - [x] **A2:** explicitly refresh/cache course activities and search them in Quick Open, with oldest metadata refresh and connection limits stated.
 - [x] **A2:** opt-in global ⌘⇧M for Quick Open, registered from Rust only, saved only after a successful registration, reported in Settings when registration fails at launch, released when disabled or on quit. Cross-app conflicts that macOS does not report are a native QA item.
-- [ ] **A3:** choose course files to save offline, with known sizes, bounded transfers and safe course/section folders.
-- [ ] **A3:** browse/open saved files offline and manually refresh selected files without overwriting local edits or propagating server deletions.
+- [x] **A3:** choose course files to save offline, with known sizes, bounded transfers and safe course/section folders.
+- [x] **A3:** browse/open saved files offline and manually refresh selected files without overwriting local edits or propagating server deletions.
+- [ ] **A3 native qualification:** validate resource/folder contracts, file-download permissions, quarantine, offline restart/open and local-edit/account-replacement cases on real Moodle 4.5/5.3 and installed macOS builds; see [offline QA](offline-files-qa.md).
 - [x] **A4:** read-only upcoming agenda across sites, grouped by day, with fixed Moodle calendar links, the Mac's time zone stated and last-refresh/stale state.
 - [ ] **A4:** opt-in local due-date reminders, deduplication and rescheduling after event changes/wake; no delivery promise while quit.
 - [x] **A5:** manually export the selected site/date range to a token-free ICS snapshot in Downloads, with UTC times, escaped/folded text, stable account-scoped UIDs and fixed calendar links. Rust fixtures and an independent ICS parser pass.
@@ -250,3 +251,12 @@ Evidence: 73 frontend tests, 52 Rust tests, frontend lint/format/build, Rust for
 - A3 offline file selection/refresh, A4 reminders and A6 AI remain unimplemented. A5 was independently deliverable on the existing agenda model; this does not close the earlier slices or Alpha release gates.
 
 Local native output: `target/debug/bundle/macos/MoodBuro.app` built with the new icon, ad-hoc signed after bundling and verified with `codesign --verify --deep --strict`. No native account interaction or Calendar import was performed.
+
+## 10 November 2026 — selected offline course files (A3)
+
+- Courses → Files lists saved snapshots offline. Load File List explicitly fetches file metadata; the user chooses up to 50 resources, with known/unknown sizes stated, before a serial batch starts. Plain resource/folder files are supported; unsupported entries are counted.
+- Rust re-fetches source descriptors for each batch, restricts token delivery to the same installation’s web-service file endpoint, refuses redirects and HTML/JSON responses, checks free space, bounds bytes/time and emits throttled progress. No URL/token is persisted in the new index or sent to the shell.
+- Course/section folders, private staging, macOS quarantine and non-replacing publication preserve existing files. Manual refresh only reuses the latest indexed file when both remote and local SHA-256 hashes match; otherwise it keeps all earlier copies and saves alongside them. Server deletion produces a per-file error and leaves saved copies intact.
+- SQLite schema 8 adds a separate account-bound offline index. Removal/replacement clears private index metadata while keeping files; late old-account publication is rejected under the store lock. Offline Open/Finder resolves copy IDs and rechecks path components; unknown/risky types retain confirmation.
+- Automated checks: 87 UI tests, 66 Rust tests, frontend build/lint/format, workspace Clippy/format, and local-shell/popup IPC guard. The native/live acceptance matrix remains unchecked in [offline-files-qa.md](offline-files-qa.md).
+- Next implementation priority: A4 opt-in local reminders; A6 remains after the A1–A5 feature slices. Existing M0, native PDF/download, security and distribution gates remain open.

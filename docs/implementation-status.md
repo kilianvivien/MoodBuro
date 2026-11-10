@@ -6,7 +6,7 @@ Use [the working plan](plan.md) to track completed tasks and next priorities.
 
 At the product owner's request, the [Alpha scope amendment](alpha-feature-expansion.md) brings forward: A1 notification inbox and richer download controls; A2 course browser/pins and quick-open; A3 selected files saved offline with manual refresh; A4 upcoming agenda and opt-in local reminders; A5 manual ICS snapshot export. The original full background-sync/live-calendar/upload features are not implied by these smaller slices. The original six-week estimate requires re-estimation; existing release/security gates remain open.
 
-A first pass over A1, A2 and the read-only A4 agenda is implemented (see the last section). A5 export is now implemented against fixtures (see below); A3 and reminders are not started. [plan.md](plan.md) lists what is checked and what is still open.
+A first pass over A1, A2 and the read-only A4 agenda is implemented (see the last section). A3 selected offline files and A5 export are now implemented against fixtures (see below); reminders are not started. [plan.md](plan.md) lists what is checked and what is still open.
 
 ## Delivered
 
@@ -137,3 +137,13 @@ Evidence: 79 frontend tests, 55 Rust tests, frontend lint/format/build, Rust for
 The first parser attempted (`icalendar` 6.3.2 on system Python 3.9) decoded an escaped literal backslash before `n` as a newline. `vobject` 0.9.9 preserves the literal backslash and passes the complete fixture and round-trip checks; the export follows RFC 5545 escaping. This parser difference reinforces the open Apple Calendar import gate.
 
 A debug macOS app was bundled at `target/debug/bundle/macos/MoodBuro.app`, then locally ad-hoc signed after bundling; `codesign --verify --deep --strict` passed. The embedded `icon.icns` matches the generated new asset. This is a local development bundle, not a distribution release.
+
+## Selected offline course files — A3, 10 November 2026
+
+Courses now offers Files per course, with separate local saved-copy and explicitly fetched remote-resource lists. Selection shows known/unknown sizes; serial saves and manual refresh return per-file outcomes and byte progress. Saved copies use the existing guarded native Open/Finder and risky-file confirmation conventions. FR/EN copy states transfer limits, manual one-way behaviour, local edits, account cleanup and unsupported resources.
+
+The new Rust path accepts only same-installation HTTPS web-service file URLs, refetches descriptors before saving, refuses redirects and common login/error MIME types, limits bytes/time, checks free space and publishes quarantined files without replacement into safe course/section folders. SHA-256 reuse requires an intact latest indexed local snapshot. Renames, remote revisions and local edits cannot overwrite an existing file. SQLite schema 8 isolates offline records from download history; account replacement/removal clears the index but keeps files.
+
+Evidence: 87 UI tests; 66 Rust tests covering file endpoint policy, metadata contracts, redirect/access/size failures, no-overwrite publication, local edits/moves, symlink components, persistent indexing and account cleanup; lint/format/build, Clippy and shell-capability checks. Native macOS quarantine/Open/Finder, real-account downloading and full restart-without-network validation remain open. See [offline qualification and limits](offline-files-qa.md). A4 reminders and A6 are still unimplemented.
+
+The local development bundle at `target/debug/bundle/macos/MoodBuro.app` was rebuilt for A3 with the new icon retained, ad-hoc signed after bundling, and verified with `codesign --verify --deep --strict`. It was not launched against a real account during this slice.

@@ -241,10 +241,16 @@ pub struct Course {
 #[derive(Clone, Deserialize)]
 pub struct CourseSection {
     #[serde(default)]
+    pub id: i64,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
     pub modules: Vec<CourseModule>,
 }
 #[derive(Clone, Deserialize)]
 pub struct CourseModule {
+    #[serde(default)]
+    pub contents: Vec<offline::Content>,
     #[serde(default)]
     pub id: i64,
     #[serde(default)]
@@ -415,6 +421,8 @@ pub fn plain_text(input: &str, max: usize) -> String {
         .take(max)
         .collect()
 }
+
+pub mod offline;
 
 pub struct Client {
     base: Url,
@@ -631,6 +639,20 @@ impl Client {
         )
         .await
     }
+    /// File metadata is fetched only when explicitly requested, unlike the activity index.
+    pub async fn course_files(
+        &self,
+        token: &str,
+        course: i64,
+    ) -> Result<Vec<CourseSection>, Error> {
+        self.call(
+            token,
+            "core_course_get_contents",
+            &[("courseid", &course.to_string())],
+            true,
+        )
+        .await
+    }
     pub async fn upcoming_events(&self, token: &str) -> Result<Vec<CalendarEvent>, Error> {
         let view: UpcomingEvents = self
             .call(token, "core_calendar_get_calendar_upcoming_view", &[], true)
@@ -780,6 +802,21 @@ mod contract_tests {
             permits: tokio::sync::Semaphore::new(4),
         };
         (server, client)
+    }
+    #[tokio::test]
+    async fn selected_files_fetch_contents_only_when_explicitly_requested() {
+        let (server, client) = client().await;
+        Mock::given(method("POST")).and(path("/webservice/rest/server.php"))
+            .and(body_string_contains("wsfunction=core_course_get_contents"))
+            .and(body_string_contains("courseid=7"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([
+                {"id":1,"name":"Week 1","modules":[{"id":42,"name":"Notes","modname":"resource","contents":[{"type":"file","filename":"notes.pdf","filepath":"/","filesize":128,"fileurl":"https://example.org/webservice/pluginfile.php/1/notes.pdf"}]}]}
+            ]))).mount(&server).await;
+        let sections = client.course_files("test-token", 7).await.unwrap();
+        assert_eq!(sections[0].modules[0].contents[0].filesize, Some(128));
+        let requests = server.received_requests().await.unwrap();
+        let body = String::from_utf8_lossy(&requests[0].body);
+        assert!(!body.contains("excludecontents"));
     }
     #[tokio::test]
     async fn notifications_and_counts_match_stock_moodle_shapes() {

@@ -33,7 +33,7 @@ fn site(app: &AppHandle, id: &str) -> Result<md_store::Site, String> {
         .ok_or("Unknown site.".into())
 }
 /// The saved account, a client for its base URL and its Keychain token.
-fn session(
+pub(crate) fn session(
     app: &AppHandle,
     id: &str,
 ) -> Result<

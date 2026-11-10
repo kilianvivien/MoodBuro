@@ -1,3 +1,4 @@
+import { CourseFiles } from "./CourseFiles";
 import { useState } from "react";
 import { BookOpen, CircleAlert, Pin, SearchX } from "lucide-react";
 import { ipc, message, type Course, type Site } from "../ipc";
@@ -24,12 +25,14 @@ function CourseRows({
   showSite,
   onOpen,
   onPin,
+  onFiles,
 }: {
   courses: readonly Course[];
   sites: readonly Site[];
   showSite: boolean;
   onOpen: (course: Course) => void;
   onPin: (course: Course) => void;
+  onFiles?: (course: Course) => void;
 }) {
   const { t } = useI18n();
   return (
@@ -53,6 +56,15 @@ function CourseRows({
               {subtitle && <span className="row-subtitle">{subtitle}</span>}
             </span>
             <span className="row-actions">
+              {onFiles && (
+                <button
+                  className="button small"
+                  aria-label={t.offline.filesLabel(course.name)}
+                  onClick={() => onFiles(course)}
+                >
+                  {t.offline.files}
+                </button>
+              )}
               <button
                 className="button small icon pin-toggle"
                 title={course.pinned ? t.courses.unpin : t.courses.pin}
@@ -87,12 +99,14 @@ export function CourseList({
   query,
   onOpen,
   onPin,
+  onFiles,
 }: {
   courses: readonly Course[];
   sites: readonly Site[];
   query: string;
   onOpen: (course: Course) => void;
   onPin: (course: Course) => void;
+  onFiles?: (course: Course) => void;
 }) {
   const { t } = useI18n();
   const matches = search(courses, query, (course) => [
@@ -115,7 +129,7 @@ export function CourseList({
         hint={t.courses.noMatchHint}
       />
     );
-  const rows = { sites, onOpen, onPin };
+  const rows = { sites, onOpen, onPin, onFiles };
   // While searching, results are one ranked list across organisations.
   if (query.trim())
     return (
@@ -160,6 +174,7 @@ export function Courses({
 }) {
   const { t } = useI18n();
   const listing = useListing(sites, ipc.courses, ipc.refreshCourses);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [indexing, setIndexing] = useState(false);
   const [query, setQuery] = useState("");
   const [siteId, setSiteId] = useState<string | null>(null);
@@ -194,6 +209,19 @@ export function Courses({
     }
   }
 
+  if (selectedCourse) {
+    const site = sites.find((site) => site.id === selectedCourse.siteId);
+    if (site)
+      return (
+        <CourseFiles
+          key={`${site.id}:${site.userId}:${selectedCourse.id}`}
+          course={selectedCourse}
+          userId={site.userId}
+          onBack={() => setSelectedCourse(null)}
+          onOpen={() => onOpenCourse(site.id, selectedCourse.id)}
+        />
+      );
+  }
   const failures = sites.filter((site) => listing.errors[site.id]);
   return (
     <div className="page">
@@ -270,6 +298,7 @@ export function Courses({
           query={query}
           onOpen={(course) => onOpenCourse(course.siteId, course.id)}
           onPin={(course) => void pin(course)}
+          onFiles={setSelectedCourse}
         />
       )}
       <p className="section-footnote">{t.courses.footnote}</p>

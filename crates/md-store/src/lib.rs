@@ -175,12 +175,14 @@ pub struct Activity {
     pub module: String,
     pub refreshed_at: i64,
 }
+mod offline;
+pub use offline::OfflineCopy;
 pub struct Store(Connection);
 impl Store {
     pub fn open(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 7 {
+        if version > 8 {
             return Err(rusqlite::Error::InvalidQuery);
         }
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; BEGIN;
@@ -198,7 +200,14 @@ impl Store {
         if version < 6 {
             connection.execute_batch("ALTER TABLE downloads ADD COLUMN course_id INTEGER; ALTER TABLE downloads ADD COLUMN course_name TEXT;")?;
         }
-        connection.execute_batch("PRAGMA user_version=7; COMMIT;")?;
+        connection.execute_batch(
+            "CREATE TABLE IF NOT EXISTS offline_copies (
+            id TEXT PRIMARY KEY, site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+            course_id INTEGER NOT NULL, resource_key TEXT NOT NULL, module_id INTEGER NOT NULL,
+            filename TEXT NOT NULL, section_name TEXT NOT NULL, local_path TEXT NOT NULL,
+            sha256 TEXT NOT NULL, bytes INTEGER NOT NULL, saved_at INTEGER NOT NULL);
+            PRAGMA user_version=8; COMMIT;",
+        )?;
         Ok(Self(connection))
     }
     pub fn download_insert(&self, item: &Download) -> rusqlite::Result<()> {
@@ -764,6 +773,7 @@ impl Store {
             "courses",
             "course_contexts",
             "activities",
+            "offline_copies",
             "course_pins",
             "events",
             "sync_state",

@@ -1,6 +1,10 @@
 fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
+            "offline_resources",
+            "offline_saved",
+            "offline_save",
+            "offline_open",
             "sites_list",
             "site_move",
             "agenda_export",

@@ -2338,6 +2338,10 @@ dependencies = [
 [[package]]
 name = "md-os"
 version = "0.1.0-alpha.0"
+dependencies = [
+ "libc",
+ "sha2",
+]
 
 [[package]]
 name = "md-secrets"

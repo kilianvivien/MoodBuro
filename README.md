@@ -38,6 +38,8 @@ MoodBuro affiche **le vrai site Moodle** dans une application macOS, avec une in
 
 Le premier site de validation est celui de l’INSP. Il n’est **pas préconfiguré** : MoodBuro reste une application générique pour les organisations disposant de Moodle et de ses services mobiles.
 
+- Fichiers simples hors connexion depuis Cours → Fichiers, sélection explicite, ouverture des copies enregistrées et actualisation manuelle conservant les modifications locales et les versions précédentes. La qualification native et sur Moodle réel reste ouverte.
+
 ## Démarrer en développement
 
 Sur Mac, installez Node.js 22+, pnpm 9.15.9, Rust et les outils de ligne de commande Xcode. Le dépôt fixe la version du compilateur Rust dans `rust-toolchain.toml`.

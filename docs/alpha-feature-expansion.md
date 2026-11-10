@@ -34,7 +34,7 @@ A completed slice should produce a reviewable local build and its relevant evide
 
 ## Progress — 9 November 2026
 
-First implementation pass over A1, A2 and the read-only half of A4, against synthetic fixtures only. Checked boxes below mean "built and covered by automated tests"; none of the **Acceptance** paragraphs is met yet, because each needs a real account, an installed build or the 4.5/5.3 rigs. Items with an italic note are partly built. A3 and A4's reminders are untouched. A5 was implemented on 10 November against fixtures; native import remains open.
+First implementation pass over A1, A2 and the read-only half of A4, against synthetic fixtures only. Checked boxes below mean "built and covered by automated tests"; none of the **Acceptance** paragraphs is met yet, because each needs a real account, an installed build or the 4.5/5.3 rigs. Items with an italic note are partly built. A3 was implemented on 10 November against fixtures; its native/live acceptance remains open. A4's reminders are untouched. A5 was implemented on 10 November against fixtures; native import remains open.
 
 ## A1 — Notification inbox and download controls
 
@@ -62,12 +62,12 @@ First implementation pass over A1, A2 and the read-only half of A4, against synt
 
 ## A3 — Selected files offline
 
-- [ ] List downloadable resources for a selected course and let the user explicitly choose files before starting a transfer. Show known sizes and label unknown sizes.
-- [ ] Provide bounded transfer concurrency, available-space checks, progress/status and actionable per-file failures.
-- [ ] Write to course/section folders using the established sanitization, staging, collision, quarantine and risky-open rules. Keep tokens in Rust/Keychain and out of URLs exposed to the shell, logs and SQLite.
-- [ ] Add an offline files list with Open and Show in Finder that works without a Moodle connection; opening the online activity remains a separate action.
-- [ ] Implement Refresh Selected Files. Reuse only an indexed unchanged copy that still matches the local snapshot; keep changed server versions alongside existing files. Never overwrite or remove user-edited/moved files.
-- [ ] Explain that refresh is manual and one-way. Preserve files when an account is removed; clear private account/index metadata and revoke access to late old-account writes.
+- [x] List downloadable resources for a selected course and let the user explicitly choose files before starting a transfer. Show known sizes and label unknown sizes.
+- [x] Provide bounded transfer concurrency, available-space checks, progress/status and actionable per-file failures.
+- [x] Write to course/section folders using the established sanitization, staging, collision, quarantine and risky-open rules. Keep tokens in Rust/Keychain and out of URLs exposed to the shell, logs and SQLite.
+- [x] Add an offline files list with Open and Show in Finder that works without a Moodle connection; opening the online activity remains a separate action.
+- [x] Implement Refresh Selected Files. Reuse only an indexed unchanged copy that still matches the local snapshot; keep changed server versions alongside existing files. Never overwrite or remove user-edited/moved files.
+- [x] Explain that refresh is manual and one-way. Preserve files when an account is removed; clear private account/index metadata and revoke access to late old-account writes.
 
 **Acceptance:** selected files can be saved from a supported test course and reopened after quitting and disconnecting the network. Repeat refresh does not duplicate unchanged indexed files; a changed remote version or local edit does not destroy an existing copy. Unsupported resources and denied permissions are reported without claiming a complete offline copy of the course. Plain files can be found by normal OS indexing where enabled; forced Spotlight indexing/Finder sidebar modification is not part of this slice.
 

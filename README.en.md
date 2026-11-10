@@ -20,6 +20,8 @@ MoodBuro hosts the **real Moodle site** in a macOS-first Tauri application. Ente
 - Same-origin session downloads to per-organisation folders, recent history, Open/Show in Finder and confirmation for risky file types. Course routing and authenticated native-download qualification remain pending.
 - Rust and UI tests, mock HTTP contracts, shell-only IPC permission checks and Linux/macOS CI.
 
+- Selected offline plain files from Courses → Files, explicit resource selection, saved-copy Open/Finder and manual refresh that keeps local edits and previous versions. Live/native qualification remains open.
+
 ## Development
 
 Install Node 22+, pnpm 9.15.9, Rust and Xcode command line tools. The Rust toolchain is pinned in the repository.

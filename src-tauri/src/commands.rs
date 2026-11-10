@@ -899,3 +899,65 @@ pub fn navigate_view(
         _ => return Err("Unknown navigation action.".into()),
     }.map_err(|_| "Navigation failed.".into())
 }
+
+#[tauri::command]
+pub async fn offline_resources(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    course_id: i64,
+    user_id: i64,
+) -> Result<crate::offline::Catalog, String> {
+    shell(&webview)?;
+    crate::offline::resources(&app, &site_id, course_id, user_id).await
+}
+#[tauri::command]
+pub fn offline_saved(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    course_id: i64,
+    user_id: i64,
+) -> Result<Vec<crate::offline::Saved>, String> {
+    shell(&webview)?;
+    crate::offline::saved(&app, &site_id, course_id, user_id)
+}
+#[tauri::command]
+pub async fn offline_save(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    course_id: i64,
+    user_id: i64,
+    keys: Vec<String>,
+) -> Result<Vec<crate::offline::Outcome>, String> {
+    shell(&webview)?;
+    crate::offline::save(&app, &site_id, course_id, user_id, keys).await
+}
+#[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OfflineTarget {
+    site_id: String,
+    course_id: i64,
+    user_id: i64,
+}
+#[tauri::command]
+pub fn offline_open(
+    webview: tauri::Webview,
+    app: AppHandle,
+    target: OfflineTarget,
+    copy_id: String,
+    reveal: bool,
+    confirmed: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::offline::open(
+        &app,
+        &target.site_id,
+        target.course_id,
+        target.user_id,
+        &copy_id,
+        reveal,
+        confirmed,
+    )
+}
