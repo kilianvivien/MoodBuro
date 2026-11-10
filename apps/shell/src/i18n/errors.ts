@@ -8,6 +8,12 @@ import { catalogues, type Messages } from "./messages";
  * exact text. Keep this list in step with the Rust messages.
  */
 const french: Record<string, string> = {
+  "Could not read reminder settings.":
+    "Impossible de lire les préférences de rappel.",
+  "Could not save reminder settings. Reopen the agenda for the current account.":
+    "Impossible d’enregistrer les préférences de rappel. Rouvrez l’agenda du compte actuel.",
+  "This agenda belongs to another account. Reopen the agenda.":
+    "Cet agenda appartient à un autre compte. Rouvrez l’agenda.",
   "This resource cannot be saved offline.":
     "Cette ressource ne peut pas être enregistrée hors connexion.",
   "Could not download this resource.":

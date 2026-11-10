@@ -1699,3 +1699,15 @@ ol {
   width: 20px;
   height: 20px;
 }
+
+.reminder-choice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-small);
+}
+.reminder-choice input {
+  accent-color: var(--accent);
+  width: 20px;
+  height: 20px;
+}

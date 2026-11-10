@@ -22,6 +22,8 @@ fn main() {
             "courses_refresh",
             "course_pin",
             "agenda_list",
+            "reminders_list",
+            "reminders_set",
             "agenda_refresh",
             "download_preview",
             "course_folders_refresh",

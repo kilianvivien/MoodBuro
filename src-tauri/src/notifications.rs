@@ -28,6 +28,16 @@ pub fn install_click_handler(app: &AppHandle) -> tauri_plugin_notification::Resu
         if action.action_id() != "tap" {
             return;
         }
+        if action
+            .notification()
+            .and_then(|n| n.extra().get("kind"))
+            .and_then(|v| v.as_str())
+            == Some("reminder")
+        {
+            crate::tray::show(&handle);
+            crate::menus::show_local_view(&handle, "agenda");
+            return;
+        }
         let id = action
             .notification()
             .and_then(|n| n.extra().get("siteId"))

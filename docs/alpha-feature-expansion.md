@@ -34,7 +34,7 @@ A completed slice should produce a reviewable local build and its relevant evide
 
 ## Progress — 9 November 2026
 
-First implementation pass over A1, A2 and the read-only half of A4, against synthetic fixtures only. Checked boxes below mean "built and covered by automated tests"; none of the **Acceptance** paragraphs is met yet, because each needs a real account, an installed build or the 4.5/5.3 rigs. Items with an italic note are partly built. A3 was implemented on 10 November against fixtures; its native/live acceptance remains open. A4's reminders are untouched. A5 was implemented on 10 November against fixtures; native import remains open.
+First implementation pass over A1, A2 and the read-only half of A4, against synthetic fixtures only. Checked boxes below mean "built and covered by automated tests"; none of the **Acceptance** paragraphs is met yet, because each needs a real account, an installed build or the 4.5/5.3 rigs. Items with an italic note are partly built. A3 was implemented on 10 November against fixtures; its native/live acceptance remains open. A4's local reminders were implemented on 10 November against fixtures; native/live qualification remains open. A5 was implemented on 10 November against fixtures; native import remains open.
 
 ## A1 — Notification inbox and download controls
 
@@ -75,9 +75,9 @@ First implementation pass over A1, A2 and the read-only half of A4, against synt
 
 - [x] Fetch available upcoming event/deadline metadata per site into a normalized read-only agenda. Link each item back to its Moodle page through validated routing. _(Each item opens its day in the Moodle calendar, a fixed page; the activity's own URL is not followed.)_
 - [x] Display the site/course, event date, time zone and last-refresh/stale state. Do not invent submission/completion status the service does not supply.
-- [ ] Offer reminders, off by default, with 24-hour/1-hour offsets and per-site control. Suppress past and known-completed items and deduplicate by account/event/due-time/offset.
-- [ ] Reconcile changed/deleted events after refresh; avoid an old-reminder burst on initial import or after sleep. Reschedule from the latest known state on wake.
-- [ ] Make permission/network limitations visible. No reminder guarantee is made while the app is quit; closing the main window still uses the background process.
+- [x] Offer reminders, off by default, with 24-hour/1-hour offsets and per-site control. Suppress past and known-completed items and deduplicate by account/event/due-time/offset.
+- [x] Reconcile changed/deleted events after refresh; avoid an old-reminder burst on initial import or after sleep. Reschedule from the latest known state on wake.
+- [x] Make permission/network limitations visible. No reminder guarantee is made while the app is quit; closing the main window still uses the background process.
 
 **Acceptance:** fixtures cover changed due dates, cancellations, account replacement, time-zone/DST boundaries, restart and duplicate prevention. Native reminder delivery is qualified on the supported macOS matrix. Server access denial leaves the other app features working.
 

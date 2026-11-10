@@ -118,6 +118,22 @@ const en = {
     footnote:
       "Pins are saved on this Mac only and do not change your Moodle favourites. This list stays available offline; opening a course needs a connection.",
   },
+  reminders: {
+    title: "Local deadline reminders",
+    day: "24 hours before",
+    hour: "1 hour before",
+    label: (site: string, offset: string) => `${site}: ${offset}`,
+    hint: "Off by default. Options apply to each organisation’s upcoming deadlines, independently of agenda filters. MoodBuro periodically refreshes enabled calendars and uses snapshots no older than 15 minutes. Events reported as non-actionable or with no remaining items are skipped; other completion states may be unknown.",
+    limits:
+      "Reminders work while MoodBuro is running, including with its window closed. Startup, wake and clock changes skip missed reminders. Nothing is promised while quit or offline. macOS notification permissions and Focus can suppress delivery; check System Settings → Notifications. This app cannot verify that a notification was displayed.",
+    never:
+      "No successful agenda refresh yet. Enable a reminder to request one.",
+    updated: (date: string) => `Agenda refreshed ${date}`,
+    stale: "Agenda data is stale. Reminders wait for a successful refresh.",
+    deliveryFailed:
+      "A notification attempt failed. Check macOS notification settings. Failed or interrupted attempts are not replayed.",
+    saving: "Saving reminder preferences…",
+  },
   agenda: {
     title: "Upcoming",
     export: "Export Calendar…",
@@ -457,6 +473,23 @@ const fr: Messages = {
       "La recherche porte sur les noms de cours et d’activités enregistrés sur ce Mac.",
     footnote:
       "Les épingles sont enregistrées sur ce Mac uniquement et ne modifient pas vos favoris Moodle. Cette liste reste disponible hors ligne\u00a0; ouvrir un cours nécessite une connexion.",
+  },
+  reminders: {
+    title: "Rappels locaux des échéances",
+    day: "24 heures avant",
+    hour: "1 heure avant",
+    label: (site: string, offset: string) => `${site}\u00a0: ${offset}`,
+    hint: "Désactivés par défaut. Ces options concernent les échéances à venir de chaque organisation, indépendamment des filtres de l’agenda. MoodBuro actualise périodiquement les calendriers activés et utilise des données de moins de 15 minutes. Les évènements signalés comme non réalisables ou sans élément restant sont ignorés\u00a0; les autres états d’achèvement peuvent être inconnus.",
+    limits:
+      "Les rappels fonctionnent tant que MoodBuro est en cours d’exécution, même fenêtre fermée. Au démarrage, au réveil ou après un changement d’horloge, les rappels manqués sont ignorés. Aucune garantie lorsque l’app est quittée ou hors connexion. Les autorisations macOS et Concentration peuvent masquer les notifications\u00a0; vérifiez Réglages Système → Notifications. L’app ne peut pas vérifier qu’une notification a été affichée.",
+    never:
+      "Aucune actualisation de l’agenda réussie. Activez un rappel pour en demander une.",
+    updated: (date: string) => `Agenda actualisé le ${date}`,
+    stale:
+      "Les données de l’agenda sont anciennes. Les rappels attendent une actualisation réussie.",
+    deliveryFailed:
+      "Une tentative de notification a échoué. Vérifiez les réglages de notifications macOS. Les tentatives échouées ou interrompues ne sont pas rejouées.",
+    saving: "Enregistrement des préférences de rappel…",
   },
   agenda: {
     title: "À venir",

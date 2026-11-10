@@ -961,3 +961,24 @@ pub fn offline_open(
         confirmed,
     )
 }
+
+#[tauri::command]
+pub fn reminders_list(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Vec<md_store::ReminderSettings>, String> {
+    shell(&webview)?;
+    crate::reminders::list(&app)
+}
+#[tauri::command]
+pub fn reminders_set(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+    hour: bool,
+    day: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::reminders::set(&app, &site_id, user_id, hour, day)
+}

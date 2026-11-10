@@ -226,14 +226,29 @@ pub fn agenda(app: &AppHandle) -> Result<Listing<md_store::Event>, String> {
     })
 }
 pub async fn refresh_agenda(app: &AppHandle, id: &str) -> Result<(), String> {
+    refresh_agenda_for_user(app, id, None).await
+}
+pub async fn refresh_agenda_for_user(
+    app: &AppHandle,
+    id: &str,
+    user: Option<i64>,
+) -> Result<(), String> {
     let (site, client, token) = session(app, id)?;
+    if user.is_some_and(|user| user != site.user_id) {
+        return Err("This agenda belongs to another account. Reopen the agenda.".into());
+    }
+    let requested_at = now();
     let fetched = client
         .upcoming_events(&token)
         .await
         .map_err(|e| e.to_string())?;
+    let eligible: Vec<_> = fetched
+        .iter()
+        .map(|e| (e.id, e.reminder_eligible()))
+        .collect();
     let items: Vec<_> = fetched
         .into_iter()
-        .filter(|e| e.timestart > 0 && e.timeduration >= 0)
+        .filter(|e| e.id > 0 && e.timestart > 0 && e.timeduration >= 0)
         .take(MAX_EVENTS)
         .map(|e| {
             // Moodle reports the site front page as course 1; that is not a course.
@@ -256,8 +271,10 @@ pub async fn refresh_agenda(app: &AppHandle, id: &str) -> Result<(), String> {
         .store
         .lock()
         .map_err(|_| "Site storage unavailable.")?
-        .save_events(id, site.user_id, &items, now())
-        .map_err(|_| "Could not save the agenda.".into())
+        .save_events_with_reminders(id, site.user_id, &items, &eligible, now(), requested_at)
+        .map_err(|_| "Could not save the agenda.")?;
+    crate::reminders::changed(app);
+    Ok(())
 }
 /// Moodle's open-ended event type, reduced to the few kinds the shell labels.
 fn kind(event_type: &str) -> &'static str {

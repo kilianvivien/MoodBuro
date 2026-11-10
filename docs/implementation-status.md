@@ -6,7 +6,7 @@ Use [the working plan](plan.md) to track completed tasks and next priorities.
 
 At the product owner's request, the [Alpha scope amendment](alpha-feature-expansion.md) brings forward: A1 notification inbox and richer download controls; A2 course browser/pins and quick-open; A3 selected files saved offline with manual refresh; A4 upcoming agenda and opt-in local reminders; A5 manual ICS snapshot export. The original full background-sync/live-calendar/upload features are not implied by these smaller slices. The original six-week estimate requires re-estimation; existing release/security gates remain open.
 
-A first pass over A1, A2 and the read-only A4 agenda is implemented (see the last section). A3 selected offline files and A5 export are now implemented against fixtures (see below); reminders are not started. [plan.md](plan.md) lists what is checked and what is still open.
+A first pass over A1, A2 and the read-only A4 agenda is implemented (see the last section). A3 selected offline files and A5 export are now implemented against fixtures (see below); local reminders are implemented against fixtures (see the latest section). [plan.md](plan.md) lists what is checked and what is still open.
 
 ## Delivered
 
@@ -147,3 +147,13 @@ The new Rust path accepts only same-installation HTTPS web-service file URLs, re
 Evidence: 87 UI tests; 66 Rust tests covering file endpoint policy, metadata contracts, redirect/access/size failures, no-overwrite publication, local edits/moves, symlink components, persistent indexing and account cleanup; lint/format/build, Clippy and shell-capability checks. Native macOS quarantine/Open/Finder, real-account downloading and full restart-without-network validation remain open. See [offline qualification and limits](offline-files-qa.md). A4 reminders and A6 are still unimplemented.
 
 The local development bundle at `target/debug/bundle/macos/MoodBuro.app` was rebuilt for A3 with the new icon retained, ad-hoc signed after bundling, and verified with `codesign --verify --deep --strict`. It was not launched against a real account during this slice.
+
+## Local deadline reminders — A4, 10 November 2026
+
+Agenda offers default-off per-account 24-hour and 1-hour reminders. Background agenda refresh and a local 15-second scheduler reconcile normalized deadlines, conservative action eligibility and recent-cache requirements. Schema 9 persists preferences, event observation times and account/event/due/offset claims. Claims precede native attempts, preventing replay across restart; missed startup/wake windows and past/newly imported triggers are skipped. Changed dates, deletions, old-account responses and older in-flight requests cannot restore stale schedules. A pre-sleep request does not qualify as a post-wake snapshot.
+
+The shell reports stale agenda data, sanitized refresh errors and known failed attempts. Copy explicitly states that macOS permissions/Focus and actual notification display cannot be verified by the desktop notification plugin. Closing the window keeps the scheduler alive; quitting stops it. Native attempts are capped at five individual alerts plus one summary; clicks open the local Agenda.
+
+Checks: 92 UI tests, 73 Rust tests, frontend build/lint/format, workspace Clippy/format and IPC boundary checks. Fixtures cover persistent deduplication, schema migration, account changes, deadlines moved/deleted/unavailable, wake/clock gaps, out-of-order responses and DST timestamps. [Real-site and installed-app reminder qualification](reminders-qa.md) remains pending. A6 is the next unimplemented feature slice; existing Alpha release gates remain open.
+
+The local development bundle `target/debug/bundle/macos/MoodBuro.app` was rebuilt with reminders, ad-hoc signed after bundling and verified with `codesign --verify --deep --strict`. Its icon matches the existing generated new icon. No real-account refresh or native reminder delivery was triggered during implementation.

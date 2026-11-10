@@ -40,6 +40,8 @@ Le premier site de validation est celui de l’INSP. Il n’est **pas préconfig
 
 - Fichiers simples hors connexion depuis Cours → Fichiers, sélection explicite, ouverture des copies enregistrées et actualisation manuelle conservant les modifications locales et les versions précédentes. La qualification native et sur Moodle réel reste ouverte.
 
+- Rappels locaux des échéances par organisation (24 heures / 1 heure), désactivés par défaut, avec déduplication persistante et limites de cache/livraison explicites. La qualification native reste ouverte.
+
 ## Démarrer en développement
 
 Sur Mac, installez Node.js 22+, pnpm 9.15.9, Rust et les outils de ligne de commande Xcode. Le dépôt fixe la version du compilateur Rust dans `rust-toolchain.toml`.

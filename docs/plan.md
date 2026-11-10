@@ -12,7 +12,7 @@ This is the working checklist for project advancement. The [PRD](prd.md) defines
 | --- | --- | --- |
 | M0 — architecture and sign-in spike | In progress | Repeatable three-site login/SSO tests, platform/security validation and D1–D5 decisions |
 | M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, course download routing and installed-app validation |
-| Expanded Alpha features — A1–A5 | A1, A2, A3 selected offline files, the read-only A4 agenda and A5 export implemented against fixtures; reminders not started | Live/native validation of the built parts; offline-file qualification, reminders and native Calendar import qualification |
+| Expanded Alpha features — A1–A5 | A1–A5 feature slices, including opt-in A4 reminders, implemented against fixtures | Live/native validation of the built parts; offline-file/reminder qualification and native Calendar import qualification |
 | A6 — AI assistant | Planned, not started; final Alpha feature | Both BYOK providers, explicit context sharing, bounded tools and isolation checks |
 | First tester Alpha | Not ready for distribution | All Alpha exit criteria, universal packaging and private distribution setup |
 
@@ -64,7 +64,7 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 - [x] Grant privileged IPC only to the local shell, with explicit command permissions and caller checks.
 - [x] Enforce origin-based navigation policy; capture managed downloads and isolate controlled same-origin popups behind separate local toolbar permissions.
 - [x] Add unit/contract tests for callback and URL policies, HTTP behavior, metadata/settings/lifecycle and localization.
-- [x] Pass the latest local frontend build, lint/format checks, **87 UI tests**, **66 Rust tests**, workspace Clippy and shell-capability regression checks.
+- [x] Pass the latest local frontend build, lint/format checks, **92 UI tests**, **73 Rust tests**, workspace Clippy and shell-capability regression checks.
 - [x] Build a local ad-hoc-signed macOS app bundle; this is not a notarized distribution release.
 - [x] Review available dev logs and metadata schema without exposing credentials; record findings in the [auth review](auth-review.md).
 
@@ -134,7 +134,8 @@ The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies 
 - [x] **A3:** browse/open saved files offline and manually refresh selected files without overwriting local edits or propagating server deletions.
 - [ ] **A3 native qualification:** validate resource/folder contracts, file-download permissions, quarantine, offline restart/open and local-edit/account-replacement cases on real Moodle 4.5/5.3 and installed macOS builds; see [offline QA](offline-files-qa.md).
 - [x] **A4:** read-only upcoming agenda across sites, grouped by day, with fixed Moodle calendar links, the Mac's time zone stated and last-refresh/stale state.
-- [ ] **A4:** opt-in local due-date reminders, deduplication and rescheduling after event changes/wake; no delivery promise while quit.
+- [x] **A4:** opt-in per-account 24-hour/1-hour deadline reminders, persisted at-most-once attempts, refreshed schedule reconciliation and periodic wake-gap detection; no delivery promise while quit.
+- [ ] **A4 native qualification:** verify delivery/clicks, permissions/Focus, sleep/clock behaviour and Moodle action/completion metadata on the supported platforms and Moodle 4.5/5.3; see [reminder QA](reminders-qa.md).
 - [x] **A5:** manually export the selected site/date range to a token-free ICS snapshot in Downloads, with UTC times, escaped/folded text, stable account-scoped UIDs and fixed calendar links. Rust fixtures and an independent ICS parser pass.
 - [ ] **A5 native qualification:** import the snapshot in Apple Calendar, check DST/text and repeat-import behaviour; qualify Finder reveal and saved site ordering in the installed app. Live subscriptions remain later.
 - [ ] Validate the built A1/A2/A4 parts against a real account and the 4.5/5.3 rigs: `core_enrol_get_users_courses`, `core_calendar_get_calendar_upcoming_view`, `core_message_mark_notification_read` / `mark_all_notifications_as_read`, access-denied responses, and count reconciliation after Mark as Read.
@@ -260,3 +261,11 @@ Local native output: `target/debug/bundle/macos/MoodBuro.app` built with the new
 - SQLite schema 8 adds a separate account-bound offline index. Removal/replacement clears private index metadata while keeping files; late old-account publication is rejected under the store lock. Offline Open/Finder resolves copy IDs and rechecks path components; unknown/risky types retain confirmation.
 - Automated checks: 87 UI tests, 66 Rust tests, frontend build/lint/format, workspace Clippy/format, and local-shell/popup IPC guard. The native/live acceptance matrix remains unchecked in [offline-files-qa.md](offline-files-qa.md).
 - Next implementation priority: A4 opt-in local reminders; A6 remains after the A1–A5 feature slices. Existing M0, native PDF/download, security and distribution gates remain open.
+
+## 10 November 2026 — local deadline reminders (A4)
+
+- Agenda now exposes independent 24-hour/1-hour reminder choices per organisation/account, default off, with stale-data, refresh-error and failed-attempt feedback in French/English. Scope is independent of visible agenda filters; completion remains unknown unless Moodle explicitly reports an unavailable/zero-item action.
+- Enabled calendars refresh in Rust. The scheduler only claims future deadlines whose offset trigger falls in the current bounded check window, using recently refreshed snapshots and a persisted account/event/due/offset ledger. Startup and gaps over 60 seconds skip missed reminders; wake requires a request started after the gap. Older responses cannot overwrite newer schedules.
+- Schema 9 adds account-bound preferences, event observation facts and claim history. Claim precedes delivery, so crashes/errors can lose an attempt but cannot replay it on restart. Five individual notifications plus a summary bound each check; reminder clicks open the local Agenda. Account removal/replacement clears scheduling metadata.
+- Automated evidence: 92 UI tests, 73 Rust tests, frontend build/lint/format, workspace Clippy/format and IPC capability checks. [Native/live reminder qualification](reminders-qa.md) remains unchecked. No claim is made about notification display, delivery while quit or complete Moodle submission status.
+- Next implementation phase: A6 Albert/Mistral BYOK assistant. A1–A5 still require the existing combined live/native/security qualification before release.

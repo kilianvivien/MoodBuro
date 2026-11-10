@@ -22,6 +22,8 @@ MoodBuro hosts the **real Moodle site** in a macOS-first Tauri application. Ente
 
 - Selected offline plain files from Courses → Files, explicit resource selection, saved-copy Open/Finder and manual refresh that keeps local edits and previous versions. Live/native qualification remains open.
 
+- Opt-in local deadline reminders per organisation (24 hours / 1 hour), with persistent duplicate prevention and honest cache/delivery limits. Native delivery qualification remains open.
+
 ## Development
 
 Install Node 22+, pnpm 9.15.9, Rust and Xcode command line tools. The Rust toolchain is pinned in the repository.

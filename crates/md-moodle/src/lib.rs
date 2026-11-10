@@ -347,7 +347,16 @@ pub struct EventCourse {
 }
 /// Upcoming calendar entry. Server-supplied URLs and descriptions are intentionally dropped.
 #[derive(Clone, Deserialize)]
+pub struct CalendarAction {
+    #[serde(default)]
+    pub actionable: Option<bool>,
+    #[serde(default)]
+    pub itemcount: Option<i64>,
+}
+#[derive(Clone, Deserialize)]
 pub struct CalendarEvent {
+    #[serde(default)]
+    pub action: Option<CalendarAction>,
     pub id: i64,
     pub name: String,
     pub timestart: i64,
@@ -357,6 +366,14 @@ pub struct CalendarEvent {
     pub eventtype: String,
     #[serde(default)]
     pub course: Option<EventCourse>,
+}
+impl CalendarEvent {
+    /// Non-actionable/zero-item actions are suppressed conservatively; absence is unknown.
+    pub fn reminder_eligible(&self) -> bool {
+        self.action
+            .as_ref()
+            .is_none_or(|action| action.actionable != Some(false) && action.itemcount != Some(0))
+    }
 }
 #[derive(Deserialize)]
 pub struct UpcomingEvents {
@@ -1203,5 +1220,20 @@ mod file_navigation_tests {
             &base,
             &base.join("course/view.php?id=4").unwrap()
         ));
+    }
+}
+
+#[cfg(test)]
+mod reminder_metadata_tests {
+    use super::*;
+    #[test]
+    fn unavailable_or_completed_actions_are_suppressed_without_exporting_action_urls() {
+        let event = |action: serde_json::Value| -> CalendarEvent {
+            serde_json::from_value(serde_json::json!({"id":1,"name":"Deadline","timestart":1,"eventtype":"due","action":action})).unwrap()
+        };
+        assert!(event(serde_json::Value::Null).reminder_eligible());
+        assert!(event(serde_json::json!({"actionable":true,"itemcount":1,"url":"https://example.org/?token=secret"})).reminder_eligible());
+        assert!(!event(serde_json::json!({"actionable":false,"itemcount":1})).reminder_eligible());
+        assert!(!event(serde_json::json!({"actionable":true,"itemcount":0})).reminder_eligible());
     }
 }

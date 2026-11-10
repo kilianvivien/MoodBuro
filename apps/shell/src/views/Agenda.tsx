@@ -1,3 +1,4 @@
+import { Reminders } from "./Reminders";
 import { CalendarDays, CircleAlert } from "lucide-react";
 import { ipc, message, type AgendaEvent, type Site } from "../ipc";
 import { useI18n } from "../i18n/context";
@@ -246,6 +247,7 @@ export function Agenda({
           onOpen={(event) => onOpenDay(event.siteId, event.timeStart)}
         />
       )}
+      <Reminders sites={sites} />
       <p className="section-footnote">
         {t.agenda.timeZone(timeZone())} {t.agenda.footnote}
       </p>

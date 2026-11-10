@@ -41,6 +41,8 @@
     "allow-courses-refresh",
     "allow-course-pin",
     "allow-agenda-list",
+    "allow-reminders-list",
+    "allow-reminders-set",
     "allow-agenda-refresh",
     "allow-download-preview",
     "allow-course-folders-refresh",

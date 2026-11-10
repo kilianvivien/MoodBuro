@@ -32,3 +32,14 @@ it("binds offline Open/Finder to the backend target DTO and explicit risky-file 
     confirmed: false,
   });
 });
+
+it("scopes reminder changes to the saved account and both explicit offset choices", async () => {
+  vi.mocked(invoke).mockResolvedValue(undefined);
+  await ipc.setReminders("a", 7, true, false);
+  expect(invoke).toHaveBeenCalledWith("reminders_set", {
+    siteId: "a",
+    userId: 7,
+    hour: true,
+    day: false,
+  });
+});

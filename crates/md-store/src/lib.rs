@@ -176,13 +176,15 @@ pub struct Activity {
     pub refreshed_at: i64,
 }
 mod offline;
+mod reminders;
 pub use offline::OfflineCopy;
+pub use reminders::{DueReminder, ReminderSettings};
 pub struct Store(Connection);
 impl Store {
     pub fn open(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 8 {
+        if version > 9 {
             return Err(rusqlite::Error::InvalidQuery);
         }
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; BEGIN;
@@ -206,7 +208,10 @@ impl Store {
             course_id INTEGER NOT NULL, resource_key TEXT NOT NULL, module_id INTEGER NOT NULL,
             filename TEXT NOT NULL, section_name TEXT NOT NULL, local_path TEXT NOT NULL,
             sha256 TEXT NOT NULL, bytes INTEGER NOT NULL, saved_at INTEGER NOT NULL);
-            PRAGMA user_version=8; COMMIT;",
+            CREATE TABLE IF NOT EXISTS reminder_settings (site_id TEXT PRIMARY KEY REFERENCES sites(id) ON DELETE CASCADE, user_id INTEGER NOT NULL, hour INTEGER NOT NULL, day INTEGER NOT NULL, enabled_at INTEGER NOT NULL, refresh_error TEXT, delivery_failed INTEGER NOT NULL DEFAULT 0, requested_at INTEGER NOT NULL DEFAULT 0);
+            CREATE TABLE IF NOT EXISTS reminder_events (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, event_id INTEGER NOT NULL, due INTEGER NOT NULL, eligible INTEGER NOT NULL, observed_at INTEGER NOT NULL, PRIMARY KEY(site_id,event_id));
+            CREATE TABLE IF NOT EXISTS reminder_ledger (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, user_id INTEGER NOT NULL, event_id INTEGER NOT NULL, due INTEGER NOT NULL, offset INTEGER NOT NULL, PRIMARY KEY(site_id,user_id,event_id,due,offset));
+            PRAGMA user_version=9; COMMIT;",
         )?;
         Ok(Self(connection))
     }
@@ -546,8 +551,33 @@ impl Store {
         items: &[Event],
         now: i64,
     ) -> rusqlite::Result<()> {
+        self.save_events_with_reminders(
+            site_id,
+            user_id,
+            items,
+            &items
+                .iter()
+                .map(|e| (e.id, e.kind == "due"))
+                .collect::<Vec<_>>(),
+            now,
+            now,
+        )
+    }
+    pub fn save_events_with_reminders(
+        &self,
+        site_id: &str,
+        user_id: i64,
+        items: &[Event],
+        eligible: &[(i64, bool)],
+        now: i64,
+        requested_at: i64,
+    ) -> rusqlite::Result<()> {
         let tx = self.0.unchecked_transaction()?;
         Self::owned_by(&tx, site_id, user_id)?;
+        let newest: i64 = tx.query_row("SELECT COALESCE(MAX(requested_at),0) FROM reminder_settings WHERE site_id=?1 AND user_id=?2",params![site_id,user_id],|r|r.get(0))?;
+        if requested_at < newest {
+            return tx.commit();
+        }
         tx.execute("DELETE FROM events WHERE site_id=?1", [site_id])?;
         for item in items {
             tx.execute(
@@ -564,6 +594,16 @@ impl Store {
                 ],
             )?;
         }
+        for item in items {
+            let ready =
+                eligible.iter().any(|(id, ready)| *id == item.id && *ready) && item.kind == "due";
+            tx.execute("INSERT INTO reminder_events VALUES (?1,?2,?3,?4,?5) ON CONFLICT(site_id,event_id) DO UPDATE SET due=excluded.due,eligible=excluded.eligible,observed_at=CASE WHEN reminder_events.due=excluded.due AND reminder_events.eligible=excluded.eligible THEN reminder_events.observed_at ELSE excluded.observed_at END",params![site_id,item.id,item.time_start,ready,now])?;
+        }
+        tx.execute("DELETE FROM reminder_events WHERE site_id=?1 AND event_id NOT IN (SELECT event_id FROM events WHERE site_id=?1)",[site_id])?;
+        tx.execute(
+            "UPDATE reminder_settings SET refresh_error=NULL,requested_at=?3 WHERE site_id=?1 AND user_id=?2",
+            params![site_id, user_id, requested_at],
+        )?;
         tx.execute("INSERT INTO sync_state VALUES (?1,'agenda',?2) ON CONFLICT(site_id,kind) DO UPDATE SET refreshed_at=excluded.refreshed_at", params![site_id, now])?;
         tx.commit()
     }
@@ -774,6 +814,9 @@ impl Store {
             "course_contexts",
             "activities",
             "offline_copies",
+            "reminder_settings",
+            "reminder_events",
+            "reminder_ledger",
             "course_pins",
             "events",
             "sync_state",

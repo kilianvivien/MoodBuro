@@ -107,6 +107,16 @@ export interface OfflineCourse {
 }
 
 export type EventKind = "due" | "open" | "user" | "site" | "course" | "other";
+export interface ReminderSettings {
+  siteId: string;
+  userId: number;
+  hour: boolean;
+  day: boolean;
+  enabledAt: number;
+  refreshedAt: number | null;
+  refreshError: string | null;
+  deliveryFailed: boolean;
+}
 export interface AgendaEvent {
   siteId: string;
   id: number;
@@ -388,6 +398,7 @@ export function settingsFrom(raw: Partial<SavedSettings> | null | undefined) {
 // UI says so instead of pretending they were saved.
 let previewSettings: SavedSettings = settingsFrom(null);
 
+const demoReminders = new Map<string, ReminderSettings>();
 const demoOfflineCopies: OfflineCopy[] = [];
 const demoResources: OfflineResource[] = [
   {
@@ -410,6 +421,44 @@ const demoResources: OfflineResource[] = [
   },
 ];
 export const ipc = {
+  reminders: (): Promise<ReminderSettings[]> =>
+    desktop
+      ? invoke<ReminderSettings[]>("reminders_list")
+      : Promise.resolve(
+          demo
+            ? demoSites.map((site) => ({
+                siteId: site.id,
+                userId: site.userId,
+                hour: false,
+                day: false,
+                enabledAt: 0,
+                refreshedAt: demoData.refreshed.agenda,
+                refreshError: null,
+                deliveryFailed: false,
+                ...demoReminders.get(site.id),
+              }))
+            : [],
+        ),
+  setReminders: async (
+    siteId: string,
+    userId: number,
+    hour: boolean,
+    day: boolean,
+  ) => {
+    if (desktop)
+      return invoke<void>("reminders_set", { siteId, userId, hour, day });
+    if (!demo) return desktopFeature();
+    demoReminders.set(siteId, {
+      siteId,
+      userId,
+      hour,
+      day,
+      enabledAt: Math.floor(Date.now() / 1000),
+      refreshedAt: demoData.refreshed.agenda,
+      refreshError: null,
+      deliveryFailed: false,
+    });
+  },
   offlineResources: (course: OfflineCourse) =>
     desktop
       ? invoke<{ items: OfflineResource[]; skipped: number }>(

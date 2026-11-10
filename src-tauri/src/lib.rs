@@ -14,6 +14,7 @@ mod notifications;
 mod offline;
 #[cfg(target_os = "macos")]
 mod pdf_save;
+mod reminders;
 mod shortcut;
 mod tray;
 mod windows;
@@ -78,6 +79,7 @@ pub fn run() {
             notifications::install_click_handler(app.handle())?;
             // A shortcut that cannot be registered must never stop the app from starting.
             shortcut::restore(app.handle());
+            reminders::install(app.handle());
             let sites = app
                 .state::<AppState>()
                 .store
@@ -171,6 +173,8 @@ pub fn run() {
             commands::courses_refresh,
             commands::course_pin,
             commands::agenda_list,
+            commands::reminders_list,
+            commands::reminders_set,
             commands::agenda_refresh,
             commands::download_preview,
             commands::course_folders_refresh,
