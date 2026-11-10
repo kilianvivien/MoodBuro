@@ -118,15 +118,17 @@ The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies 
 - [ ] Stabilize PDF saving, native history and popup parent return; add a public-API save fallback before extending file workflows.
 - [x] **A1:** notification inbox across sites (day groups, organisation and unread filters) with safe Open, Mark as Read and Mark All as Read; the server is asked first and the poller then reconciles badge, Dock and menu-bar counts.
 - [x] **A1:** state unread conversations separately from notifications, with a fixed link to Moodle's Messages page.
-- [ ] **A1:** latest unread items in the tray. (A tray Inbox entry with the count exists; individual items are not listed.)
+- [x] **A1:** latest unread notifications per organisation in bounded tray submenus; selecting an item opens the fixed notifications page.
 - [x] **A1:** paginated/searchable download history with site/state filters, Copy Path (pasteboard written from Rust) and confirmed Clear History that keeps files and active transfers.
 - [x] **A1:** course filter with an Unknown Course bucket and course labels in download history.
 - [x] **A1:** shared Rust-owned native reader for downloaded PDF, DOCX, XLSX and PPTX files on macOS, with a separate Preview action and the existing default-app Open action.
-- [ ] **A1:** safe retry/fallback for failed downloads and the PDF/image handling preference.
+- [x] **A1:** failed-download Return to Moodle fallback: opens a still-cached course or the organisation, with explicit copy that the transfer is not restarted.
+- [ ] **A1:** PDF/image handling preference.
 - [x] **A2:** account-bound course cache and browser with search and local pins, refresh/stale/error states per organisation, and rejection of late responses for a replaced account.
 - [x] **A2:** metadata-backed course/context mapping and course-folder routing with an explicit Refresh Course Folders action. Live-site qualification remains open.
 - [x] **A2:** ⌘L Quick Open over saved course names, organisations and shell views, from the Go menu, the toolbar and the keyboard.
-- [ ] **A2:** cached activities in Quick Open; optional global Cmd+Shift+M with conflict handling.
+- [x] **A2:** explicitly refresh/cache course activities and search them in Quick Open, with oldest metadata refresh and connection limits stated.
+- [ ] **A2:** optional global Cmd+Shift+M with conflict handling.
 - [ ] **A3:** choose course files to save offline, with known sizes, bounded transfers and safe course/section folders.
 - [ ] **A3:** browse/open saved files offline and manually refresh selected files without overwriting local edits or propagating server deletions.
 - [x] **A4:** read-only upcoming agenda across sites, grouped by day, with fixed Moodle calendar links, the Mac's time zone stated and last-refresh/stale state.
@@ -229,3 +231,9 @@ Built: explicit Refresh Course Folders in Downloads, metadata-only `core_course_
 Downloaded PDF, DOCX, XLSX and PPTX files have a Preview action separate from default-app Open. Rust resolves a completed managed download by ID and creates a Tauri-owned native document window. PDFKit renders PDFs; Quick Look renders Office files. The AppKit toolbar has zoom/fit/readout, default-app Open, Finder and full screen; PDFs also have page navigation and page count. Office navigation stays in the native preview's scrolling surface. Native views have no webview/IPC grants, no document bytes cross IPC, and account session removal closes its previews. At most three previews are open at once.
 
 Verification and remaining live checks are recorded in [native reader/download QA](native-reader-downloads-qa.md). AI chat is now A6, at the end of Alpha feature implementation.
+
+### Tray unread items and activity search — 10 November 2026
+
+Implemented the next A1/A2 batch: latest unread subjects in per-organisation tray submenus; explicit activity metadata refresh in Courses; schema v7 account/course-scoped activity cache; Quick Open activity search with cache-age/connection copy; and a failed-download Return to Moodle fallback. No stale transfer URL is replayed. The tray opens the fixed notifications page without marking read. Removed courses and replaced accounts lose their cached activities; late writes from the previous account fail.
+
+Evidence: 73 frontend tests, 52 Rust tests, frontend lint/format/build, Rust formatting, workspace Clippy, IPC guards and local debug app packaging pass. Native/live-site acceptance remains open; no such gate was marked passed. Next independent implementation items are the PDF/image preference and optional global shortcut, followed by selected offline files, reminders and ICS in the amended delivery order. A6 remains last.

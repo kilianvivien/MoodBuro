@@ -31,6 +31,7 @@
     "allow-inbox-mark-read",
     "allow-site-open-page",
     "allow-courses-list",
+    "allow-activities-list",
     "allow-courses-refresh",
     "allow-course-pin",
     "allow-agenda-list",

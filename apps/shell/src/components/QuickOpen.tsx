@@ -9,7 +9,8 @@ import {
   Pin,
   Settings,
 } from "lucide-react";
-import { ipc, type Course, type Site } from "../ipc";
+import { ipc, message, type Activity, type Course, type Site } from "../ipc";
+import { ErrorText } from "../i18n/ErrorText";
 import { useI18n } from "../i18n/context";
 import type { Messages } from "../i18n/messages";
 import { search } from "../lib/search";
@@ -21,6 +22,7 @@ export type QuickView =
   "inbox" | "courses" | "agenda" | "downloads" | "settings";
 export type QuickTarget =
   | { kind: "course"; siteId: string; courseId: number }
+  | { kind: "activity"; siteId: string; activityId: number }
   | { kind: "site"; siteId: string }
   | { kind: "view"; view: QuickView };
 export interface QuickResult {
@@ -42,7 +44,7 @@ const views: readonly QuickView[] = [
 ];
 
 /**
- * Local search over saved names only: courses, organisations and shell views.
+ * Local search over saved names: courses, activities, organisations and shell views.
  * With nothing typed, pinned courses lead, then organisations and views.
  */
 export function quickOpenResults(
@@ -50,6 +52,7 @@ export function quickOpenResults(
   sites: readonly Site[],
   courses: readonly Course[],
   t: Messages,
+  activities: readonly Activity[] = [],
 ): QuickResult[] {
   const siteName = (id: string) => sites.find((site) => site.id === id)?.name;
   const all: QuickResult[] = [
@@ -68,6 +71,28 @@ export function quickOpenResults(
           courseId: course.id,
         },
       })),
+    ...activities
+      .filter(
+        (a) =>
+          siteName(a.siteId) &&
+          courses.some((c) => c.siteId === a.siteId && c.id === a.courseId),
+      )
+      .map((a) => ({
+        id: `activity:${a.siteId}:${a.id}`,
+        title: a.name,
+        subtitle: [
+          courses.find((c) => c.siteId === a.siteId && c.id === a.courseId)
+            ?.name,
+          siteName(a.siteId),
+        ]
+          .filter(Boolean)
+          .join(" · "),
+        target: {
+          kind: "activity" as const,
+          siteId: a.siteId,
+          activityId: a.id,
+        },
+      })),
     ...sites.map((site) => ({
       id: `site:${site.id}`,
       title: site.name,
@@ -84,7 +109,10 @@ export function quickOpenResults(
   if (!query.trim())
     return [
       ...all.filter((item) => item.pinned).slice(0, MAX_PINNED),
-      ...all.filter((item) => item.target.kind !== "course"),
+      ...all.filter(
+        (item) =>
+          item.target.kind !== "course" && item.target.kind !== "activity",
+      ),
     ];
   return search(all, query, (item) => [item.title, item.subtitle]).slice(
     0,
@@ -103,7 +131,11 @@ function ResultIcon({ result }: { result: QuickResult }): ReactNode {
   if (result.target.kind === "course")
     return <span className="row-avatar">{initials(result.title)}</span>;
   const Icon =
-    result.target.kind === "site" ? Building2 : viewIcons[result.target.view];
+    result.target.kind === "activity"
+      ? BookOpen
+      : result.target.kind === "site"
+        ? Building2
+        : viewIcons[result.target.view];
   return (
     <span className="row-icon">
       <Icon size={16} strokeWidth={1.75} />
@@ -118,7 +150,11 @@ export function QuickOpenPanel({
   onQuery,
   onActive,
   onChoose,
+  cacheNote,
+  error,
 }: {
+  error?: string | null;
+  cacheNote?: string;
   query: string;
   results: readonly QuickResult[];
   active: number;
@@ -214,6 +250,16 @@ export function QuickOpenPanel({
           ))}
         </ul>
       )}
+      {error && (
+        <p className="section-message error" role="alert">
+          <ErrorText error={error} context="navigation" />
+        </p>
+      )}
+      {cacheNote && (
+        <p className="quick-hint" role="status">
+          {cacheNote}
+        </p>
+      )}
       <p className="quick-hint">{t.quickOpen.hint}</p>
     </div>
   );
@@ -229,11 +275,40 @@ export function QuickOpen({
   onChoose: (target: QuickTarget) => void;
   onClose: () => void;
 }) {
-  const { t } = useI18n();
-  const { items } = useListing(sites, ipc.courses, ipc.refreshCourses);
+  const { t, date } = useI18n();
+  const [activityError, setActivityError] = useState<string | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    void ipc
+      .activities()
+      .then((items) => {
+        if (!cancelled) setActivities(items);
+      })
+      .catch((cause) => {
+        if (!cancelled) setActivityError(message(cause));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const { items, refreshed, loadError } = useListing(
+    sites,
+    ipc.courses,
+    ipc.refreshCourses,
+  );
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
-  const results = quickOpenResults(query, sites, items, t);
+  const results = quickOpenResults(query, sites, items, t, activities);
+  const oldest = [...refreshed, ...activities].reduce(
+    (at, item) => Math.min(at, item.refreshedAt),
+    Infinity,
+  );
+  const cacheNote = Number.isFinite(oldest)
+    ? t.quickOpen.cacheDate(
+        date(oldest * 1000, { dateStyle: "medium", timeStyle: "short" }),
+      )
+    : t.quickOpen.cacheEmpty;
   return (
     // Clicking outside the panel dismisses it, like a Spotlight window.
     <div
@@ -243,6 +318,8 @@ export function QuickOpen({
       }}
     >
       <QuickOpenPanel
+        error={activityError ?? loadError}
+        cacheNote={cacheNote}
         query={query}
         results={results}
         active={Math.min(active, Math.max(results.length - 1, 0))}

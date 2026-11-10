@@ -58,6 +58,14 @@ export interface Course {
   shortName: string;
   pinned: boolean;
 }
+export interface Activity {
+  siteId: string;
+  courseId: number;
+  id: number;
+  name: string;
+  module: string;
+  refreshedAt: number;
+}
 export type EventKind = "due" | "open" | "user" | "site" | "course" | "other";
 export interface AgendaEvent {
   siteId: string;
@@ -78,7 +86,12 @@ export interface Listing<T> {
 }
 /** Fixed Moodle destinations; Rust builds the URL from the saved site. */
 export type MoodlePage =
-  "notifications" | "messages" | "calendar" | "calendar-day" | "course";
+  | "notifications"
+  | "messages"
+  | "calendar"
+  | "calendar-day"
+  | "course"
+  | "activity";
 
 export type DeepLinkOutcome =
   { kind: "site"; siteId: string } | { kind: "onboarding"; url: string };
@@ -378,6 +391,21 @@ export const ipc = {
       : desktop
         ? invoke<void>("site_open_page", { id, page, value })
         : desktopFeature(),
+  activities: () =>
+    desktop
+      ? invoke<Activity[]>("activities_list")
+      : Promise.resolve<Activity[]>(
+          demo
+            ? demoData.courses.map((c, index) => ({
+                siteId: c.siteId,
+                courseId: c.id,
+                id: 1000 + index,
+                name: `${c.name} · Reading`,
+                module: "resource",
+                refreshedAt: demoData.refreshed.courses,
+              }))
+            : [],
+        ),
   courses: () =>
     desktop
       ? invoke<Listing<Course>>("courses_list")

@@ -160,6 +160,7 @@ export function Courses({
 }) {
   const { t } = useI18n();
   const listing = useListing(sites, ipc.courses, ipc.refreshCourses);
+  const [indexing, setIndexing] = useState(false);
   const [query, setQuery] = useState("");
   const [siteId, setSiteId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -210,6 +211,27 @@ export function Courses({
         />
       </PageHeader>
       <div className="filter-bar">
+        <button
+          className="button"
+          disabled={indexing || listing.refreshing.length > 0}
+          onClick={() =>
+            void (async () => {
+              setError(null);
+              setIndexing(true);
+              try {
+                for (const site of shownSites)
+                  await ipc.refreshCourseFolders(site.id);
+                await listing.reload();
+              } catch (cause) {
+                setError(message(cause));
+              } finally {
+                setIndexing(false);
+              }
+            })()
+          }
+        >
+          {indexing ? t.common.refreshing : t.courses.refreshActivities}
+        </button>
         <SearchField
           value={query}
           label={t.courses.searchLabel}

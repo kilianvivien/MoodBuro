@@ -246,6 +246,12 @@ pub struct CourseSection {
 #[derive(Clone, Deserialize)]
 pub struct CourseModule {
     #[serde(default)]
+    pub id: i64,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub modname: String,
+    #[serde(default)]
     pub contextid: Option<i64>,
 }
 /// Parse only a pluginfile context within this Moodle installation, including non-slash URLs.
@@ -824,10 +830,12 @@ mod contract_tests {
             .and(body_string_contains("wsfunction=core_course_get_contents"))
             .and(body_string_contains("courseid=7"))
             .and(body_string_contains("excludecontents"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([{"id":1,"modules":[{"id":2,"contextid":42,"description":"ignored"},{"id":3}]}])))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([{"id":1,"modules":[{"id":2,"name":"Essay","modname":"assign","contextid":42,"description":"ignored"},{"id":3}]}])))
             .expect(1).mount(&server).await;
         let sections = client.course_contents("test", 7).await.unwrap();
         assert_eq!(sections[0].modules[0].contextid, Some(42));
+        assert_eq!(sections[0].modules[0].name, "Essay");
+        assert_eq!(sections[0].modules[0].modname, "assign");
         assert!(sections[0].modules[1].contextid.is_none());
     }
     #[tokio::test]

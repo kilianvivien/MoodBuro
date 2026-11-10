@@ -395,3 +395,37 @@ it("offers native previews separately from opening and labels unmatched courses"
   expect(unavailable).toContain("Cours inconnu");
   expect(unavailable.match(/disabled=""/g)).toHaveLength(3);
 });
+
+it("offers failed downloads a return route without enabling file opening", () => {
+  const props = {
+    sites: [site],
+    busy: false,
+    confirming: null,
+    onOpen: vi.fn(),
+    onReveal: vi.fn(),
+    onCancel: vi.fn(),
+    onConfirm: vi.fn(),
+    onReturn: vi.fn(),
+  };
+  const item = {
+    id: "failed",
+    siteId: site.id,
+    filename: "notes.pdf",
+    state: "failed" as const,
+    startedAt: 1,
+    needsConfirmation: false,
+  };
+  const html = inLocale("en", <DownloadList {...props} items={[item]} />);
+  expect(html).toContain("Return to Moodle");
+  expect(html).toContain("This does not restart the transfer.");
+  expect(html).toMatch(/aria-label="Open notes.pdf" disabled=""/);
+  expect(inLocale("fr", <DownloadList {...props} items={[item]} />)).toContain(
+    "Retour à Moodle",
+  );
+  expect(
+    inLocale(
+      "en",
+      <DownloadList {...props} items={[{ ...item, state: "complete" }]} />,
+    ),
+  ).not.toContain("Return to Moodle");
+});

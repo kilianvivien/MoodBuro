@@ -269,6 +269,53 @@ describe("Quick Open", () => {
     expect(results("no such thing")).toEqual([]);
   });
 
+  it("searches cached activity names across sites and drops orphaned metadata", () => {
+    const activities = [
+      {
+        siteId: "a",
+        courseId: 1,
+        id: 42,
+        name: "Économie essay",
+        module: "assign",
+        refreshedAt: 1,
+      },
+      {
+        siteId: "gone",
+        courseId: 4,
+        id: 42,
+        name: "Économie orphan",
+        module: "quiz",
+        refreshedAt: 1,
+      },
+      {
+        siteId: "a",
+        courseId: 99,
+        id: 43,
+        name: "Économie removed course",
+        module: "quiz",
+        refreshedAt: 1,
+      },
+    ];
+    const found = quickOpenResults(
+      "economie",
+      sites,
+      courses,
+      catalogues.en,
+      activities,
+    );
+    expect(found).toHaveLength(1);
+    expect(found[0].target).toEqual({
+      kind: "activity",
+      siteId: "a",
+      activityId: 42,
+    });
+    expect(
+      quickOpenResults("", sites, courses, catalogues.en, activities).some(
+        (r) => r.target.kind === "activity",
+      ),
+    ).toBe(false);
+  });
+
   it("renders an accessible combobox with one selected option", () => {
     const html = inLocale(
       "fr",

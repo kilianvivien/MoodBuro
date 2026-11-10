@@ -101,6 +101,7 @@ export function DownloadList({
   onReveal,
   onCopy,
   onPreview,
+  onReturn,
   onCancel,
   onConfirm,
 }: {
@@ -114,6 +115,7 @@ export function DownloadList({
   onReveal: (id: string) => void;
   onCopy?: (id: string) => void;
   onPreview?: (id: string) => void;
+  onReturn?: (item: Download) => void;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -166,6 +168,16 @@ export function DownloadList({
                 </span>
               </div>
               <div className="row-actions">
+                {item.state === "failed" && onReturn && (
+                  <button
+                    className="button small"
+                    disabled={busy || !sites.some((s) => s.id === item.siteId)}
+                    title={t.downloads.returnHint}
+                    onClick={() => onReturn(item)}
+                  >
+                    {t.downloads.returnToMoodle}
+                  </button>
+                )}
                 {item.canPreview && onPreview && (
                   <button
                     className="button small"
@@ -279,7 +291,13 @@ function ClearConfirmation({
 
 type StateFilter = "all" | DownloadState;
 
-export function Downloads({ sites }: { sites: Site[] }) {
+export function Downloads({
+  sites,
+  onReturn,
+}: {
+  sites: Site[];
+  onReturn?: (item: Download) => void;
+}) {
   const { t } = useI18n();
   const [items, setItems] = useState<Download[]>([]);
   const [total, setTotal] = useState(0);
@@ -515,6 +533,7 @@ export function Downloads({ sites }: { sites: Site[] }) {
           busy={busy}
           confirming={confirming}
           filtered={filtered}
+          onReturn={onReturn}
           onOpen={(item) => {
             if (item.needsConfirmation) {
               returnFocus.current = document.activeElement as HTMLElement;
@@ -542,6 +561,7 @@ export function Downloads({ sites }: { sites: Site[] }) {
       )}
       <p className="section-footnote">{t.downloads.location}</p>
       <p className="section-footnote">{t.downloads.previewHint}</p>
+      <p className="section-footnote">{t.downloads.returnHint}</p>
     </div>
   );
 }

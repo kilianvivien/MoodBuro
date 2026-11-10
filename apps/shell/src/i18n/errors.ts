@@ -151,6 +151,14 @@ const french: Record<string, string> = {
   "Navigation failed.": "La navigation a échoué.",
 
   // Inbox, courses and agenda
+  "Could not read course activities.":
+    "Impossible de lire les activités des cours.",
+  "Could not save course activities.":
+    "Impossible d’enregistrer les activités des cours.",
+  "This activity is no longer available. Refresh your course activities.":
+    "Cette activité n’est plus disponible. Actualisez les activités de vos cours.",
+  "Invalid activity metadata.":
+    "Les métadonnées de cette activité sont invalides.",
   "Unknown Moodle page.": "Page Moodle inconnue.",
   "This course is no longer in your list. Refresh your courses.":
     "Ce cours ne figure plus dans votre liste. Actualisez vos cours.",

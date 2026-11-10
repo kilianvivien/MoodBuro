@@ -175,6 +175,14 @@ pub async fn site_open_page(
     crate::library::open_page(&app, &id, &page, value).await
 }
 #[tauri::command]
+pub fn activities_list(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Vec<md_store::Activity>, String> {
+    shell(&webview)?;
+    crate::library::activities(&app)
+}
+#[tauri::command]
 pub fn courses_list(
     webview: tauri::Webview,
     app: AppHandle,

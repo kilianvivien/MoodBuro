@@ -39,12 +39,12 @@ First implementation pass over A1, A2 and the read-only half of A4, against synt
 ## A1 — Notification inbox and download controls
 
 - [x] Add a local notification inbox grouped/filterable by site, with subject, date, unread state, Open and Mark Read.
-- [ ] Use the existing native/menu-bar entry points to reach the inbox and expose the latest unread items without wide menu rows. _(Partly built: View → Inbox ⌘1 and a tray Inbox entry with the count; individual unread items are not listed in the tray.)_
+- [x] Use native/menu-bar entry points to reach the inbox and expose up to five latest unread notifications per organisation in compact submenus. Selecting a subject opens the fixed notifications page.
 - [x] Open a safe site notification page when a precise activity destination is unavailable; never follow an unvalidated context URL.
 - [x] Refresh authoritative counts/read state after Mark Read. Show failures and preserve the previous state when the server rejects the operation.
 - [x] Replace the 20-row-only Downloads view with paginated history and filename/site/state filters; add course filtering when A2 supplies a reliable association. Keep an explicit Unknown Course bucket. _(Built: paging and filename/site/state/course filters with Unknown Course. Course mapping comes from explicit Moodle module-metadata refresh; live qualification remains open.)_
 - [x] Add Copy Path and per-site Clear History, keeping files on disk. Confirm history clearing and describe its effect.
-- [ ] Add a safe retry route: resolve a fresh source from stable Moodle file metadata when available; otherwise offer return to the relevant Moodle page/site. Never persist or replay a stale credential-bearing URL or claim that revealing a page restarted a transfer.
+- [x] Offer failed downloads a Return to Moodle fallback, using a still-cached course or the organisation. No old source URL is persisted or replayed; the UI states that navigation does not restart the transfer. Fresh-source retry remains later.
 - [ ] Add a PDF/image handling preference: retain inline viewing by default; offer an explicit Save/Open in Default App route through managed downloads. Risky/unknown types always retain confirmation and never auto-open.
 
 **Acceptance:** a notification can be opened/read with badge/tray counts reconciled; reconnect and permission failures are honest; an old download remains discoverable after restart; clearing history leaves files untouched; missing files, risky types and expired source links follow the existing guards. Native actions have an in-app fallback.
@@ -53,7 +53,7 @@ First implementation pass over A1, A2 and the read-only half of A4, against synt
 
 - [x] Fetch enrolled-course metadata with bounded requests, cache it per account, and expose refresh, empty, offline/stale and permission-error states.
 - [x] Add a compact course browser with local pins and course/site labels. Opening a result routes through the existing session bridge and navigation guard.
-- [ ] Add Cmd+L quick-open across sites' course names and already cached activities. Search cached metadata locally; show what is available offline and when the cache was refreshed. _(Built: ⌘L over course names, organisations and shell views. Open: no activity metadata is cached yet, and the panel does not show the cache age — the Courses view does.)_
+- [x] Add Cmd+L Quick Open across course names and explicitly cached activities, organisations and views. Show the oldest saved metadata refresh and state that Moodle pages need a connection. Activities are indexed by Refresh Activities in Courses or Refresh Course Folders in Downloads.
 - [ ] Offer an opt-in global Cmd+Shift+M shortcut; handle registration conflicts visibly and unregister it when disabled or quitting.
 - [x] Reuse course/context identifiers to finish course-folder download routing. Keep the Downloads fallback when association is unknown; never infer a course from a similar name.
 - [x] Clear metadata/pins on removal or account replacement and reject late responses from the previous user.

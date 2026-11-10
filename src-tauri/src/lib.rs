@@ -144,6 +144,7 @@ pub fn run() {
             commands::inbox_mark_read,
             commands::site_open_page,
             commands::courses_list,
+            commands::activities_list,
             commands::courses_refresh,
             commands::course_pin,
             commands::agenda_list,

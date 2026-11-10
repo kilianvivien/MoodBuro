@@ -12,6 +12,7 @@ fn main() {
             "inbox_mark_read",
             "site_open_page",
             "courses_list",
+            "activities_list",
             "courses_refresh",
             "course_pin",
             "agenda_list",

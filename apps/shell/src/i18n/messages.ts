@@ -63,6 +63,7 @@ const en = {
       "MoodBuro keeps the latest 100 notification subjects per organisation on this Mac. Opening one shows that organisation’s notifications page in Moodle.",
   },
   courses: {
+    refreshActivities: "Refresh Activities",
     title: "Courses",
     searchLabel: "Search courses",
     searchPlaceholder: "Search courses",
@@ -78,7 +79,7 @@ const en = {
     empty: "No courses yet",
     emptyHint: "Courses you are enrolled in appear here after a refresh.",
     noMatch: (query: string) => `No course matches “${query}”`,
-    noMatchHint: "Search looks at course names saved on this Mac.",
+    noMatchHint: "Search looks at course and activity names saved on this Mac.",
     footnote:
       "Pins are saved on this Mac only and do not change your Moodle favourites. This list stays available offline; opening a course needs a connection.",
   },
@@ -106,14 +107,18 @@ const en = {
   },
   quickOpen: {
     label: "Quick Open",
-    placeholder: "Open a course, organisation or view",
+    placeholder: "Open a course, activity, organisation or view",
+    cacheDate: (date: string) =>
+      `Saved metadata · oldest refresh: ${date}. Moodle pages require a connection.`,
+    cacheEmpty:
+      "No saved metadata yet. Refresh courses and activities in Courses.",
     results: "Results",
     courses: "Courses",
     organisations: "Organisations",
     views: "Views",
     pinned: "Pinned",
     empty: "No results",
-    emptyHint: "Search looks at course names saved on this Mac.",
+    emptyHint: "Search looks at course and activity names saved on this Mac.",
     hint: "↑ ↓ to choose · Return to open · Esc to close",
   },
   toolbar: {
@@ -146,6 +151,9 @@ const en = {
     allCourses: "All courses",
     unknownCourse: "Unknown course",
     refreshFolders: "Refresh Course Folders",
+    returnToMoodle: "Return to Moodle",
+    returnHint:
+      "For a failed download, return to Moodle and start it again there. This does not restart the transfer.",
     foldersRefreshed:
       "Course folders refreshed. New downloads will use known course folders; existing files stay in place.",
     openLabel: (name: string) => `Open ${name}`,
@@ -324,6 +332,7 @@ const fr: Messages = {
       "MoodBuro conserve sur ce Mac les objets des 100 dernières notifications de chaque organisation. En ouvrir une affiche la page des notifications de cette organisation dans Moodle.",
   },
   courses: {
+    refreshActivities: "Actualiser les activités",
     title: "Cours",
     searchLabel: "Rechercher des cours",
     searchPlaceholder: "Rechercher des cours",
@@ -341,7 +350,7 @@ const fr: Messages = {
     noMatch: (query: string) =>
       `Aucun cours ne correspond à «\u00a0${query}\u00a0»`,
     noMatchHint:
-      "La recherche porte sur les noms de cours enregistrés sur ce Mac.",
+      "La recherche porte sur les noms de cours et d’activités enregistrés sur ce Mac.",
     footnote:
       "Les épingles sont enregistrées sur ce Mac uniquement et ne modifient pas vos favoris Moodle. Cette liste reste disponible hors ligne\u00a0; ouvrir un cours nécessite une connexion.",
   },
@@ -370,7 +379,11 @@ const fr: Messages = {
   },
   quickOpen: {
     label: "Ouverture rapide",
-    placeholder: "Ouvrir un cours, une organisation ou une vue",
+    placeholder: "Ouvrir un cours, une activité, une organisation ou une vue",
+    cacheDate: (date: string) =>
+      `Métadonnées enregistrées · actualisation la plus ancienne\u00a0: ${date}. Les pages Moodle nécessitent une connexion.`,
+    cacheEmpty:
+      "Aucune métadonnée enregistrée. Actualisez les cours et activités dans Cours.",
     results: "Résultats",
     courses: "Cours",
     organisations: "Organisations",
@@ -378,7 +391,7 @@ const fr: Messages = {
     pinned: "Épinglé",
     empty: "Aucun résultat",
     emptyHint:
-      "La recherche porte sur les noms de cours enregistrés sur ce Mac.",
+      "La recherche porte sur les noms de cours et d’activités enregistrés sur ce Mac.",
     hint: "↑ ↓ pour choisir · Retour pour ouvrir · Échap pour fermer",
   },
   toolbar: {
@@ -411,6 +424,9 @@ const fr: Messages = {
     allCourses: "Tous les cours",
     unknownCourse: "Cours inconnu",
     refreshFolders: "Actualiser les dossiers de cours",
+    returnToMoodle: "Retour à Moodle",
+    returnHint:
+      "Après un échec, retournez dans Moodle pour relancer le téléchargement. Cette action ne relance pas le transfert.",
     foldersRefreshed:
       "Dossiers de cours actualisés. Les nouveaux téléchargements seront classés par cours identifié ; les fichiers existants restent en place.",
     openLabel: (name: string) => `Ouvrir ${name}`,

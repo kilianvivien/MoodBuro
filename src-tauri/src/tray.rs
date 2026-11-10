@@ -58,6 +58,35 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
                     }
                 });
             }
+            id if id.starts_with("tray-notification:") => {
+                if let Some((site, notification)) = id
+                    .strip_prefix("tray-notification:")
+                    .and_then(|s| s.rsplit_once(':'))
+                {
+                    if let Ok(notification) = notification.parse::<i64>() {
+                        let cached = crate::library::inbox(app)
+                            .unwrap_or_default()
+                            .iter()
+                            .any(|n| n.site_id == site && n.id == notification && !n.read);
+                        if cached {
+                            let app = app.clone();
+                            let site = site.to_owned();
+                            tauri::async_runtime::spawn(async move {
+                                let result =
+                                    crate::library::open_page(&app, &site, "notifications", None)
+                                        .await;
+                                show(&app);
+                                if let Err(error) = result {
+                                    crate::menus::show_local_view(&app, "inbox");
+                                    let _ = app.emit_to("shell", "shell://error", error);
+                                } else {
+                                    let _ = app.emit_to("shell", "navigation://site-opened", site);
+                                }
+                            });
+                        }
+                    }
+                }
+            }
             id if id.starts_with("tray-reveal:") => {
                 let id = id.strip_prefix("tray-reveal:").expect("download menu id");
                 let result = crate::downloads::path(app, id, false, false).and_then(|path| {
@@ -109,6 +138,15 @@ async fn open_site(app: &AppHandle, id: &str, home: bool) -> Result<(), String> 
     let _ = app.emit_to("shell", "navigation://site-opened", id);
     Ok(())
 }
+fn latest_unread<'a>(items: &'a [md_store::InboxItem], site: &str) -> Vec<&'a md_store::InboxItem> {
+    let mut unread: Vec<_> = items
+        .iter()
+        .filter(|n| n.site_id == site && !n.read)
+        .collect();
+    unread.sort_by_key(|n| std::cmp::Reverse((n.time_created, n.id)));
+    unread.truncate(5);
+    unread
+}
 fn count_all(statuses: &[Status]) -> u64 {
     statuses
         .iter()
@@ -128,6 +166,7 @@ pub fn refresh(app: &AppHandle, statuses: &[Status]) -> tauri::Result<()> {
         .sites()
         .unwrap_or_default();
     let mut menu = MenuBuilder::new(app);
+    let notifications = crate::library::inbox(app).unwrap_or_default();
     for site in sites {
         let status = statuses.iter().find(|s| s.site_id == site.id);
         let count = status.map_or(0, |s| s.unread);
@@ -162,6 +201,20 @@ pub fn refresh(app: &AppHandle, statuses: &[Status]) -> tauri::Result<()> {
         )
         .build(app)?;
         let mut site_menu = SubmenuBuilder::new(app, label).items(&[&open, &home]);
+        let unread = latest_unread(&notifications, &site.id);
+        if !unread.is_empty() {
+            let mut latest = SubmenuBuilder::new(app, text("Latest Unread", "Dernières non lues"));
+            for item in unread {
+                latest = latest.item(
+                    &MenuItemBuilder::with_id(
+                        format!("tray-notification:{}:{}", site.id, item.id),
+                        compact(&item.subject, 48),
+                    )
+                    .build(app)?,
+                );
+            }
+            site_menu = site_menu.separator().item(&latest.build()?);
+        }
         if let Some(status) = status_text {
             site_menu = site_menu
                 .separator()
@@ -247,6 +300,25 @@ pub fn refresh(app: &AppHandle, statuses: &[Status]) -> tauri::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn latest_items_are_unread_site_scoped_newest_and_bounded() {
+        let items: Vec<_> = (0..12)
+            .map(|i| md_store::InboxItem {
+                site_id: if i == 11 { "other" } else { "site" }.into(),
+                id: i,
+                subject: "Subject".into(),
+                time_created: i,
+                read: i == 10,
+            })
+            .collect();
+        assert_eq!(
+            latest_unread(&items, "site")
+                .iter()
+                .map(|n| n.id)
+                .collect::<Vec<_>>(),
+            vec![9, 8, 7, 6, 5]
+        );
+    }
     #[test]
     fn menu_labels_are_bounded_and_unicode_safe() {
         assert_eq!(compact("CX", 32), "CX");

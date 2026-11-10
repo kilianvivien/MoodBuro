@@ -109,12 +109,22 @@ fn download_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Download> {
         course_name: r.get(7)?,
     })
 }
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Activity {
+    pub site_id: String,
+    pub course_id: i64,
+    pub id: i64,
+    pub name: String,
+    pub module: String,
+    pub refreshed_at: i64,
+}
 pub struct Store(Connection);
 impl Store {
     pub fn open(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 6 {
+        if version > 7 {
             return Err(rusqlite::Error::InvalidQuery);
         }
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; BEGIN;
@@ -127,11 +137,12 @@ impl Store {
             CREATE TABLE IF NOT EXISTS course_pins (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, course_id INTEGER NOT NULL, PRIMARY KEY(site_id,course_id));
             CREATE TABLE IF NOT EXISTS events (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, event_id INTEGER NOT NULL, name TEXT NOT NULL, time_start INTEGER NOT NULL, duration INTEGER NOT NULL, kind TEXT NOT NULL, course_id INTEGER, course_name TEXT, PRIMARY KEY(site_id,event_id));
             CREATE TABLE IF NOT EXISTS sync_state (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, kind TEXT NOT NULL, refreshed_at INTEGER NOT NULL, PRIMARY KEY(site_id,kind));
+            CREATE TABLE IF NOT EXISTS activities (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, course_id INTEGER NOT NULL, module_id INTEGER NOT NULL, name TEXT NOT NULL, module TEXT NOT NULL, refreshed_at INTEGER NOT NULL, PRIMARY KEY(site_id,module_id));
             CREATE TABLE IF NOT EXISTS course_contexts (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, course_id INTEGER NOT NULL, context_id INTEGER NOT NULL, PRIMARY KEY(site_id,course_id,context_id));")?;
         if version < 6 {
             connection.execute_batch("ALTER TABLE downloads ADD COLUMN course_id INTEGER; ALTER TABLE downloads ADD COLUMN course_name TEXT;")?;
         }
-        connection.execute_batch("PRAGMA user_version=6; COMMIT;")?;
+        connection.execute_batch("PRAGMA user_version=7; COMMIT;")?;
         Ok(Self(connection))
     }
     pub fn download_insert(&self, item: &Download) -> rusqlite::Result<()> {
@@ -316,6 +327,7 @@ impl Store {
             )?;
         }
         tx.execute("DELETE FROM course_contexts WHERE site_id=?1 AND course_id NOT IN (SELECT course_id FROM courses WHERE site_id=?1)", [site_id])?;
+        tx.execute("DELETE FROM activities WHERE site_id=?1 AND course_id NOT IN (SELECT course_id FROM courses WHERE site_id=?1)", [site_id])?;
         tx.execute("DELETE FROM course_pins WHERE site_id=?1 AND course_id NOT IN (SELECT course_id FROM courses WHERE site_id=?1)", [site_id])?;
         tx.execute("INSERT INTO sync_state VALUES (?1,'courses',?2) ON CONFLICT(site_id,kind) DO UPDATE SET refreshed_at=excluded.refreshed_at", params![site_id, now])?;
         tx.commit()
@@ -362,6 +374,56 @@ impl Store {
             )?;
         }
         tx.commit()
+    }
+    pub fn save_activities(
+        &self,
+        site_id: &str,
+        user_id: i64,
+        course: i64,
+        items: &[Activity],
+    ) -> rusqlite::Result<()> {
+        let tx = self.0.unchecked_transaction()?;
+        Self::owned_by(&tx, site_id, user_id)?;
+        let known: bool = tx.query_row(
+            "SELECT EXISTS(SELECT 1 FROM courses WHERE site_id=?1 AND course_id=?2)",
+            params![site_id, course],
+            |r| r.get(0),
+        )?;
+        if !known {
+            return Err(rusqlite::Error::InvalidQuery);
+        }
+        tx.execute(
+            "DELETE FROM activities WHERE site_id=?1 AND course_id=?2",
+            params![site_id, course],
+        )?;
+        for item in items.iter().take(10000) {
+            tx.execute(
+                "INSERT OR REPLACE INTO activities VALUES (?1,?2,?3,?4,?5,?6)",
+                params![
+                    site_id,
+                    course,
+                    item.id,
+                    item.name,
+                    item.module,
+                    item.refreshed_at
+                ],
+            )?;
+        }
+        tx.commit()
+    }
+    pub fn activities(&self) -> rusqlite::Result<Vec<Activity>> {
+        let mut stmt = self.0.prepare("SELECT site_id,course_id,module_id,name,module,refreshed_at FROM activities ORDER BY name COLLATE NOCASE,module_id")?;
+        let rows = stmt.query_map([], |r| {
+            Ok(Activity {
+                site_id: r.get(0)?,
+                course_id: r.get(1)?,
+                id: r.get(2)?,
+                name: r.get(3)?,
+                module: r.get(4)?,
+                refreshed_at: r.get(5)?,
+            })
+        })?;
+        rows.collect()
     }
     /// An ambiguous context deliberately falls back to Unknown Course.
     pub fn course_for_context(
@@ -601,6 +663,7 @@ impl Store {
             "downloads",
             "courses",
             "course_contexts",
+            "activities",
             "course_pins",
             "events",
             "sync_state",
@@ -868,6 +931,46 @@ mod library_tests {
             short_name: String::new(),
             pinned: false,
         }
+    }
+    #[test]
+    fn activity_cache_reconciles_and_rejects_old_accounts() {
+        let (store, mut site) = store();
+        store
+            .save_courses("site", 1, &[course(2, "Law")], 1)
+            .unwrap();
+        let item = Activity {
+            site_id: "ignored".into(),
+            course_id: 99,
+            id: 42,
+            name: "Essay".into(),
+            module: "assign".into(),
+            refreshed_at: 3,
+        };
+        store
+            .save_activities("site", 1, 2, std::slice::from_ref(&item))
+            .unwrap();
+        let saved = store.activities().unwrap();
+        assert_eq!(saved[0].site_id, "site");
+        assert_eq!(saved[0].course_id, 2);
+        assert!(store.save_activities("site", 2, 2, &[]).is_err());
+        assert!(store.save_activities("site", 1, 99, &[]).is_err());
+        store.save_activities("site", 1, 2, &[]).unwrap();
+        assert!(store.activities().unwrap().is_empty());
+        store
+            .save_activities("site", 1, 2, std::slice::from_ref(&item))
+            .unwrap();
+        store.save_courses("site", 1, &[], 4).unwrap();
+        assert!(store.activities().unwrap().is_empty());
+        store
+            .save_courses("site", 1, &[course(2, "Law")], 5)
+            .unwrap();
+        store
+            .save_activities("site", 1, 2, std::slice::from_ref(&item))
+            .unwrap();
+        site.user_id = 2;
+        store.update(&site).unwrap();
+        assert!(store.activities().unwrap().is_empty());
+        assert!(store.save_activities("site", 1, 2, &[item]).is_err());
     }
     #[test]
     fn course_contexts_are_account_bound_and_ambiguous_contexts_are_unknown() {

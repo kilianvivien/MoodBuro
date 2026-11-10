@@ -147,6 +147,8 @@ export default function App() {
     if (target.kind === "site") void openSite(target.siteId);
     else if (target.kind === "course")
       void openPage(target.siteId, "course", target.courseId);
+    else if (target.kind === "activity")
+      void openPage(target.siteId, "activity", target.activityId);
     else if (target.view === "settings") void showSettings();
     else void showLocal(target.view);
   }
@@ -436,7 +438,26 @@ export default function App() {
               onSubmit={(url) => void addSite(url)}
             />
           )}
-          {ready && view === "downloads" && <Downloads sites={sites} />}
+          {ready && view === "downloads" && (
+            <Downloads
+              sites={sites}
+              onReturn={(item) => {
+                void ipc
+                  .courses()
+                  .then(({ items }) => {
+                    if (
+                      items.some(
+                        (c) =>
+                          c.siteId === item.siteId && c.id === item.courseId,
+                      )
+                    )
+                      void openPage(item.siteId, "course", item.courseId!);
+                    else void openSite(item.siteId);
+                  })
+                  .catch(() => void openSite(item.siteId));
+              }}
+            />
+          )}
           {ready && view === "settings" && (
             <Settings
               desktop={desktop}
