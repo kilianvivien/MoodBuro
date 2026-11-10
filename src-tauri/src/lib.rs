@@ -1,11 +1,14 @@
 mod auth_log;
 mod commands;
+mod documents;
 mod downloads;
 #[cfg(target_os = "macos")]
 mod frame_guard;
 mod library;
 mod links;
 mod menus;
+#[cfg(target_os = "macos")]
+mod native_preview;
 mod notifications;
 #[cfg(target_os = "macos")]
 mod pdf_save;
@@ -107,6 +110,10 @@ pub fn run() {
             }
             if let tauri::WindowEvent::Destroyed = event {
                 #[cfg(target_os = "macos")]
+                if window.label().starts_with("document-") {
+                    native_preview::remove(window.label());
+                }
+                #[cfg(target_os = "macos")]
                 if window.label().starts_with("popup-") {
                     pdf_save::remove(window.app_handle(), window.label());
                     frame_guard::remove(window.app_handle(), window.label());
@@ -141,6 +148,8 @@ pub fn run() {
             commands::course_pin,
             commands::agenda_list,
             commands::agenda_refresh,
+            commands::download_preview,
+            commands::course_folders_refresh,
             commands::download_open,
             commands::download_reveal,
             commands::unread_list,

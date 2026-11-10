@@ -16,6 +16,8 @@ fn main() {
             "course_pin",
             "agenda_list",
             "agenda_refresh",
+            "download_preview",
+            "course_folders_refresh",
             "download_open",
             "download_reveal",
             "unread_list",

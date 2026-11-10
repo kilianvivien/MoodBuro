@@ -212,6 +212,7 @@ pub fn profile(
 }
 
 pub fn remove_session(app: &AppHandle, site: &md_store::Site) -> Result<(), String> {
+    crate::documents::close_site(app, &site.id);
     let label = format!("site-{}", site.id);
     for (label, view) in app.webviews() {
         if label.starts_with(&format!("popup-{}-", site.id)) {

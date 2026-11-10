@@ -241,6 +241,52 @@ fn kind(event_type: &str) -> &'static str {
     }
 }
 
+/// User-triggered indexing; web-service permissions determine which contexts exist.
+/// Refreshes metadata first and never guesses course ownership from the current page.
+pub async fn refresh_folders(app: &AppHandle, id: &str) -> Result<(), String> {
+    let expected = site(app, id)?.user_id;
+    refresh_courses(app, id).await?;
+    let courses = app
+        .state::<AppState>()
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?
+        .courses()
+        .map_err(|_| "Could not read the course list.")?;
+    for course in courses.into_iter().filter(|c| c.site_id == id) {
+        refresh_contexts(app, id, course.id, expected).await?;
+    }
+    Ok(())
+}
+pub async fn refresh_contexts(
+    app: &AppHandle,
+    id: &str,
+    course: i64,
+    expected_user: i64,
+) -> Result<(), String> {
+    let (site, client, token) = session(app, id)?;
+    if site.user_id != expected_user {
+        return Err("This course is no longer in your list. Refresh your courses.".into());
+    }
+    let sections = client
+        .course_contents(&token, course)
+        .await
+        .map_err(|e| e.to_string())?;
+    let contexts: Vec<_> = sections
+        .into_iter()
+        .flat_map(|s| s.modules)
+        .filter_map(|m| m.contextid)
+        .filter(|id| *id > 0)
+        .take(10000)
+        .collect();
+    app.state::<AppState>()
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?
+        .save_course_contexts(id, site.user_id, course, &contexts)
+        .map_err(|_| "Could not save course folders.".into())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

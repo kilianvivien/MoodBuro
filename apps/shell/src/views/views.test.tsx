@@ -359,3 +359,39 @@ it("provides a Home button and a popup escape path independent of PDF JavaScript
   expect(popup).toMatch(/Back to Moodle|Retour à Moodle/);
   expect(popup).toContain('disabled=""');
 });
+
+it("offers native previews separately from opening and labels unmatched courses", () => {
+  const props = {
+    sites: [site],
+    busy: false,
+    confirming: null,
+    onOpen: vi.fn(),
+    onReveal: vi.fn(),
+    onCancel: vi.fn(),
+    onConfirm: vi.fn(),
+    onPreview: vi.fn(),
+  };
+  const item = {
+    id: "office",
+    siteId: site.id,
+    filename: "lesson.pptx",
+    state: "complete" as const,
+    startedAt: 1,
+    needsConfirmation: false,
+    canPreview: true,
+    courseName: "Public law",
+  };
+  const available = inLocale("en", <DownloadList {...props} items={[item]} />);
+  expect(available).toContain('aria-label="Preview lesson.pptx"');
+  expect(available).toContain('aria-label="Open lesson.pptx"');
+  expect(available).toContain("Public law");
+  const unavailable = inLocale(
+    "fr",
+    <DownloadList
+      {...props}
+      items={[{ ...item, state: "downloading", courseName: undefined }]}
+    />,
+  );
+  expect(unavailable).toContain("Cours inconnu");
+  expect(unavailable.match(/disabled=""/g)).toHaveLength(3);
+});

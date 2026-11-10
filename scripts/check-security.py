@@ -24,5 +24,5 @@ assert commands.count('    shell(&webview)?;') + commands.count('popup_shell(&we
 assert 'view.label() == format!("chrome-{}", view.window().label())' in commands
 print('Local shell/popup-toolbar capability and caller guards passed; remote views have no grants.')
 
-for label in ['site-0000', 'auth-0000', 'popup-0000-1111']:
+for label in ['site-0000', 'auth-0000', 'popup-0000-1111', 'document-0000-1111']:
     assert not any(fnmatchcase(label, pattern) for data in [cap, popup] for pattern in data['webviews'])

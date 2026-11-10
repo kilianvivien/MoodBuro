@@ -1,6 +1,6 @@
 # MoodBuro — implementation tracker
 
-Last updated: 9 November 2026.
+Last updated: 10 November 2026.
 
 This is the working checklist for project advancement. The [PRD](prd.md) defines the product, and the [Alpha implementation plan](alpha-plan.md) supplies the baseline scope and sequence. The [expanded Alpha feature scope](alpha-feature-expansion.md) promotes bounded user-facing slices from later milestones. Work has landed across parts of W1–W3; that does not mean those weeks or their validation gates are complete.
 
@@ -13,6 +13,7 @@ This is the working checklist for project advancement. The [PRD](prd.md) defines
 | M0 — architecture and sign-in spike | In progress | Repeatable three-site login/SSO tests, platform/security validation and D1–D5 decisions |
 | M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, course download routing and installed-app validation |
 | Expanded Alpha features — A1–A5 | A1, A2 and the read-only A4 agenda partly implemented against fixtures; A3, A5 and reminders not started | Live/native validation of the built parts; remaining A1/A2 items, selected offline files, reminders and manual ICS export |
+| A6 — AI assistant | Planned, not started; final Alpha feature | Both BYOK providers, explicit context sharing, bounded tools and isolation checks |
 | First tester Alpha | Not ready for distribution | All Alpha exit criteria, universal packaging and private distribution setup |
 
 The INSP dashboard has been observed authenticated in the app. This is a successful real-site observation; it does not close the complete SSO, session-restoration or security test matrix.
@@ -63,13 +64,13 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 - [x] Grant privileged IPC only to the local shell, with explicit command permissions and caller checks.
 - [x] Enforce origin-based navigation policy; capture managed downloads and isolate controlled same-origin popups behind separate local toolbar permissions.
 - [x] Add unit/contract tests for callback and URL policies, HTTP behavior, metadata/settings/lifecycle and localization.
-- [x] Pass the latest local frontend build, lint/format checks, **70 UI tests**, **42 Rust tests**, workspace Clippy and shell-capability regression checks.
+- [x] Pass the latest local frontend build, lint/format checks, **71 UI tests**, **49 Rust tests**, workspace Clippy and shell-capability regression checks.
 - [x] Build a local ad-hoc-signed macOS app bundle; this is not a notarized distribution release.
 - [x] Review available dev logs and metadata schema without exposing credentials; record findings in the [auth review](auth-review.md).
 
 ## Next steps — in priority order
 
-**Implementation priority:** finish the current PDF/popup escape paths, then implement A1–A5 below. Run the M0/native validation tasks alongside this work; unavailable account/platform intervention is a deferred check, not a reason to stop unrelated feature implementation. The original six-week baseline no longer estimates the expanded scope; re-estimate each feature slice before promising a release date.
+**Implementation priority:** finish the current PDF/popup escape paths, then implement A1–A5 below, followed by the A6 AI panel. Run the M0/native validation tasks alongside this work; unavailable account/platform intervention is a deferred check, not a reason to stop unrelated feature implementation. The original six-week baseline no longer estimates the expanded scope; re-estimate each feature slice before promising a release date.
 
 ### 1. Close the M0 validation gaps
 
@@ -105,7 +106,7 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 - [x] Prefill HTTPS onboarding for unknown deep-link origins without starting sign-in automatically.
 - [ ] Validate WKWebView download destination/finish behavior (D5).
 - [x] Capture same-origin authenticated downloads into a per-site Downloads folder, sanitize names and publish atomically without overwriting collisions.
-- [ ] Add course discovery/context mapping and course-folder routing.
+- [x] Add metadata-backed module-context mapping and course-folder routing, refreshed explicitly from Downloads; unmatched files remain in Downloads.
 - [x] Migrate download history, mark interrupted transfers failed on restart, and expose recent downloads with Open/Show in Finder from the toolbar, native menu and tray.
 - [x] Require inline confirmation for risky/unknown file types, revalidate paths in Rust and never auto-open downloads.
 - [ ] Verify installed-app deep links and session-authenticated downloads across the test rigs.
@@ -119,9 +120,11 @@ The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies 
 - [x] **A1:** state unread conversations separately from notifications, with a fixed link to Moodle's Messages page.
 - [ ] **A1:** latest unread items in the tray. (A tray Inbox entry with the count exists; individual items are not listed.)
 - [x] **A1:** paginated/searchable download history with site/state filters, Copy Path (pasteboard written from Rust) and confirmed Clear History that keeps files and active transfers.
-- [ ] **A1:** safe retry/fallback for failed downloads, course filter with an Unknown Course bucket, and the PDF/image handling preference.
+- [x] **A1:** course filter with an Unknown Course bucket and course labels in download history.
+- [x] **A1:** shared Rust-owned native reader for downloaded PDF, DOCX, XLSX and PPTX files on macOS, with a separate Preview action and the existing default-app Open action.
+- [ ] **A1:** safe retry/fallback for failed downloads and the PDF/image handling preference.
 - [x] **A2:** account-bound course cache and browser with search and local pins, refresh/stale/error states per organisation, and rejection of late responses for a replaced account.
-- [ ] **A2:** reliable course/context mapping for downloads and course-folder routing.
+- [x] **A2:** metadata-backed course/context mapping and course-folder routing with an explicit Refresh Course Folders action. Live-site qualification remains open.
 - [x] **A2:** ⌘L Quick Open over saved course names, organisations and shell views, from the Go menu, the toolbar and the keyboard.
 - [ ] **A2:** cached activities in Quick Open; optional global Cmd+Shift+M with conflict handling.
 - [ ] **A3:** choose course files to save offline, with known sizes, bounded transfers and safe course/section folders.
@@ -133,7 +136,19 @@ The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies 
 - [ ] Check natively with `pnpm tauri dev`: the ⌘1/⌘2/⌘3/⌘L/⌥⌘L menu commands, the tray Inbox entry, hiding and restoring the Moodle view around Quick Open, keyboard focus landing in its field when ⌘L is pressed from a Moodle page, warm and cold opening of a course/calendar/notifications page, Copy Path, and the new motion under Reduce Motion and Increase Contrast.
 - [ ] Verify the combined A1–A5 acceptance cases, access-denied behavior, account replacement/cleanup, FR/EN and keyboard paths.
 
-### 5. Prepare the tester Alpha
+### 5. AI chat side panel — final Alpha feature (A6)
+
+Added on 10 November 2026. Plan an optional AI assistant beside the Moodle view, able to answer general questions and interact with Moodle elements exposed to the app. At the product owner’s request, implement this as **A6, after A1–A5 and before combined Alpha qualification and release**. Estimate it after the provider/API spike; it is part of the Alpha feature gate. See the [PRD scope amendment](prd.md#ai-assistant-scope-amendment--10-november-2026).
+
+- [ ] **Provider setup and general chat:** support the Albert API or Mistral AI in bring-your-own-key (BYOK) mode, with provider/model settings, connection validation, streaming responses, cancel/retry and clear authentication, quota and network errors. Validate each provider's endpoint, model availability and tool-calling support during the spike.
+- [ ] **Side panel:** add a collapsible, resizable chat panel alongside the active Moodle view, with keyboard access, FR/EN copy and accessible focus handling. Recalculate native Moodle webview bounds when the panel opens, closes or resizes.
+- [ ] **Moodle context:** let the user explicitly attach an organisation/course or supported item. Start with courses, exposed activities/resources, upcoming deadlines and notifications available through the app's Moodle API/cache. Show the selected context and link answers back to Moodle sources; state missing permissions or stale data. General questions must work without Moodle context.
+- [ ] **Bounded interactions:** expose an allowlist of typed tools through the Rust core, starting with course/activity lookup, deadline lookup and opening a referenced Moodle item. Add selected write actions, such as marking a notification read, only where the site exposes the capability; show the exact target and require user confirmation before each write. Keep submissions, grades and arbitrary page/script execution outside the initial slice.
+- [ ] **Keys and data controls:** keep provider keys in the OS credential store and provider requests in Rust. Explain which prompt/context is sent to the selected provider before enabling Moodle context sharing; never send Moodle tokens, cookies or provider keys as model context. Make chat-history retention explicit and provide deletion controls.
+- [ ] **Isolation and tool safety:** scope context, conversations and tool calls to the selected Moodle account; clear attached context on account switches and invalidate pending tools on account replacement/removal. Treat Moodle content and model output as untrusted, validate tool arguments and permissions in Rust, and keep remote Moodle webviews without privileged IPC.
+- [ ] **Acceptance gate:** verify both providers, general chat without context, source-linked Moodle answers, permitted lookups/navigation, denied capabilities, confirmed/cancelled writes, prompt-injection resistance, account isolation, credential/log redaction, panel geometry and keyboard access. Use provider/Moodle fixtures plus live qualification before claiming support.
+
+### 6. Prepare the tester Alpha
 
 - [ ] Configure a stable self-signed Alpha identity, updater signing keys and private HTTPS hosting with the product owner.
 - [ ] Implement the universal Apple Silicon/Intel DMG release workflow and verify architectures/signatures/checksums.
@@ -146,7 +161,7 @@ The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies 
 
 ## Deferred beyond the Alpha
 
-The bounded A1–A5 versions above are Alpha targets, not enabled features. The following larger versions remain deferred:
+The bounded A1–A6 versions above are Alpha targets; the AI panel remains unimplemented. The following larger versions remain deferred:
 
 - [ ] Full scheduled course-folder sync, resumable mirroring, automatic server-deletion handling and full sync/download de-duplication.
 - [ ] Live authenticated calendar subscriptions and automatic external-calendar refresh; the Alpha gets agenda/reminders and manual ICS export only.
@@ -155,7 +170,8 @@ The bounded A1–A5 versions above are Alpha targets, not enabled features. The 
 - [ ] Download pause/resume, automatic retention/deletion and expanded Finder tagging/metadata.
 - [ ] Developer ID signing/notarization, managed deployment and Windows/Linux releases.
 
-Current implementation still captures downloads into per-site Downloads folders; course routing, selected offline files and native transfer qualification remain open. Closing the window hides it and keeps polling active; Quit ends the process.
+
+New downloads with an indexed Moodle module context go into a course folder; unmatched files remain in the per-site Downloads folder. Existing files are not moved. Selected offline files and native transfer qualification remain open. Closing the window hides it and keeps polling active; Quit ends the process.
 
 ## Evidence and related documents
 
@@ -205,3 +221,11 @@ Implemented on 9 November 2026, at the product owner's choice of "A1 + A2 + agen
 - **Shell.** Inbox, Courses and Agenda views, a ⌘L Quick Open panel, a rebuilt Downloads view, shared list components, a sliding segmented control and the motion tokens. Menu: Inbox ⌘1, Courses ⌘2, Agenda ⌘3, Downloads ⌥⌘L, Quick Open… ⌘L. The design guidelines' motion, typography, component and pattern sections were revised to match.
 - **Scope decisions.** Not built in this pass and left unchecked above: tray list of unread items, failed-download retry, PDF/image preference, download-to-course mapping, cached activities in Quick Open, the global shortcut, reminders, A3 and A5. Agenda items open their calendar day rather than the activity page, because the activity URL comes from the server.
 - **Verification.** 70 UI tests and 42 Rust tests, frontend build/lint/format, workspace Clippy and the IPC check pass. The UI was exercised in the browser preview (`?mac&demo`) in light and dark with sample data: view switching, Mark as Read, pinning, filters, Quick Open keyboard use. **Not verified:** anything native (menus, tray, Moodle-view hiding, pasteboard) and every live Moodle call; contract tests use synthetic stock-shaped responses. No acceptance criterion in the amendment is claimed.
+
+## Course-aware downloads and native readers — 10 November 2026
+
+Built: explicit Refresh Course Folders in Downloads, metadata-only `core_course_get_contents` indexing, account-scoped context/course mappings, course-folder routing for new downloads, course labels/filter and Unknown Course fallback. Schema v6 preserves old rows/files and adds nullable course metadata. Existing downloads are not moved. Permissions failures remain visible; unknown contexts never use guessed page/course names.
+
+Downloaded PDF, DOCX, XLSX and PPTX files have a Preview action separate from default-app Open. Rust resolves a completed managed download by ID and creates a Tauri-owned native document window. PDFKit renders PDFs; Quick Look renders Office files. The AppKit toolbar has zoom/fit/readout, default-app Open, Finder and full screen; PDFs also have page navigation and page count. Office navigation stays in the native preview's scrolling surface. Native views have no webview/IPC grants, no document bytes cross IPC, and account session removal closes its previews. At most three previews are open at once.
+
+Verification and remaining live checks are recorded in [native reader/download QA](native-reader-downloads-qa.md). AI chat is now A6, at the end of Alpha feature implementation.

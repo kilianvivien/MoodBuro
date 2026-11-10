@@ -29,3 +29,6 @@ block2 = "0.6"
 objc2-web-kit = { version = "0.3", default-features = false, features = ["WKWebView", "WKNavigation", "WKUIDelegate", "WKBackForwardList", "WKBackForwardListItem", "WKNavigationDelegate", "WKNavigationAction", "WKFrameInfo", "block2"] }
 
 objc2-foundation = { version = "0.3", features = ["NSLocale", "NSArray", "NSString", "NSData", "NSURL", "NSURLRequest"] }
+objc2-app-kit = { version = "0.3", default-features = false, features = ["NSView", "NSWindow", "NSToolbar", "NSToolbarItem", "NSImage", "NSAlert", "NSWorkspace", "NSTextField", "NSScrollView"] }
+objc2-quick-look-ui = { version = "0.3", default-features = false, features = ["std", "objc2-app-kit", "QLPreviewView", "QLPreviewItem"] }
+objc2-pdf-kit = { version = "0.3", default-features = false, features = ["PDFView", "PDFDocument", "PDFPage", "objc2-app-kit", "objc2-core-foundation"] }

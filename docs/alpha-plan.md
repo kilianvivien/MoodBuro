@@ -6,7 +6,7 @@ Implementation progress: use [the working checklist](plan.md) and see [current s
 
 ## 1. Scope, team and exit criteria
 
-The baseline Alpha was scoped as an unsigned (ad-hoc or self-signed) macOS build in 6 weeks by two engineers. The expanded Alpha now includes bounded slices of later milestones A1–A5 as well as PRD milestones M0 (spike) and M1 (core shell); the original six-week estimate must be re-estimated for this added scope. The core includes sign-in to any Moodle site including SSO, several sites side by side, native notifications with dock badge and menu-bar extra, deep links, and basic capture of downloads from the Moodle view. It goes to 10–20 internal testers on 2–3 real Moodle sites.
+The baseline Alpha was scoped as an unsigned (ad-hoc or self-signed) macOS build in 6 weeks by two engineers. The expanded Alpha now includes bounded slices of later milestones A1–A5 and the final A6 AI assistant as well as PRD milestones M0 (spike) and M1 (core shell); the original six-week estimate must be re-estimated for this added scope. The core includes sign-in to any Moodle site including SSO, several sites side by side, native notifications with dock badge and menu-bar extra, deep links, and basic capture of downloads from the Moodle view. It goes to 10–20 internal testers on 2–3 real Moodle sites.
 
 **Team.** Engineer R owns the Rust core (auth, WS client, index, notifier, OS adapters, release). Engineer F owns the shell UI (React, Vite, TypeScript, Zustand) and QA scripts. Both review each other's PRs; the product owner runs the weekly demo.
 
@@ -24,6 +24,7 @@ The baseline Alpha was scoped as an unsigned (ad-hoc or self-signed) macOS build
 | Offline files | A3 explicit selected-file saving and manual refresh (OS-6/OS-7 partial) | Full scheduled course mirroring, resumable sync and automatic server deletions |
 | Agenda and calendar | A4 read-only upcoming agenda/reminders; A5 manual token-free ICS snapshot (OS-8/OS-9/MAC-5 partial) | Live authenticated calendar subscription and automatic calendar refresh |
 | macOS polish | MAC-6, MAC-8; MAC-9 universal binary only (signing and notarization deferred to beta) | MAC-4 Finder favourite, MAC-10 MDM |
+| AI assistant | A6, after A1–A5: Albert/Mistral AI BYOK side panel, general chat, explicit Moodle context and bounded tools | Broad autonomous actions, submissions and grade changes |
 | Not in alpha | — | Upload (OS-10), full automatic sync/live calendar integrations beyond the slices above, Windows, Linux |
 
 Basic download capture is pulled forward from M2 because, without it, files downloaded in the Moodle view land in WebKit's default location and the alpha would teach testers the wrong habit.
@@ -35,6 +36,7 @@ Basic download capture is pulled forward from M2 because, without it, files down
 - [ ] A3: explicitly save selected course files, reopen them offline after restart and manually refresh without destroying edited files or deleting server-removed files locally.
 - [ ] A4: show upcoming agenda items and deliver opt-in reminders with time-zone/DST, changed-date, stale-data and deduplication checks.
 - [ ] A5: export a valid token-free ICS snapshot and import it into Apple Calendar; the UI clearly says it is not a live subscription.
+- [ ] A6: qualify both BYOK providers, general chat, explicit Moodle context, bounded tools/confirmed writes, credential protection and account isolation. Implement last among Alpha features.
 
 The full acceptance criteria are in the [feature amendment](alpha-feature-expansion.md). These gates supplement, rather than replace, the original gates below. Any change to the target feature set must be recorded explicitly.
 
@@ -53,7 +55,7 @@ The full acceptance criteria are in the [feature amendment](alpha-feature-expans
 
 ## 2. Week-by-week plan
 
-**Scheduling amendment:** the weeks below describe the original core-shell baseline. They are not a six-week promise for the expanded Alpha. After stabilizing current PDF/popups, implement A1 inbox/download controls → A2 course index/quick-open → A3 selected offline files → A4 agenda/reminders → A5 ICS export, then combined qualification/release. Estimate each slice and update the working tracker; run independent M0 checks alongside feature work.
+**Scheduling amendment:** the weeks below describe the original core-shell baseline. They are not a six-week promise for the expanded Alpha. After stabilizing current PDF/popups, implement A1 inbox/download controls → A2 course index/quick-open → A3 selected offline files → A4 agenda/reminders → A5 ICS export → A6 AI chat side panel, then combined qualification/release. Estimate each slice and update the working tracker; run independent M0 checks alongside feature work.
 
 In the original baseline, weeks 1–2 covered the M0 spike and three-site SSO; weeks 3–6 covered the core shell and first Alpha build. Weekly demos and local builds remain useful checkpoints, but the expanded feature sequence above replaces that original release timing.
 

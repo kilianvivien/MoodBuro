@@ -23,6 +23,9 @@ export interface Download {
   state: "downloading" | "complete" | "failed";
   startedAt: number;
   needsConfirmation: boolean;
+  canPreview?: boolean;
+  courseId?: number | null;
+  courseName?: string | null;
 }
 
 export type DownloadState = Download["state"];
@@ -31,6 +34,7 @@ export interface DownloadQuery {
   siteId: string | null;
   state: DownloadState | null;
   offset: number;
+  courseId?: number | null;
 }
 export interface DownloadPage {
   items: Download[];
@@ -258,6 +262,9 @@ function buildDemoData() {
       filename,
       state,
       startedAt: demoNow - (ago as number),
+      canPreview: /\.(pdf|docx|xlsx|pptx)$/iu.test(filename as string),
+      courseId: null,
+      courseName: null,
       needsConfirmation: /\.(zip|key)$/u.test(filename as string),
     })) as Download[],
   };
@@ -319,7 +326,11 @@ export const ipc = {
       (item) =>
         item.filename.toLowerCase().includes(needle) &&
         (!filter.siteId || item.siteId === filter.siteId) &&
-        (!filter.state || item.state === filter.state),
+        (!filter.state || item.state === filter.state) &&
+        (filter.courseId == null ||
+          (filter.courseId === 0
+            ? item.courseId == null
+            : item.courseId === filter.courseId)),
     );
     return Promise.resolve({
       items: items.slice(filter.offset, filter.offset + DOWNLOAD_PAGE_SIZE),
@@ -335,6 +346,10 @@ export const ipc = {
     );
     return Promise.resolve();
   },
+  previewDownload: (id: string) =>
+    desktop ? invoke<void>("download_preview", { id }) : desktopFeature(),
+  refreshCourseFolders: (id: string) =>
+    desktop ? invoke<void>("course_folders_refresh", { id }) : desktopFeature(),
   copyDownloadPath: (id: string) =>
     desktop ? invoke<void>("download_copy_path", { id }) : desktopFeature(),
   inbox: () =>

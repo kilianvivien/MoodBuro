@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-download-preview"
+description = "Enables the download_preview command without any pre-configured scope."
+commands.allow = ["download_preview"]
+
+[[permission]]
+identifier = "deny-download-preview"
+description = "Denies the download_preview command without any pre-configured scope."
+commands.deny = ["download_preview"]

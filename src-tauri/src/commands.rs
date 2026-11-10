@@ -115,9 +115,17 @@ pub fn downloads_page(
     site_id: Option<String>,
     state: Option<String>,
     offset: u32,
+    course_id: Option<i64>,
 ) -> Result<crate::downloads::Page, String> {
     shell(&webview)?;
-    crate::downloads::page(&app, &query, site_id.as_deref(), state.as_deref(), offset)
+    crate::downloads::page(
+        &app,
+        &query,
+        site_id.as_deref(),
+        state.as_deref(),
+        offset,
+        course_id,
+    )
 }
 #[tauri::command]
 pub fn downloads_clear(
@@ -210,6 +218,24 @@ pub async fn agenda_refresh(
 ) -> Result<(), String> {
     shell(&webview)?;
     crate::library::refresh_agenda(&app, &id).await
+}
+#[tauri::command]
+pub async fn download_preview(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::documents::preview(&app, &id).await
+}
+#[tauri::command]
+pub async fn course_folders_refresh(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::library::refresh_folders(&app, &id).await
 }
 #[tauri::command]
 pub fn download_open(

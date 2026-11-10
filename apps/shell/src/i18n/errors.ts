@@ -8,6 +8,17 @@ import { catalogues, type Messages } from "./messages";
  * exact text. Keep this list in step with the Rust messages.
  */
 const french: Record<string, string> = {
+  "Could not preview this document.":
+    "Impossible d’afficher l’aperçu de ce document.",
+  "This document type cannot be previewed.":
+    "Ce type de document ne peut pas être affiché en aperçu.",
+  "Close a document preview before opening another.":
+    "Fermez un aperçu de document avant d’en ouvrir un autre.",
+  "Document preview is currently available on macOS. Use Open in Default App.":
+    "L’aperçu est disponible sur macOS. Ouvrez le fichier dans l’application par défaut.",
+  "Could not save course folders.":
+    "Impossible d’enregistrer les dossiers de cours.",
+
   "This Moodle link is invalid or does not match a saved organisation.":
     "Ce lien Moodle est invalide ou ne correspond pas à une organisation enregistrée.",
   "This file was requested twice. Restart MoodBuro before downloading it again.":

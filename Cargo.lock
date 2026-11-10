@@ -2385,7 +2385,10 @@ dependencies = [
  "md-secrets",
  "md-store",
  "objc2",
+ "objc2-app-kit",
  "objc2-foundation",
+ "objc2-pdf-kit",
+ "objc2-quick-look-ui",
  "objc2-web-kit",
  "serde",
  "tauri",
@@ -2733,6 +2736,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "objc2-pdf-kit"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c14ed801ae810c6ba487cedd7616bb48f9a8e37940042f57e862538e2c7db117"
+dependencies = [
+ "bitflags 2.13.2",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-core-foundation",
+ "objc2-foundation",
+]
+
+[[package]]
 name = "objc2-quartz-core"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2741,6 +2757,17 @@ dependencies = [
  "bitflags 2.13.2",
  "objc2",
  "objc2-core-foundation",
+ "objc2-foundation",
+]
+
+[[package]]
+name = "objc2-quick-look-ui"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef5bce23577f7bcbb88339d4f4fcba83bcc376ca6a7f556d1707e49e7986d329"
+dependencies = [
+ "objc2",
+ "objc2-app-kit",
  "objc2-foundation",
 ]
 

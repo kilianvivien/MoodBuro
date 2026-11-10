@@ -6,6 +6,8 @@ import {
   Copy,
   Download as DownloadIcon,
   FileText,
+  Eye,
+  RefreshCw,
   FolderOpen,
   LoaderCircle,
   SearchX,
@@ -16,6 +18,7 @@ import {
   DOWNLOAD_PAGE_SIZE,
   ipc,
   message,
+  type Course,
   type Download,
   type DownloadState,
   type Site,
@@ -97,6 +100,7 @@ export function DownloadList({
   onOpen,
   onReveal,
   onCopy,
+  onPreview,
   onCancel,
   onConfirm,
 }: {
@@ -109,6 +113,7 @@ export function DownloadList({
   onOpen: (item: Download) => void;
   onReveal: (id: string) => void;
   onCopy?: (id: string) => void;
+  onPreview?: (id: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
@@ -149,6 +154,7 @@ export function DownloadList({
                 <span className="row-subtitle">
                   {[
                     sites.find((s) => s.id === item.siteId)?.name,
+                    item.courseName ?? t.downloads.unknownCourse,
                     t.downloads.states[item.state],
                     date(item.startedAt * 1000, {
                       dateStyle: "medium",
@@ -160,6 +166,17 @@ export function DownloadList({
                 </span>
               </div>
               <div className="row-actions">
+                {item.canPreview && onPreview && (
+                  <button
+                    className="button small"
+                    disabled={unavailable}
+                    aria-label={t.downloads.previewLabel(item.filename)}
+                    onClick={() => onPreview(item.id)}
+                  >
+                    <Eye size={13} strokeWidth={2} aria-hidden="true" />
+                    {t.downloads.preview}
+                  </button>
+                )}
                 <button
                   className="button small"
                   aria-label={t.downloads.openLabel(item.filename)}
@@ -269,6 +286,8 @@ export function Downloads({ sites }: { sites: Site[] }) {
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState("");
   const [siteId, setSiteId] = useState<string | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [courseId, setCourseId] = useState<number | null>(null);
   const [state, setState] = useState<StateFilter>("all");
   const [pages, setPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
@@ -277,6 +296,18 @@ export function Downloads({ sites }: { sites: Site[] }) {
   const [confirming, setConfirming] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
   const loadSequence = useRef(0);
+  useEffect(() => {
+    let cancelled = false;
+    void ipc
+      .courses()
+      .then((result) => {
+        if (!cancelled) setCourses(result.items);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [sites]);
   const returnFocus = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (!confirming && !clearing && !busy && returnFocus.current) {
@@ -295,6 +326,7 @@ export function Downloads({ sites }: { sites: Site[] }) {
         const result = await ipc.downloads({
           query,
           siteId,
+          courseId,
           state: state === "all" ? null : state,
           offset: page * DOWNLOAD_PAGE_SIZE,
         });
@@ -337,7 +369,7 @@ export function Downloads({ sites }: { sites: Site[] }) {
       cancelled = true;
       void listener.then((stop) => stop()).catch(() => {});
     };
-  }, [query, siteId, state, pages]);
+  }, [query, siteId, courseId, state, pages]);
   async function action(run: () => Promise<void>, done: string | null = null) {
     setBusy(true);
     setError(null);
@@ -360,7 +392,11 @@ export function Downloads({ sites }: { sites: Site[] }) {
       setNotice(null);
       set(value);
     };
-  const filtered = query.trim() !== "" || siteId !== null || state !== "all";
+  const filtered =
+    query.trim() !== "" ||
+    siteId !== null ||
+    courseId !== null ||
+    state !== "all";
   return (
     <div className="page">
       <PageHeader
@@ -371,6 +407,22 @@ export function Downloads({ sites }: { sites: Site[] }) {
             : undefined
         }
       >
+        <button
+          className="button"
+          disabled={busy || sites.length === 0}
+          onClick={() =>
+            void action(async () => {
+              for (const site of sites.filter(
+                (s) => !siteId || s.id === siteId,
+              ))
+                await ipc.refreshCourseFolders(site.id);
+              setCourses((await ipc.courses()).items);
+            }, t.downloads.foldersRefreshed)
+          }
+        >
+          <RefreshCw size={14} strokeWidth={2} aria-hidden="true" />
+          {t.downloads.refreshFolders}
+        </button>
         <button
           className="button"
           disabled={busy || clearing || !loaded || (total === 0 && !filtered)}
@@ -390,7 +442,35 @@ export function Downloads({ sites }: { sites: Site[] }) {
           placeholder={t.downloads.searchPlaceholder}
           onChange={filter(setQuery)}
         />
-        <SiteSelect sites={sites} value={siteId} onChange={filter(setSiteId)} />
+        <SiteSelect
+          sites={sites}
+          value={siteId}
+          onChange={(value) => {
+            filter(setSiteId)(value);
+            setCourseId(null);
+          }}
+        />
+        <select
+          className="popup-button"
+          aria-label={t.downloads.courseFilter}
+          value={courseId ?? "all"}
+          onChange={(e) =>
+            filter(setCourseId)(
+              e.target.value === "all" ? null : Number(e.target.value),
+            )
+          }
+        >
+          <option value="all">{t.downloads.allCourses}</option>
+          <option value="0">{t.downloads.unknownCourse}</option>
+          {siteId &&
+            courses
+              .filter((c) => c.siteId === siteId)
+              .map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.name}
+                </option>
+              ))}
+        </select>
         <Segmented<StateFilter>
           name="download-state"
           legend={t.downloads.stateFilter}
@@ -441,6 +521,7 @@ export function Downloads({ sites }: { sites: Site[] }) {
               setConfirming(item.id);
             } else void action(() => ipc.openDownload(item.id));
           }}
+          onPreview={(id) => void action(() => ipc.previewDownload(id))}
           onReveal={(id) => void action(() => ipc.revealDownload(id))}
           onCopy={(id) =>
             void action(() => ipc.copyDownloadPath(id), t.downloads.copied)
@@ -460,6 +541,7 @@ export function Downloads({ sites }: { sites: Site[] }) {
         </div>
       )}
       <p className="section-footnote">{t.downloads.location}</p>
+      <p className="section-footnote">{t.downloads.previewHint}</p>
     </div>
   );
 }

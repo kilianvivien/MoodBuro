@@ -49,6 +49,8 @@ pub struct Download {
     pub local_path: String,
     pub state: String,
     pub started_at: i64,
+    pub course_id: Option<i64>,
+    pub course_name: Option<String>,
 }
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -92,6 +94,8 @@ pub struct DownloadFilter<'a> {
     pub query: &'a str,
     pub site_id: Option<&'a str>,
     pub state: Option<&'a str>,
+    /// None = all, Some(0) = unknown course.
+    pub course_id: Option<i64>,
 }
 fn download_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Download> {
     Ok(Download {
@@ -101,6 +105,8 @@ fn download_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Download> {
         local_path: r.get(3)?,
         state: r.get(4)?,
         started_at: r.get(5)?,
+        course_id: r.get(6)?,
+        course_name: r.get(7)?,
     })
 }
 pub struct Store(Connection);
@@ -108,7 +114,7 @@ impl Store {
     pub fn open(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 5 {
+        if version > 6 {
             return Err(rusqlite::Error::InvalidQuery);
         }
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; BEGIN;
@@ -121,26 +127,16 @@ impl Store {
             CREATE TABLE IF NOT EXISTS course_pins (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, course_id INTEGER NOT NULL, PRIMARY KEY(site_id,course_id));
             CREATE TABLE IF NOT EXISTS events (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, event_id INTEGER NOT NULL, name TEXT NOT NULL, time_start INTEGER NOT NULL, duration INTEGER NOT NULL, kind TEXT NOT NULL, course_id INTEGER, course_name TEXT, PRIMARY KEY(site_id,event_id));
             CREATE TABLE IF NOT EXISTS sync_state (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, kind TEXT NOT NULL, refreshed_at INTEGER NOT NULL, PRIMARY KEY(site_id,kind));
-            PRAGMA user_version=5; COMMIT;")?;
+            CREATE TABLE IF NOT EXISTS course_contexts (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, course_id INTEGER NOT NULL, context_id INTEGER NOT NULL, PRIMARY KEY(site_id,course_id,context_id));")?;
+        if version < 6 {
+            connection.execute_batch("ALTER TABLE downloads ADD COLUMN course_id INTEGER; ALTER TABLE downloads ADD COLUMN course_name TEXT;")?;
+        }
+        connection.execute_batch("PRAGMA user_version=6; COMMIT;")?;
         Ok(Self(connection))
     }
     pub fn download_insert(&self, item: &Download) -> rusqlite::Result<()> {
         self.0.execute(
-            "INSERT INTO downloads VALUES (?1,?2,?3,?4,?5,?6)",
-            params![
-                item.id,
-                item.site_id,
-                item.filename,
-                item.local_path,
-                item.state,
-                item.started_at
-            ],
-        )?;
-        Ok(())
-    }
-    pub fn download_insert_for_user(&self, item: &Download, user_id: i64) -> rusqlite::Result<()> {
-        let inserted = self.0.execute(
-            "INSERT INTO downloads SELECT ?1,?2,?3,?4,?5,?6 FROM sites WHERE id=?2 AND user_id=?7",
+            "INSERT INTO downloads VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
             params![
                 item.id,
                 item.site_id,
@@ -148,7 +144,23 @@ impl Store {
                 item.local_path,
                 item.state,
                 item.started_at,
-                user_id
+                item.course_id,
+                item.course_name
+            ],
+        )?;
+        Ok(())
+    }
+    pub fn download_insert_for_user(&self, item: &Download, user_id: i64) -> rusqlite::Result<()> {
+        let inserted = self.0.execute(
+            "INSERT INTO downloads SELECT ?1,?2,?3,?4,?5,?6,?8,?9 FROM sites WHERE id=?2 AND user_id=?7",
+            params![
+                item.id,
+                item.site_id,
+                item.filename,
+                item.local_path,
+                item.state,
+                item.started_at,
+                user_id, item.course_id, item.course_name
             ],
         )?;
         if inserted == 1 {
@@ -169,7 +181,7 @@ impl Store {
         Ok(())
     }
     pub fn downloads_recent(&self) -> rusqlite::Result<Vec<Download>> {
-        let mut stmt = self.0.prepare("SELECT id,site_id,filename,local_path,state,started_at FROM downloads ORDER BY started_at DESC,rowid DESC LIMIT 20")?;
+        let mut stmt = self.0.prepare("SELECT id,site_id,filename,local_path,state,started_at,course_id,course_name FROM downloads ORDER BY started_at DESC,rowid DESC LIMIT 20")?;
         let items = stmt.query_map([], download_row)?;
         items.collect()
     }
@@ -177,7 +189,7 @@ impl Store {
         use rusqlite::OptionalExtension;
         self.0
             .query_row(
-                "SELECT id,site_id,filename,local_path,state,started_at FROM downloads WHERE id=?1",
+                "SELECT id,site_id,filename,local_path,state,started_at,course_id,course_name FROM downloads WHERE id=?1",
                 [id],
                 download_row,
             )
@@ -200,16 +212,30 @@ impl Store {
                 .replace('%', "\\%")
                 .replace('_', "\\_")
         );
-        const WHERE: &str = "filename LIKE ?1 ESCAPE '\\' AND (?2 IS NULL OR site_id=?2) AND (?3 IS NULL OR state=?3)";
+        const WHERE: &str = "filename LIKE ?1 ESCAPE '\\' AND (?2 IS NULL OR site_id=?2) AND (?3 IS NULL OR state=?3) AND (?6 IS NULL OR (?6=0 AND course_id IS NULL) OR course_id=?6)";
         let total: u64 = self.0.query_row(
             &format!("SELECT COUNT(*) FROM downloads WHERE {WHERE}"),
-            params![pattern, filter.site_id, filter.state],
+            params![
+                pattern,
+                filter.site_id,
+                filter.state,
+                rusqlite::types::Null,
+                rusqlite::types::Null,
+                filter.course_id
+            ],
             |r| r.get(0),
         )?;
-        let mut stmt = self.0.prepare(&format!("SELECT id,site_id,filename,local_path,state,started_at FROM downloads WHERE {WHERE} ORDER BY started_at DESC,rowid DESC LIMIT ?4 OFFSET ?5"))?;
+        let mut stmt = self.0.prepare(&format!("SELECT id,site_id,filename,local_path,state,started_at,course_id,course_name FROM downloads WHERE {WHERE} ORDER BY started_at DESC,rowid DESC LIMIT ?4 OFFSET ?5"))?;
         let items = stmt
             .query_map(
-                params![pattern, filter.site_id, filter.state, limit, offset],
+                params![
+                    pattern,
+                    filter.site_id,
+                    filter.state,
+                    limit,
+                    offset,
+                    filter.course_id
+                ],
                 download_row,
             )?
             .collect::<rusqlite::Result<_>>()?;
@@ -289,6 +315,7 @@ impl Store {
                 params![site_id, item.id, item.name, item.short_name],
             )?;
         }
+        tx.execute("DELETE FROM course_contexts WHERE site_id=?1 AND course_id NOT IN (SELECT course_id FROM courses WHERE site_id=?1)", [site_id])?;
         tx.execute("DELETE FROM course_pins WHERE site_id=?1 AND course_id NOT IN (SELECT course_id FROM courses WHERE site_id=?1)", [site_id])?;
         tx.execute("INSERT INTO sync_state VALUES (?1,'courses',?2) ON CONFLICT(site_id,kind) DO UPDATE SET refreshed_at=excluded.refreshed_at", params![site_id, now])?;
         tx.commit()
@@ -305,6 +332,57 @@ impl Store {
             })
         })?;
         items.collect()
+    }
+    /// Replace only this account/course's authoritative module contexts. Never persist URLs.
+    pub fn save_course_contexts(
+        &self,
+        site_id: &str,
+        user_id: i64,
+        course_id: i64,
+        contexts: &[i64],
+    ) -> rusqlite::Result<()> {
+        let tx = self.0.unchecked_transaction()?;
+        Self::owned_by(&tx, site_id, user_id)?;
+        let known: bool = tx.query_row(
+            "SELECT EXISTS(SELECT 1 FROM courses WHERE site_id=?1 AND course_id=?2)",
+            params![site_id, course_id],
+            |r| r.get(0),
+        )?;
+        if !known {
+            return Err(rusqlite::Error::InvalidQuery);
+        }
+        tx.execute(
+            "DELETE FROM course_contexts WHERE site_id=?1 AND course_id=?2",
+            params![site_id, course_id],
+        )?;
+        for context in contexts.iter().filter(|id| **id > 0).take(10000) {
+            tx.execute(
+                "INSERT OR IGNORE INTO course_contexts VALUES (?1,?2,?3)",
+                params![site_id, course_id, context],
+            )?;
+        }
+        tx.commit()
+    }
+    /// An ambiguous context deliberately falls back to Unknown Course.
+    pub fn course_for_context(
+        &self,
+        site_id: &str,
+        context: i64,
+    ) -> rusqlite::Result<Option<Course>> {
+        let ids = {
+            let mut stmt = self.0.prepare(
+                "SELECT course_id FROM course_contexts WHERE site_id=?1 AND context_id=?2 LIMIT 2",
+            )?;
+            let rows = stmt.query_map(params![site_id, context], |r| r.get::<_, i64>(0))?;
+            rows.collect::<rusqlite::Result<Vec<_>>>()?
+        };
+        if ids.len() != 1 {
+            return Ok(None);
+        }
+        Ok(self
+            .courses()?
+            .into_iter()
+            .find(|c| c.site_id == site_id && c.id == ids[0]))
     }
     /// Pins are local only; they never change Moodle favourites. Unknown courses are refused.
     pub fn set_course_pin(
@@ -522,6 +600,7 @@ impl Store {
             "notification_state",
             "downloads",
             "courses",
+            "course_contexts",
             "course_pins",
             "events",
             "sync_state",
@@ -730,6 +809,8 @@ mod download_tests {
                     local_path: "/private/staging/notes.pdf".into(),
                     state: "downloading".into(),
                     started_at: n,
+                    course_id: None,
+                    course_name: None,
                 })
                 .unwrap();
         }
@@ -755,6 +836,8 @@ mod download_tests {
                 local_path: "/home/Moodle/file.pdf".into(),
                 state: "complete".into(),
                 started_at: 22,
+                course_id: None,
+                course_name: None,
             })
             .unwrap();
         store.remove("site").unwrap();
@@ -785,6 +868,90 @@ mod library_tests {
             short_name: String::new(),
             pinned: false,
         }
+    }
+    #[test]
+    fn course_contexts_are_account_bound_and_ambiguous_contexts_are_unknown() {
+        let (store, mut site) = store();
+        store
+            .save_courses("site", 1, &[course(2, "Law"), course(3, "Economics")], 1)
+            .unwrap();
+        store.save_course_contexts("site", 1, 2, &[50, 51]).unwrap();
+        assert_eq!(store.course_for_context("site", 50).unwrap().unwrap().id, 2);
+        assert!(store.course_for_context("other", 50).unwrap().is_none());
+        assert!(store.save_course_contexts("site", 2, 2, &[60]).is_err());
+        assert!(store.save_course_contexts("site", 1, 99, &[60]).is_err());
+        store.save_course_contexts("site", 1, 3, &[50]).unwrap();
+        assert!(store.course_for_context("site", 50).unwrap().is_none());
+        store.save_course_contexts("site", 1, 2, &[52]).unwrap();
+        assert!(store.course_for_context("site", 51).unwrap().is_none());
+        site.user_id = 2;
+        store.update(&site).unwrap();
+        assert!(store.course_for_context("site", 52).unwrap().is_none());
+        assert!(store.save_course_contexts("site", 1, 2, &[60]).is_err());
+    }
+    #[test]
+    fn history_preserves_course_labels_and_filters_unknowns() {
+        let (store, _) = store();
+        for (id, course_id, course_name) in [
+            ("known", Some(2), Some("Law".into())),
+            ("unknown", None, None),
+        ] {
+            store
+                .download_insert_for_user(
+                    &Download {
+                        id: id.into(),
+                        site_id: "site".into(),
+                        filename: "notes.pdf".into(),
+                        local_path: "/Moodle/notes.pdf".into(),
+                        state: "complete".into(),
+                        started_at: 1,
+                        course_id,
+                        course_name,
+                    },
+                    1,
+                )
+                .unwrap();
+        }
+        let (known, total) = store
+            .downloads_page(
+                &DownloadFilter {
+                    course_id: Some(2),
+                    ..Default::default()
+                },
+                0,
+                25,
+            )
+            .unwrap();
+        assert_eq!(total, 1);
+        assert_eq!(known[0].course_name.as_deref(), Some("Law"));
+        let (unknown, total) = store
+            .downloads_page(
+                &DownloadFilter {
+                    course_id: Some(0),
+                    ..Default::default()
+                },
+                0,
+                25,
+            )
+            .unwrap();
+        assert_eq!(total, 1);
+        assert_eq!(unknown[0].id, "unknown");
+    }
+    #[test]
+    fn version_five_downloads_migrate_without_losing_files_or_rows() {
+        // Use a real file to exercise Store::open's migration and its second-open path.
+        let file = std::env::temp_dir().join(format!("moodburo-v5-{}.db", std::process::id()));
+        let _ = std::fs::remove_file(&file);
+        let legacy = Connection::open(&file).unwrap();
+        legacy.execute_batch("CREATE TABLE downloads(id TEXT PRIMARY KEY,site_id TEXT,filename TEXT,local_path TEXT,state TEXT,started_at INTEGER); INSERT INTO downloads VALUES ('legacy','site','notes.pdf','/Moodle/notes.pdf','complete',1); PRAGMA user_version=5;").unwrap();
+        drop(legacy);
+        for _ in 0..2 {
+            let store = Store::open(&file).unwrap();
+            let row = store.download("legacy").unwrap().unwrap();
+            assert_eq!(row.local_path, "/Moodle/notes.pdf");
+            assert!(row.course_id.is_none() && row.course_name.is_none());
+        }
+        std::fs::remove_file(&file).unwrap();
     }
     fn event(id: i64, time_start: i64) -> Event {
         Event {
@@ -902,6 +1069,8 @@ mod library_tests {
                     local_path: "/home/Moodle/x".into(),
                     state: if n == 29 { "downloading" } else { "complete" }.into(),
                     started_at: n,
+                    course_id: None,
+                    course_name: None,
                 })
                 .unwrap();
         }

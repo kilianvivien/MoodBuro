@@ -35,6 +35,8 @@
     "allow-course-pin",
     "allow-agenda-list",
     "allow-agenda-refresh",
+    "allow-download-preview",
+    "allow-course-folders-refresh",
     "allow-download-open",
     "allow-download-reveal"
   ]

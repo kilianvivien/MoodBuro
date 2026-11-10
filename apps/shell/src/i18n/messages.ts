@@ -138,6 +138,16 @@ const en = {
     cancel: "Cancel",
   },
   downloads: {
+    preview: "Preview",
+    previewLabel: (name: string) => `Preview ${name}`,
+    previewHint:
+      "PDF, Word, Excel and PowerPoint files use the same native macOS reader. Use Open to edit in your default app. Previews require the desktop app.",
+    courseFilter: "Course",
+    allCourses: "All courses",
+    unknownCourse: "Unknown course",
+    refreshFolders: "Refresh Course Folders",
+    foldersRefreshed:
+      "Course folders refreshed. New downloads will use known course folders; existing files stay in place.",
     openLabel: (name: string) => `Open ${name}`,
     revealLabel: (name: string) => `Show ${name} in Finder`,
     title: "Downloads",
@@ -170,7 +180,7 @@ const en = {
     empty: "No downloads yet",
     loading: "Loading downloads…",
     location:
-      "Files are saved in ~/Moodle, in a folder for each organisation. Removing an organisation keeps its downloaded files.",
+      "Files are saved in ~/Moodle, by organisation and known course. Refresh Course Folders to index Moodle resources. Choose an organisation to filter by course. Unmatched files stay in Downloads. Removing an organisation keeps its files.",
     open: "Open",
     reveal: "Show in Finder",
     cancel: "Cancel",
@@ -393,6 +403,16 @@ const fr: Messages = {
     cancel: "Annuler",
   },
   downloads: {
+    preview: "Aperçu",
+    previewLabel: (name: string) => `Afficher un aperçu de ${name}`,
+    previewHint:
+      "Les fichiers PDF, Word, Excel et PowerPoint utilisent le même lecteur natif macOS. Utilisez Ouvrir pour les modifier dans l’application par défaut. Les aperçus nécessitent l’app de bureau.",
+    courseFilter: "Cours",
+    allCourses: "Tous les cours",
+    unknownCourse: "Cours inconnu",
+    refreshFolders: "Actualiser les dossiers de cours",
+    foldersRefreshed:
+      "Dossiers de cours actualisés. Les nouveaux téléchargements seront classés par cours identifié ; les fichiers existants restent en place.",
     openLabel: (name: string) => `Ouvrir ${name}`,
     revealLabel: (name: string) => `Afficher ${name} dans le Finder`,
     title: "Téléchargements",
@@ -427,7 +447,7 @@ const fr: Messages = {
     empty: "Aucun téléchargement pour le moment",
     loading: "Chargement des téléchargements…",
     location:
-      "Les fichiers sont enregistrés dans ~/Moodle, dans un dossier par organisation. Retirer une organisation conserve ses fichiers téléchargés.",
+      "Les fichiers sont enregistrés dans ~/Moodle, par organisation et cours identifié. Actualisez les dossiers pour indexer les ressources Moodle. Choisissez une organisation pour filtrer par cours. Les fichiers non identifiés restent dans Downloads. Retirer une organisation conserve ses fichiers.",
     open: "Ouvrir",
     reveal: "Afficher dans le Finder",
     cancel: "Annuler",

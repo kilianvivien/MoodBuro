@@ -237,6 +237,44 @@ pub struct Course {
     #[serde(default)]
     pub shortname: String,
 }
+/// Minimal course-content metadata: no descriptions, resource URLs or content retained.
+#[derive(Clone, Deserialize)]
+pub struct CourseSection {
+    #[serde(default)]
+    pub modules: Vec<CourseModule>,
+}
+#[derive(Clone, Deserialize)]
+pub struct CourseModule {
+    #[serde(default)]
+    pub contextid: Option<i64>,
+}
+/// Parse only a pluginfile context within this Moodle installation, including non-slash URLs.
+pub fn file_context(base: &Url, target: &Url) -> Option<i64> {
+    if base.origin() != target.origin()
+        || !target.username().is_empty()
+        || target.password().is_some()
+    {
+        return None;
+    }
+    let prefix = base.path();
+    let path = target.path().strip_prefix(prefix)?;
+    let tail = path
+        .strip_prefix("pluginfile.php/")
+        .or_else(|| path.strip_prefix("webservice/pluginfile.php/"));
+    let argument = target
+        .query_pairs()
+        .find(|(k, _)| k == "file")
+        .map(|(_, v)| v.into_owned());
+    let tail = tail.or_else(|| {
+        if matches!(path, "pluginfile.php" | "webservice/pluginfile.php") {
+            argument.as_deref().and_then(|s| s.strip_prefix('/'))
+        } else {
+            None
+        }
+    })?;
+    let id = tail.split('/').next()?.parse::<i64>().ok()?;
+    (id > 0).then_some(id)
+}
 #[derive(Clone, Deserialize)]
 pub struct EventCourse {
     pub id: i64,
@@ -518,6 +556,23 @@ impl Client {
         )
         .await
     }
+    pub async fn course_contents(
+        &self,
+        token: &str,
+        course_id: i64,
+    ) -> Result<Vec<CourseSection>, Error> {
+        self.call(
+            token,
+            "core_course_get_contents",
+            &[
+                ("courseid", &course_id.to_string()),
+                ("options[0][name]", "excludecontents"),
+                ("options[0][value]", "1"),
+            ],
+            true,
+        )
+        .await
+    }
     pub async fn upcoming_events(&self, token: &str) -> Result<Vec<CalendarEvent>, Error> {
         let view: UpcomingEvents = self
             .call(token, "core_calendar_get_calendar_upcoming_view", &[], true)
@@ -741,6 +796,39 @@ mod contract_tests {
             .mark_all_notifications_read("test", 42)
             .await
             .unwrap();
+    }
+    #[test]
+    fn download_contexts_respect_origin_installation_and_url_shape() {
+        let base = normalize_site("example.org/moodle").unwrap();
+        for path in [
+            "pluginfile.php/42/mod_resource/content/0/notes.pdf",
+            "webservice/pluginfile.php/42/mod_resource/content/0/notes.pdf?token=private",
+            "pluginfile.php?file=%2F42%2Fmod_resource%2Fcontent%2Fnotes.pdf",
+        ] {
+            assert_eq!(file_context(&base, &base.join(path).unwrap()), Some(42));
+        }
+        for target in [
+            "https://evil.org/moodle/pluginfile.php/42/x",
+            "https://example.org/other/pluginfile.php/42/x",
+            "https://example.org/moodle/mod/resource/view.php?id=42",
+            "https://example.org/moodle/pluginfile.php/0/x",
+            "https://example.org/moodle/pluginfile.php/not-an-id/x",
+        ] {
+            assert!(file_context(&base, &Url::parse(target).unwrap()).is_none());
+        }
+    }
+    #[tokio::test]
+    async fn module_context_index_uses_metadata_only_stock_contract() {
+        let (server, client) = client().await;
+        Mock::given(method("POST"))
+            .and(body_string_contains("wsfunction=core_course_get_contents"))
+            .and(body_string_contains("courseid=7"))
+            .and(body_string_contains("excludecontents"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!([{"id":1,"modules":[{"id":2,"contextid":42,"description":"ignored"},{"id":3}]}])))
+            .expect(1).mount(&server).await;
+        let sections = client.course_contents("test", 7).await.unwrap();
+        assert_eq!(sections[0].modules[0].contextid, Some(42));
+        assert!(sections[0].modules[1].contextid.is_none());
     }
     #[tokio::test]
     async fn denied_course_listing_is_typed() {

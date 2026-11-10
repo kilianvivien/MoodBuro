@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-course-folders-refresh"
+description = "Enables the course_folders_refresh command without any pre-configured scope."
+commands.allow = ["course_folders_refresh"]
+
+[[permission]]
+identifier = "deny-course-folders-refresh"
+description = "Denies the course_folders_refresh command without any pre-configured scope."
+commands.deny = ["course_folders_refresh"]

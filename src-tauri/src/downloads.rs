@@ -38,7 +38,11 @@ fn finish_transfer(
         transfers.remove(key)
     }
 }
-fn folder(app: &AppHandle, site: &md_store::Site) -> Result<PathBuf, String> {
+fn folder(
+    app: &AppHandle,
+    site: &md_store::Site,
+    course: Option<&md_store::Course>,
+) -> Result<PathBuf, String> {
     let root = app
         .path()
         .home_dir()
@@ -48,7 +52,18 @@ fn folder(app: &AppHandle, site: &md_store::Site) -> Result<PathBuf, String> {
     let id = uuid::Uuid::parse_str(&site.id).map_err(|_| "Invalid site identifier.")?;
     let site_dir = root.join(format!("{}-{}", policy::safe_name(&site.name), id));
     policy::directory(&site_dir).map_err(|_| "Download folder unavailable.")?;
-    let folder = site_dir.join("Downloads");
+    let folder = site_dir.join(match course {
+        Some(course) => format!(
+            "{}-{}",
+            policy::safe_name(if course.short_name.is_empty() {
+                &course.name
+            } else {
+                &course.short_name
+            }),
+            course.id
+        ),
+        None => "Downloads".into(),
+    });
     policy::directory(&folder).map_err(|_| "Download folder unavailable.")?;
     Ok(folder)
 }
@@ -99,7 +114,16 @@ pub fn handle_for_user(
                         "This file is already downloading or the download queue is full.".into(),
                     );
                 }
-                let folder = folder(app, &site)?;
+                let course = md_moodle::file_context(&base, &url).and_then(|context| {
+                    state
+                        .store
+                        .lock()
+                        .ok()?
+                        .course_for_context(site_id, context)
+                        .ok()
+                        .flatten()
+                });
+                let folder = folder(app, &site, course.as_ref())?;
                 let staging = folder.join(".moodburo-staging");
                 policy::directory(&staging).map_err(|_| "Download folder unavailable.")?;
                 let id = uuid::Uuid::new_v4().to_string();
@@ -124,6 +148,8 @@ pub fn handle_for_user(
                     filename: filename.clone(),
                     local_path: staged.to_string_lossy().into_owned(),
                     state: "downloading".into(),
+                    course_id: course.as_ref().map(|c| c.id),
+                    course_name: course.map(|c| c.name),
                     started_at: std::time::SystemTime::now()
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap_or_default()
@@ -242,6 +268,7 @@ pub struct Summary {
     #[serde(flatten)]
     item: md_store::Download,
     needs_confirmation: bool,
+    can_preview: bool,
 }
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -256,6 +283,7 @@ pub fn page(
     site_id: Option<&str>,
     state: Option<&str>,
     offset: u32,
+    course_id: Option<i64>,
 ) -> Result<Page, String> {
     if !matches!(state, None | Some("downloading" | "complete" | "failed")) || query.len() > 256 {
         return Err("Unknown download filter.".into());
@@ -264,6 +292,7 @@ pub fn page(
         query,
         site_id,
         state,
+        course_id,
     };
     let (items, total) = app
         .state::<AppState>()
@@ -276,6 +305,8 @@ pub fn page(
         items: items
             .into_iter()
             .map(|item| Summary {
+                can_preview: cfg!(target_os = "macos")
+                    && crate::documents::supported(&item.filename),
                 needs_confirmation: policy::needs_confirmation(Path::new(&item.filename)),
                 item,
             })

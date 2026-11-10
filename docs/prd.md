@@ -1,6 +1,6 @@
 # PRD — Tauri Desktop Shell for Moodle
 
-Nov 9, 2026 · @Kilian
+Nov 10, 2026 · @Kilian
 
 ## 1. Summary, problem and goals
 
@@ -219,7 +219,7 @@ The security model rests on one rule: remote Moodle content is untrusted, and on
 | SEC-10 | Dependency audit (`cargo audit`, `npm audit`) in CI; Tauri and plugin updates applied within 14 days of a security release | P1 |
 | SEC-11 | User-Agent identifies the app (`MoodleDesk/<version>`) so site admins can see and, if they wish, block it | P1 |
 
-**Privacy.** All data stays on the device and goes only to the user's own Moodle site; no analytics by default. Opt-in crash reports exclude URLs, file names and course names. Synced files are personal data under GDPR when they include other users' content (forum attachments, feedback), so the sign-out wipe (SEC-8) and a documented local-storage notice are required.
+**Privacy.** By default, data stays on the device and goes only to the user's own Moodle site; no analytics by default. The planned optional AI assistant (§7) adds an explicit exception: prompts and user-approved Moodle context are sent to the selected Albert or Mistral AI provider using the user's own key. Before enabling context sharing, explain the data sent and the provider's applicable processing/retention terms; no provider retention guarantee is assumed. Moodle tokens and cookies must never enter model context. Opt-in crash reports exclude URLs, file names and course names. Synced files are personal data under GDPR when they include other users' content (forum attachments, feedback), so the sign-out wipe (SEC-8) and a documented local-storage notice are required.
 
 **Exams.** Quiz pages that require Safe Exam Browser must keep failing in the app as they do in a normal browser; the app sends no SEB headers and makes no attempt to emulate them.
 
@@ -272,9 +272,18 @@ The product owner requested more user-facing features in the Alpha. The [expande
 | Expanded Alpha A2 | Course browser/pins; course/cached-activity quick-open, Cmd+L and an optional global shortcut (OS-12/MAC-8 partial) | Server full-text and file-content search |
 | Expanded Alpha A3 | Explicitly selected course files saved offline and manually refreshed (OS-6/OS-7 partial; plain-file MAC-4 behavior) | Full scheduled mirroring, automatic deletion handling, resumable sync and complete DL-3 de-duplication |
 | Expanded Alpha A4–A5 | Read-only upcoming agenda, opt-in local reminders while running, and manual token-free ICS snapshot export (OS-8/OS-9/MAC-5 partial) | Live authenticated calendar subscriptions, automatic external-calendar refresh and reminder delivery guarantees while quit |
+| Expanded Alpha A6 | Optional Albert/Mistral AI BYOK chat side panel with explicit Moodle context and bounded tools, implemented after A1–A5 | Broad autonomous actions, assignment submissions and grade changes |
 | Later releases | Uploads/submission assistance (OS-10), Finder Services, signing/notarization, managed deployment and additional platforms | Unchanged v1.0/later-platform requirements remain applicable |
 
 The original Alpha six-week estimate and overall sequencing are baselines for the smaller scope, not commitments for this expansion. Re-estimate by slice. None of A1–A5 is marked delivered by this planning decision; full security, sign-in, account-isolation and platform gates remain mandatory. The live-calendar export-token question Q6 still applies to the deferred subscription path; manual ICS generation from agenda data does not depend on that token.
+
+### AI assistant scope amendment — 10 November 2026
+
+Add an optional, collapsible AI chat side panel alongside the Moodle view. Users bring their own Albert API or Mistral AI key and choose their provider/model. The assistant answers general questions without Moodle context and can use explicitly selected Moodle data exposed to the app to answer course questions, find deadlines/resources and open relevant items. Answers grounded in Moodle data link back to their sources and identify unavailable or stale context.
+
+Interaction uses a bounded set of account-scoped tools mediated by the Rust core, respecting the site's actual web-service capabilities and the user's permissions. Start with read/search/navigation; selected writes such as marking a notification read require an exact-target preview and explicit confirmation. The initial scope excludes assignment submissions, grade changes and arbitrary page/script execution. Moodle content and model output are untrusted inputs, never authorization for a tool call.
+
+This feature is **A6, the final implementation slice of the expanded Alpha**, after A1–A5 and before combined qualification/release. It is part of the Alpha feature gate. The [working roadmap](plan.md#5-ai-chat-side-panel--final-alpha-feature-a6) tracks provider validation, panel layout/accessibility, credential storage, explicit context sharing, history deletion, account isolation and acceptance checks. Estimate delivery after validating both providers and the supported Moodle tool surface; no implementation or API compatibility is claimed by this amendment.
 
 ### 7.1 Success metrics (90 days after v1.0)
 

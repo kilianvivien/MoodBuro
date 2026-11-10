@@ -15,6 +15,7 @@ The original six-week schedule was for the smaller core-shell scope. It is now a
 | A3 — Save selected files offline | Choose files from a course and keep readable copies in the course's Finder folder | OS-6/OS-7 partial; plain-file portion of MAC-4 | User-selected, one-shot transfers and manual refresh. No automatic course mirroring, scheduled sync, server-deletion propagation or upload of local edits. |
 | A4 — Agenda and reminders | See upcoming Moodle events/deadlines across sites and opt into local reminders | OS-9 partial | Read-only upcoming agenda and configurable local reminders while MoodBuro is running. No offline submission or wake-while-quit guarantee. |
 | A5 — Calendar export | Export the visible agenda to a local `.ics` file for import into Calendar | OS-8/MAC-5 partial | Manual snapshot export generated from agenda data. No live `webcal://` subscription, background refresh or token-bearing feed URL. |
+| A6 — AI assistant (added 10 November 2026) | Chat in a side panel using Albert or Mistral AI with BYOK; answer general questions and interact with explicitly selected Moodle context | [AI scope amendment](prd.md#ai-assistant-scope-amendment--10-november-2026) | Final Alpha feature after A1–A5; account-scoped read/navigation tools and individually confirmed supported writes. No broad autonomy, submissions or grade changes. |
 
 Pins are a small addition to the course browser, stored locally per account. They do not change Moodle favourites or other server state.
 
@@ -26,7 +27,8 @@ Pins are a small addition to the course browser, stored locally per account. The
 4. **A3:** add explicit offline file selection and manual refresh on top of the course index and safe file-publication rules.
 5. **A4:** add the upcoming agenda and opt-in reminders, independently of file transfers.
 6. **A5:** export the agenda locally as ICS; this depends on A4's normalized event model, not on a server calendar-export token.
-7. Run the combined feature/security/platform matrix and package the expanded Alpha. Account-dependent checks, signing identity, updater keys and hosting are separate tasks; unavailable intervention must not block unrelated implementation or be recorded as a passed gate.
+7. **A6:** implement the AI chat side panel last, with the provider, context-sharing and bounded-tool acceptance gate in the [working plan](plan.md#5-ai-chat-side-panel--final-alpha-feature-a6).
+8. Run the combined feature/security/platform matrix and package the expanded Alpha. Account-dependent checks, signing identity, updater keys and hosting are separate tasks; unavailable intervention must not block unrelated implementation or be recorded as a passed gate.
 
 A completed slice should produce a reviewable local build and its relevant evidence. These slices are the target feature set for the expanded Alpha. If a slice cannot meet its acceptance criteria, record an explicit scope decision in the tracker rather than silently dropping it or marking the full PRD requirement complete.
 
@@ -40,7 +42,7 @@ First implementation pass over A1, A2 and the read-only half of A4, against synt
 - [ ] Use the existing native/menu-bar entry points to reach the inbox and expose the latest unread items without wide menu rows. _(Partly built: View → Inbox ⌘1 and a tray Inbox entry with the count; individual unread items are not listed in the tray.)_
 - [x] Open a safe site notification page when a precise activity destination is unavailable; never follow an unvalidated context URL.
 - [x] Refresh authoritative counts/read state after Mark Read. Show failures and preserve the previous state when the server rejects the operation.
-- [ ] Replace the 20-row-only Downloads view with paginated history and filename/site/state filters; add course filtering when A2 supplies a reliable association. Keep an explicit Unknown Course bucket. _(Built: paging and filename/site/state filters. Open: course filter and Unknown Course bucket, which need the download-to-course association.)_
+- [x] Replace the 20-row-only Downloads view with paginated history and filename/site/state filters; add course filtering when A2 supplies a reliable association. Keep an explicit Unknown Course bucket. _(Built: paging and filename/site/state/course filters with Unknown Course. Course mapping comes from explicit Moodle module-metadata refresh; live qualification remains open.)_
 - [x] Add Copy Path and per-site Clear History, keeping files on disk. Confirm history clearing and describe its effect.
 - [ ] Add a safe retry route: resolve a fresh source from stable Moodle file metadata when available; otherwise offer return to the relevant Moodle page/site. Never persist or replay a stale credential-bearing URL or claim that revealing a page restarted a transfer.
 - [ ] Add a PDF/image handling preference: retain inline viewing by default; offer an explicit Save/Open in Default App route through managed downloads. Risky/unknown types always retain confirmation and never auto-open.
@@ -53,7 +55,7 @@ First implementation pass over A1, A2 and the read-only half of A4, against synt
 - [x] Add a compact course browser with local pins and course/site labels. Opening a result routes through the existing session bridge and navigation guard.
 - [ ] Add Cmd+L quick-open across sites' course names and already cached activities. Search cached metadata locally; show what is available offline and when the cache was refreshed. _(Built: ⌘L over course names, organisations and shell views. Open: no activity metadata is cached yet, and the panel does not show the cache age — the Courses view does.)_
 - [ ] Offer an opt-in global Cmd+Shift+M shortcut; handle registration conflicts visibly and unregister it when disabled or quitting.
-- [ ] Reuse course/context identifiers to finish course-folder download routing. Keep the Downloads fallback when association is unknown; never infer a course from a similar name.
+- [x] Reuse course/context identifiers to finish course-folder download routing. Keep the Downloads fallback when association is unknown; never infer a course from a similar name.
 - [x] Clear metadata/pins on removal or account replacement and reject late responses from the previous user.
 
 **Acceptance:** keyboard-only search can open the correct course across three sites; pins survive restart; a cached list remains usable offline without implying that the Moodle page itself is offline; shortcut conflicts do not override another binding or prevent app use. API access failure does not break ordinary Moodle browsing.

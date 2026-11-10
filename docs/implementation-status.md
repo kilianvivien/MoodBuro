@@ -91,3 +91,11 @@ Automated verification: 46 UI tests, 34 Rust tests, frontend build/lint/format, 
 - **Limits.** Courses and Agenda refresh only while their view (or Quick Open) is open; nothing is fetched in the background. The poller still fetches the newest 20 notifications. The agenda horizon is whatever Moodle's upcoming view returns for the user's calendar preferences.
 
 Automated verification: 70 UI tests and 42 Rust tests (including contract tests for the three new web-service calls with stock-shaped synthetic responses, store tests for account binding, paging and clearing, and view tests in both languages), frontend build/lint/format, workspace Clippy and the IPC/caller check. The interface was exercised in the browser preview with sample data in light and dark. No native window, tray, menu, pasteboard or live Moodle behaviour was verified in this slice.
+
+## Course folders and native document reader — 10 November 2026
+
+Built: metadata-backed course-folder routing, explicit Refresh Course Folders, download course labels/filter with Unknown Course, and schema v6 migration. New supported downloads can be previewed in Rust-owned native Tauri windows: PDFKit for PDF and Quick Look for DOCX/XLSX/PPTX. The native toolbar includes zoom, fit, scale readout, default-app Open, Finder and full screen; PDF additionally has previous/next page and page count. No document bytes or paths cross IPC. The native smoke harness exercises the actual toolbar actions independently of the user's account data.
+
+71 UI tests and 49 Rust tests pass, with frontend build/lint/format, workspace Clippy, capability checks and a local debug app bundle. Native PDF/Office toolbar smoke checks pass and PowerPoint rendering/toolbar were observed. Real Moodle course routing, installed-app lifecycle, complex Office fidelity and the supported-platform matrix remain open in [native reader/download QA](native-reader-downloads-qa.md). Existing PDF Save/download qualification is not closed by this work.
+
+The AI assistant is now **A6**, the final Alpha feature after A1–A5 and before combined qualification/release; it remains unimplemented.
