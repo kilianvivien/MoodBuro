@@ -9,12 +9,20 @@ pub enum Event {
     SessionRestoring,
     SessionRestored,
     BrowserSessionFallback,
+    RetryScheduled,
+    RetryFinished,
+    PrivateTokenPresent,
+    PrivateTokenAbsent,
 }
 pub fn record(event: Event) {
     #[cfg(debug_assertions)]
     eprintln!(
         "[auth] {}",
         match event {
+            Event::RetryScheduled => "waiting for autologin lockout before one restore retry",
+            Event::RetryFinished => "autologin restore retry finished",
+            Event::PrivateTokenPresent => "private token supplied at sign-in",
+            Event::PrivateTokenAbsent => "private token absent at sign-in; browser session only",
             Event::Started => "sign-in window requested",
             Event::CallbackVerified => "one-use callback verified",
             Event::CallbackRejected => "callback rejected",

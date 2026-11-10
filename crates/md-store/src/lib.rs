@@ -185,7 +185,7 @@ impl Store {
     pub fn open(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 9 {
+        if version > 10 {
             return Err(rusqlite::Error::InvalidQuery);
         }
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; BEGIN;
@@ -212,9 +212,25 @@ impl Store {
             CREATE TABLE IF NOT EXISTS reminder_settings (site_id TEXT PRIMARY KEY REFERENCES sites(id) ON DELETE CASCADE, user_id INTEGER NOT NULL, hour INTEGER NOT NULL, day INTEGER NOT NULL, enabled_at INTEGER NOT NULL, refresh_error TEXT, delivery_failed INTEGER NOT NULL DEFAULT 0, requested_at INTEGER NOT NULL DEFAULT 0);
             CREATE TABLE IF NOT EXISTS reminder_events (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, event_id INTEGER NOT NULL, due INTEGER NOT NULL, eligible INTEGER NOT NULL, observed_at INTEGER NOT NULL, PRIMARY KEY(site_id,event_id));
             CREATE TABLE IF NOT EXISTS reminder_ledger (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, user_id INTEGER NOT NULL, event_id INTEGER NOT NULL, due INTEGER NOT NULL, offset INTEGER NOT NULL, PRIMARY KEY(site_id,user_id,event_id,due,offset));
-            PRAGMA user_version=9; COMMIT;",
+            CREATE TABLE IF NOT EXISTS autologin_state (site_id TEXT PRIMARY KEY REFERENCES sites(id) ON DELETE CASCADE, minted_at INTEGER NOT NULL);
+            PRAGMA user_version=10; COMMIT;",
         )?;
         Ok(Self(connection))
+    }
+    /// Non-secret timing metadata only; one-use keys remain in memory.
+    pub fn autologin_minted(&self, id: &str, at: i64) -> rusqlite::Result<()> {
+        self.0.execute("INSERT INTO autologin_state VALUES (?1,?2) ON CONFLICT(site_id) DO UPDATE SET minted_at=excluded.minted_at", params![id, at])?;
+        Ok(())
+    }
+    pub fn last_autologin_mint(&self, id: &str) -> rusqlite::Result<Option<i64>> {
+        use rusqlite::OptionalExtension;
+        self.0
+            .query_row(
+                "SELECT minted_at FROM autologin_state WHERE site_id=?1",
+                [id],
+                |r| r.get(0),
+            )
+            .optional()
     }
     pub fn download_insert(&self, item: &Download) -> rusqlite::Result<()> {
         self.0.execute(
@@ -821,6 +837,7 @@ impl Store {
             "course_pins",
             "events",
             "sync_state",
+            "autologin_state",
         ] {
             tx.execute(&format!("DELETE FROM {table} WHERE site_id=?1 AND EXISTS (SELECT 1 FROM sites WHERE id=?1 AND user_id<>?2)"), params![site.id, site.user_id])?;
         }
@@ -863,6 +880,43 @@ impl Store {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn autologin_timing_survives_restart_and_is_account_scoped() {
+        let path =
+            std::env::temp_dir().join(format!("moodburo-autologin-{}.db", std::process::id()));
+        {
+            let store = Store::open(&path).unwrap();
+            let site = Site {
+                id: "restore-test".into(),
+                wwwroot: "https://example.org/".into(),
+                name: "Example".into(),
+                user_id: 1,
+                full_name: "Learner".into(),
+            };
+            store.insert(&site).unwrap();
+            assert_eq!(store.last_autologin_mint(&site.id).unwrap(), None);
+            store.autologin_minted(&site.id, 1000).unwrap();
+            store.autologin_minted(&site.id, 1200).unwrap();
+        }
+        {
+            let store = Store::open(&path).unwrap();
+            assert_eq!(
+                store.last_autologin_mint("restore-test").unwrap(),
+                Some(1200)
+            );
+            let mut site = store.sites().unwrap().remove(0);
+            store.update(&site).unwrap();
+            assert_eq!(store.last_autologin_mint(&site.id).unwrap(), Some(1200));
+            site.user_id = 2;
+            store.update(&site).unwrap();
+            assert_eq!(store.last_autologin_mint(&site.id).unwrap(), None);
+            store.autologin_minted(&site.id, 1300).unwrap();
+            store.remove(&site.id).unwrap();
+            assert_eq!(store.last_autologin_mint(&site.id).unwrap(), None);
+            assert!(store.autologin_minted(&site.id, 1400).is_err());
+        }
+        std::fs::remove_file(path).unwrap();
+    }
     #[test]
     fn migration_and_unique_site() {
         let store = Store::open(":memory:").unwrap();

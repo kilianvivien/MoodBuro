@@ -10,6 +10,40 @@ Implementation is ready for these tests; none of the live outcomes below is clai
 4. Remove the account. Confirm metadata/notification rows and credentials disappear, the tray/badge no longer include it, and an in-flight poll cannot recreate it. Verify asynchronous profile removal separately.
 5. Repeat sign-in/cancellation/restart across manual, SAML and OIDC sites. Test three simultaneous sites and record warm-switch timings, resize/focus and profile isolation results.
 
+## Rate-limited startup restoration
+
+Cold restore still validates the saved user's web-service token first. A rate-limited
+key request now arms one recovery attempt for that view. Only a completed load of
+the site's own `login/` or `login/index.php` schedules it. The delay uses a saved
+non-secret mint timestamp and Moodle's default six-minute interval, plus five
+seconds of margin; missing, stale or future timestamps use the full interval.
+The timestamp survives restarts and is cleared on account replacement/removal.
+Moodle administrators can configure a longer interval; one failed retry then
+stops. See [Moodle's lockout implementation](https://github.com/moodle/moodle/blob/MOODLE_405_STABLE/admin/tool/mobile/classes/external.php#L293-L304).
+
+The retry revalidates the account, mints a fresh one-use key and navigates only
+that existing view, preserving the requested destination and current selection.
+Logout, browsing away, successful SSO/manual login, reconnect and removal cancel
+recovery. No periodic login watcher runs after successful restoration. Cookies
+keep their server-provided lifetime. Other network/service failures and missing
+private tokens keep the existing fallback behavior.
+
+Installed-app checks still required (automated tests do not authenticate to INSP):
+
+- Quit/reopen within six minutes of a successful mint: leave the fallback login
+  page open and confirm one automatic login after the remaining delay. Repeat
+  without local timing metadata and after six minutes (immediate cold restore).
+- Reload the login page repeatedly: confirm only one retry. Force another
+  rate-limit/network failure on retry: confirm no loop.
+- During the delay, switch to another organisation or local Library: recovery
+  must not change selection. A deep-linked destination should survive recovery.
+- During both the delay and HTTP requests, log out, browse away, reconnect or
+  remove the account: confirm the old task cannot navigate the replacement view.
+- Complete manual/SSO login during the delay: confirm no later navigation. Test
+  a subdirectory installation and an expired/mismatched token (reconnect state).
+- Confirm missing private token diagnostics use fixed text only; no credentials,
+  cookies or one-use URLs should appear in logs, SQLite or shell events.
+
 ## Notification and lifecycle checks (W4)
 
 1. Install the local `.app` in Applications and launch it. Enable its notifications in macOS Settings if necessary. Connect a test site with old unread items: first poll must update sidebar/tray/dock counts without posting historical alerts.

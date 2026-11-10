@@ -143,6 +143,9 @@ pub fn switch_at(app: &AppHandle, id: &str, target: Option<url::Url>) -> Result<
         let base = md_moodle::normalize_site(&site.wwwroot).map_err(|e| e.to_string())?;
         let policy_base = base.clone();
         let handle = app.clone();
+        let load_base = base.clone();
+        let load_site = id.to_owned();
+        let navigation_site = id.to_owned();
         let download_app = app.clone();
         let download_site = id.to_owned();
         let download_user = site.user_id;
@@ -154,15 +157,28 @@ pub fn switch_at(app: &AppHandle, id: &str, target: Option<url::Url>) -> Result<
                 target.unwrap_or(base.join("my/").map_err(|_| "Invalid site URL.")?),
             ),
         )
-        .on_navigation(move |target| match navigation(&policy_base, target) {
-            Navigation::Allow => true,
-            Navigation::External => {
-                if md_moodle::shareable_url(target) {
-                    let _ = handle.opener().open_url(target.as_str(), None::<&str>);
-                }
-                false
+        .on_page_load(move |view, payload| {
+            if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
+                crate::session_restore::loaded(
+                    view.app_handle(),
+                    &load_site,
+                    &load_base,
+                    payload.url(),
+                );
             }
-            Navigation::Block => false,
+        })
+        .on_navigation(move |target| {
+            crate::session_restore::navigation(&handle, &navigation_site, &policy_base, target);
+            match navigation(&policy_base, target) {
+                Navigation::Allow => true,
+                Navigation::External => {
+                    if md_moodle::shareable_url(target) {
+                        let _ = handle.opener().open_url(target.as_str(), None::<&str>);
+                    }
+                    false
+                }
+                Navigation::Block => false,
+            }
         })
         .on_download(move |_, event| {
             crate::downloads::handle_for_user(

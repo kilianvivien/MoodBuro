@@ -567,6 +567,11 @@ async fn complete_sign_in(
     let save = || -> Result<(), String> {
         md_secrets::put(id, Kind::Token, &tokens.token)
             .map_err(|_| "Could not save the token in the OS credential store.")?;
+        record(if tokens.private.is_some() {
+            AuthEvent::PrivateTokenPresent
+        } else {
+            AuthEvent::PrivateTokenAbsent
+        });
         if let Some(private) = &tokens.private {
             md_secrets::put(id, Kind::Private, private)
                 .map_err(|_| "Could not save the private token in the OS credential store.")?;
@@ -616,6 +621,7 @@ async fn complete_sign_in(
     crate::notifications::start(app, saved_site(app, id)?);
     // A turn or confirmation started for the previous account must not finish.
     crate::assistant::invalidate(app, id);
+    crate::session_restore::cancel(app, id);
     record(AuthEvent::CredentialsSaved);
     drop(pending);
     if let Some(view) = app.get_webview(&format!("site-{id}")) {
@@ -666,6 +672,7 @@ pub async fn restore_site_at(
         if let Ok(private) = md_secrets::get(id, Kind::Private) {
             match client.autologin_key(&token, &private).await {
                 Ok(key) => {
+                    crate::session_restore::minted(app, id);
                     let dashboard = base.join("my/").map_err(|_| "Invalid site URL.")?;
                     let target = md_moodle::autologin_target_to(
                         &base,
@@ -681,7 +688,10 @@ pub async fn restore_site_at(
                 Err(md_moodle::Error::InvalidToken) => {
                     return Err(md_moodle::Error::InvalidToken.to_string())
                 }
-                // A retained browser session remains valid when autologin is unavailable/rate-limited.
+                Err(md_moodle::Error::RateLimited) => {
+                    crate::session_restore::arm(app, id, destination.clone());
+                }
+                // A retained browser session may still be valid for other failures.
                 Err(_) => {}
             }
         }
@@ -829,6 +839,7 @@ pub async fn site_remove(
             "Finish or close the current sign-in window before removing an organisation.".into(),
         );
     }
+    crate::session_restore::cancel(&app, &id);
     windows::remove_session(&app, &site)?;
     md_secrets::delete_site(&id)
         .map_err(|_| "Could not remove this organisation’s credentials. Please try again.")?;

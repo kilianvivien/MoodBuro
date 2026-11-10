@@ -16,6 +16,7 @@ mod offline;
 #[cfg(target_os = "macos")]
 mod pdf_save;
 mod reminders;
+mod session_restore;
 mod shortcut;
 mod tray;
 mod window_state;
@@ -34,6 +35,7 @@ pub struct AppState {
     active: Mutex<Option<String>>,
     pending: Mutex<Option<String>>,
     switching: tauri::async_runtime::Mutex<()>,
+    restores: Mutex<session_restore::Restores>,
     /// Organisations whose next download was started by the "save and open" preference.
     open_next: Mutex<std::collections::HashMap<String, std::time::Instant>>,
     /// The saved global shortcut could not be registered at launch.
@@ -67,6 +69,7 @@ pub fn run() {
                 active: Mutex::new(None),
                 pending: Mutex::new(None),
                 switching: tauri::async_runtime::Mutex::new(()),
+                restores: Mutex::new(Default::default()),
                 open_next: Mutex::new(Default::default()),
                 shortcut_unavailable: Default::default(),
             });

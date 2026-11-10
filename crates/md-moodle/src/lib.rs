@@ -555,7 +555,8 @@ impl Client {
             .await
     }
     pub async fn autologin_key(&self, token: &str, private: &str) -> Result<AutologinKey, Error> {
-        // Minting keys is rate-limited server-side; never automatically retry it.
+        // Minting keys is rate-limited server-side; never retry within this request.
+        // The app may schedule one separate attempt after the lockout expires.
         self.call(
             token,
             "tool_mobile_get_autologin_key",
