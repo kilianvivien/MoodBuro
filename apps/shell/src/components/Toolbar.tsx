@@ -7,6 +7,7 @@ import {
   House,
   RotateCw,
   Search,
+  Sparkles,
   X,
 } from "lucide-react";
 import type { NavAction, Site } from "../ipc";
@@ -26,8 +27,13 @@ export function Toolbar({
   onLeave,
   onDownloads,
   onQuickOpen,
+  onAssistant,
+  assistantOpen = false,
   paused = false,
 }: {
+  /** Shows or hides the AI assistant panel beside the content. */
+  onAssistant?: () => void;
+  assistantOpen?: boolean;
   view: View;
   site: Site | undefined;
   /**
@@ -80,6 +86,17 @@ export function Toolbar({
       onClick={onQuickOpen}
     >
       <Search {...icon} />
+    </button>
+  );
+  const assistant = onAssistant && (
+    <button
+      className="tool"
+      title={t.assistant.toggle}
+      aria-label={t.assistant.title}
+      aria-pressed={assistantOpen}
+      onClick={onAssistant}
+    >
+      <Sparkles {...icon} />
     </button>
   );
   const local =
@@ -158,6 +175,7 @@ export function Toolbar({
           >
             <ExternalLink size={15} strokeWidth={1.75} aria-hidden="true" />
           </button>
+          {assistant}
         </>
       ) : (
         <>
@@ -176,6 +194,7 @@ export function Toolbar({
               <Download {...icon} />
             </button>
           )}
+          {assistant}
           {canLeave && (
             <button className="button" onClick={onLeave}>
               {view === "onboarding" ? t.toolbar.cancel : t.toolbar.done}

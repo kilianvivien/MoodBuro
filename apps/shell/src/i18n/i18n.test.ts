@@ -70,6 +70,8 @@ describe("catalogues", () => {
           "Site",
           "Français",
           "English",
+          "Sources",
+          "Conversations",
         ].includes(text) &&
         !/^\d+ sites?$/u.test(text),
     );

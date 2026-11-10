@@ -1,3 +1,4 @@
+mod assistant;
 mod auth_log;
 mod calendar;
 mod commands;
@@ -73,6 +74,7 @@ pub fn run() {
                 .lock()
                 .expect("store")
                 .downloads_interrupt()?;
+            assistant::install(app.handle());
             windows::create_shell(app.handle())?;
             menus::install(app.handle())?;
             tray::install(app.handle())?;
@@ -152,6 +154,17 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            commands::assistant_status,
+            commands::assistant_configure,
+            commands::assistant_key_set,
+            commands::assistant_key_remove,
+            commands::assistant_models,
+            commands::assistant_panel,
+            commands::assistant_history,
+            commands::assistant_send,
+            commands::assistant_cancel,
+            commands::assistant_confirm,
+            commands::assistant_clear,
             commands::offline_resources,
             commands::offline_saved,
             commands::offline_save,

@@ -13,7 +13,7 @@ This is the working checklist for project advancement. The [PRD](prd.md) defines
 | M0 — architecture and sign-in spike | In progress | Repeatable three-site login/SSO tests, platform/security validation and D1–D5 decisions |
 | M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, course download routing and installed-app validation |
 | Expanded Alpha features — A1–A5 | A1–A5 feature slices, including opt-in A4 reminders, implemented against fixtures | Live/native validation of the built parts; offline-file/reminder qualification and native Calendar import qualification |
-| A6 — AI assistant | Planned, not started; final Alpha feature | Both BYOK providers, explicit context sharing, bounded tools and isolation checks |
+| A6 — AI assistant | Implemented against provider/Moodle fixtures | Live BYOK/model qualification, native geometry, keyboard/VoiceOver and adversarial account/tool checks |
 | First tester Alpha | Not ready for distribution | All Alpha exit criteria, universal packaging and private distribution setup |
 
 The INSP dashboard has been observed authenticated in the app. This is a successful real-site observation; it does not close the complete SSO, session-restoration or security test matrix.
@@ -145,14 +145,14 @@ The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies 
 
 ### 5. AI chat side panel — final Alpha feature (A6)
 
-Added on 10 November 2026. Plan an optional AI assistant beside the Moodle view, able to answer general questions and interact with Moodle elements exposed to the app. At the product owner’s request, implement this as **A6, after A1–A5 and before combined Alpha qualification and release**. Estimate it after the provider/API spike; it is part of the Alpha feature gate. See the [PRD scope amendment](prd.md#ai-assistant-scope-amendment--10-november-2026).
+Added on 10 November 2026. Plan an optional AI assistant beside the Moodle view, able to answer general questions and interact with Moodle elements exposed to the app. At the product owner’s request, implement this as **A6, after A1–A5 and before combined Alpha qualification and release**. The bounded implementation is complete against fixtures; live/native qualification remains part of the Alpha feature gate. See [assistant qualification](assistant-qa.md). See the [PRD scope amendment](prd.md#ai-assistant-scope-amendment--10-november-2026).
 
-- [ ] **Provider setup and general chat:** support the Albert API or Mistral AI in bring-your-own-key (BYOK) mode, with provider/model settings, connection validation, streaming responses, cancel/retry and clear authentication, quota and network errors. Validate each provider's endpoint, model availability and tool-calling support during the spike.
-- [ ] **Side panel:** add a collapsible, resizable chat panel alongside the active Moodle view, with keyboard access, FR/EN copy and accessible focus handling. Recalculate native Moodle webview bounds when the panel opens, closes or resizes.
-- [ ] **Moodle context:** let the user explicitly attach an organisation/course or supported item. Start with courses, exposed activities/resources, upcoming deadlines and notifications available through the app's Moodle API/cache. Show the selected context and link answers back to Moodle sources; state missing permissions or stale data. General questions must work without Moodle context.
-- [ ] **Bounded interactions:** expose an allowlist of typed tools through the Rust core, starting with course/activity lookup, deadline lookup and opening a referenced Moodle item. Add selected write actions, such as marking a notification read, only where the site exposes the capability; show the exact target and require user confirmation before each write. Keep submissions, grades and arbitrary page/script execution outside the initial slice.
-- [ ] **Keys and data controls:** keep provider keys in the OS credential store and provider requests in Rust. Explain which prompt/context is sent to the selected provider before enabling Moodle context sharing; never send Moodle tokens, cookies or provider keys as model context. Make chat-history retention explicit and provide deletion controls.
-- [ ] **Isolation and tool safety:** scope context, conversations and tool calls to the selected Moodle account; clear attached context on account switches and invalidate pending tools on account replacement/removal. Treat Moodle content and model output as untrusted, validate tool arguments and permissions in Rust, and keep remote Moodle webviews without privileged IPC.
+- [x] **Provider setup and general chat:** support the Albert API or Mistral AI in bring-your-own-key (BYOK) mode, with provider/model settings, connection validation, streaming responses, cancel/retry and clear authentication, quota and network errors. Validate each provider's endpoint, model availability and tool-calling support during the spike.
+- [x] **Side panel:** add a collapsible, resizable chat panel alongside the active Moodle view, with keyboard access, FR/EN copy and accessible focus handling. Recalculate native Moodle webview bounds when the panel opens, closes or resizes.
+- [x] **Moodle context:** let the user explicitly attach an organisation/course or supported item. Start with courses, exposed activities/resources, upcoming deadlines and notifications available through the app's Moodle API/cache. Show the selected context and link answers back to Moodle sources; state missing permissions or stale data. General questions must work without Moodle context.
+- [x] **Bounded interactions:** expose an allowlist of typed tools through the Rust core, starting with course/activity lookup, deadline lookup and opening a referenced Moodle item. Add selected write actions, such as marking a notification read, only where the site exposes the capability; show the exact target and require user confirmation before each write. Keep submissions, grades and arbitrary page/script execution outside the initial slice.
+- [x] **Keys and data controls:** keep provider keys in the OS credential store and provider requests in Rust. Explain which prompt/context is sent to the selected provider before enabling Moodle context sharing; never send Moodle tokens, cookies or provider keys as model context. Make chat-history retention explicit and provide deletion controls.
+- [x] **Isolation and tool safety:** scope context, conversations and tool calls to the selected Moodle account; clear attached context on account switches and invalidate pending tools on account replacement/removal. Treat Moodle content and model output as untrusted, validate tool arguments and permissions in Rust, and keep remote Moodle webviews without privileged IPC.
 - [ ] **Acceptance gate:** verify both providers, general chat without context, source-linked Moodle answers, permitted lookups/navigation, denied capabilities, confirmed/cancelled writes, prompt-injection resistance, account isolation, credential/log redaction, panel geometry and keyboard access. Use provider/Moodle fixtures plus live qualification before claiming support.
 
 ### 6. Prepare the tester Alpha
@@ -168,7 +168,7 @@ Added on 10 November 2026. Plan an optional AI assistant beside the Moodle view,
 
 ## Deferred beyond the Alpha
 
-The bounded A1–A6 versions above are Alpha targets; the AI panel remains unimplemented. The following larger versions remain deferred:
+The bounded A1–A6 versions above are implemented against fixtures; live/native acceptance gates remain open. The following larger versions remain deferred:
 
 - [ ] Full scheduled course-folder sync, resumable mirroring, automatic server-deletion handling and full sync/download de-duplication.
 - [ ] Live authenticated calendar subscriptions and automatic external-calendar refresh; the Alpha gets agenda/reminders and manual ICS export only.

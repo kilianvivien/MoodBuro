@@ -341,6 +341,121 @@ const en = {
     reauthenticated: (name: string) => `Signed in to ${name} again.`,
     reauthenticatedUnnamed: "Signed in to the site again.",
   },
+  assistant: {
+    title: "AI Assistant",
+    toggle: "AI Assistant (⇧⌘A)",
+    general: "General chat",
+    scope: (name: string) => `Conversation for ${name}`,
+    close: "Close Assistant",
+    clear: "Clear Conversation…",
+    clearTitle: "Clear this conversation?",
+    clearBody:
+      "The messages shown here will be forgotten. Conversations are kept in memory only and are never saved to disk.",
+    clearConfirm: "Clear",
+    cancel: "Cancel",
+    resize: "Assistant panel width",
+    log: "Conversation",
+    you: "You",
+    answer: "Answer",
+    placeholder: "Ask a question",
+    inputLabel: "Message to the assistant",
+    inputHint: "Return to send · Shift-Return for a new line",
+    send: "Send",
+    stop: "Stop",
+    retry: "Try Again",
+    thinking: "Waiting for the answer…",
+    steps: {
+      courses: "Checking your courses…",
+      activities: "Searching saved activities…",
+      agenda: "Checking your agenda…",
+      notifications: "Checking your notifications…",
+      open: "Opening in Moodle…",
+      confirm: "Waiting for your confirmation…",
+    },
+    contextLabel: "Moodle context",
+    contextNone: "No Moodle context",
+    contextSite: (name: string) => `Organisation: ${name}`,
+    contextCourses: "Courses",
+    contextHint:
+      "With a context attached, the assistant can look up this account’s courses, saved activities, deadlines and notification subjects.",
+    contextNeedsConsent:
+      "Sharing Moodle context is off. Turn it on in Settings to attach an organisation or a course.",
+    contextNeedsSite: "Open an organisation to attach its Moodle context.",
+    attached: (name: string) => `Context: ${name}`,
+    sources: "Sources",
+    openSource: (label: string) => `Open in Moodle: ${label}`,
+    setupTitle: "Set up the assistant",
+    setupHint:
+      "Add your own Albert API or Mistral AI key in Settings to start a conversation.",
+    openSettings: "Open Settings…",
+    emptyTitle: "Ask a question",
+    emptyHint: (provider: string) =>
+      `Your messages are sent to ${provider}. The conversation stays in memory until you quit MoodBuro and is never saved to disk.`,
+    confirmTitle: "Mark this notification as read?",
+    confirmBody: (site: string) =>
+      `In ${site}. Nothing changes in Moodle unless you confirm.`,
+    confirmApprove: "Mark as Read",
+    confirmDecline: "Don’t Mark",
+    notes: {
+      courses: "Checked your course list",
+      activities: "Searched activities saved on this Mac",
+      agenda: "Checked your agenda",
+      notifications: "Checked notification subjects saved on this Mac",
+      updated: (when: string) => `updated ${when}`,
+      updatedNow: "updated just now",
+      stale: "could not be refreshed, so saved data was used",
+      opened: (label: string) => `Opened in Moodle: ${label}`,
+      openedNotifications: "Opened the notifications page in Moodle",
+      openedCalendar: "Opened the calendar in Moodle",
+      marked: (label: string) => `Marked as read: ${label}`,
+      declined: (label: string) => `Left unread: ${label}`,
+      writeFailed: (label: string) =>
+        `Moodle did not accept marking “${label}” as read.`,
+      refused: "A requested action is not available and was skipped.",
+      stopped: "Stopped before the answer was complete.",
+    },
+    settings: {
+      title: "AI assistant",
+      intro:
+        "Optional. Chat in a side panel using your own Albert API or Mistral AI key.",
+      provider: "Provider",
+      providerHint:
+        "Each provider keeps its own key and model. Switching provider clears conversations.",
+      key: "API key",
+      keySaved: "A key is saved in your Mac’s Keychain.",
+      keyMissing: "No key saved yet.",
+      keyPlaceholder: "Paste your API key",
+      saveKey: "Save Key",
+      removeKey: "Remove Key…",
+      removeKeyTitle: (provider: string) => `Remove the ${provider} key?`,
+      removeKeyBody:
+        "The key is deleted from your Mac’s Keychain and any answer in progress stops. The key itself stays valid with the provider.",
+      removeKeyConfirm: "Remove",
+      model: "Model",
+      modelHint:
+        "Check the connection to choose from the models your key can use.",
+      modelLabel: "Model name",
+      saveModel: "Save",
+      check: "Check Connection",
+      checking: "Checking…",
+      connected: (count: number) =>
+        `Connected. ${formatNumber("en", count)} chat ${plural("en", count) === "one" ? "model is" : "models are"} available.`,
+      consent: "Share Moodle context",
+      consentHint: (provider: string) =>
+        `Turning this off stops the current answer and clears conversations. Off: the assistant only sees what you type. On: when you attach an organisation or a course to a message, MoodBuro also sends ${provider} the organisation name and the course names, saved activity names, upcoming deadlines and notification subjects the assistant looks up. Sign-in tokens, cookies, API keys, your name, site addresses and file contents are never sent.`,
+      history: "Conversations",
+      historyHint:
+        "Kept in memory only, separately for each organisation account, until you quit MoodBuro. Nothing is written to disk.",
+      clearAll: "Delete All Conversations…",
+      clearAllTitle: "Delete all conversations?",
+      clearAllBody:
+        "Every conversation in memory is forgotten and any answer in progress stops.",
+      clearAllConfirm: "Delete",
+      cleared: "All conversations were deleted.",
+      footnote:
+        "You use your own key, so usage is billed or limited by the provider. The assistant cannot submit work, change grades or read page and file contents, and it asks before changing anything in Moodle.",
+    },
+  },
   errors: {
     /** Shown in French only when a backend message has no translation. */
     general: "Something went wrong.",
@@ -349,6 +464,7 @@ const en = {
     settings: "Could not save this setting.",
     remove: "Could not remove this organisation.",
     navigation: "Could not complete this action.",
+    assistant: "The assistant could not answer.",
     detail: "Details:",
   },
 };
@@ -708,6 +824,125 @@ const fr: Messages = {
     reauthenticated: (name: string) => `Connexion à ${name} rétablie.`,
     reauthenticatedUnnamed: "Connexion au site rétablie.",
   },
+  assistant: {
+    title: "Assistant IA",
+    toggle: "Assistant IA (⇧⌘A)",
+    general: "Discussion générale",
+    scope: (name: string) => `Conversation pour ${name}`,
+    close: "Fermer l’assistant",
+    clear: "Effacer la conversation…",
+    clearTitle: "Effacer cette conversation\u00a0?",
+    clearBody:
+      "Les messages affichés ici seront oubliés. Les conversations sont conservées en mémoire uniquement et ne sont jamais enregistrées sur le disque.",
+    clearConfirm: "Effacer",
+    cancel: "Annuler",
+    resize: "Largeur du panneau de l’assistant",
+    log: "Fil de la conversation",
+    you: "Vous",
+    answer: "Réponse",
+    placeholder: "Posez une question",
+    inputLabel: "Message à l’assistant",
+    inputHint: "Retour pour envoyer · Maj-Retour pour aller à la ligne",
+    send: "Envoyer",
+    stop: "Arrêter",
+    retry: "Réessayer",
+    thinking: "En attente de la réponse…",
+    steps: {
+      courses: "Consultation de vos cours…",
+      activities: "Recherche dans les activités enregistrées…",
+      agenda: "Consultation de votre agenda…",
+      notifications: "Consultation de vos notifications…",
+      open: "Ouverture dans Moodle…",
+      confirm: "En attente de votre confirmation…",
+    },
+    contextLabel: "Contexte Moodle",
+    contextNone: "Aucun contexte Moodle",
+    contextSite: (name: string) => `Organisation\u00a0: ${name}`,
+    contextCourses: "Cours",
+    contextHint:
+      "Avec un contexte joint, l’assistant peut consulter les cours, les activités enregistrées, les échéances et les objets des notifications de ce compte.",
+    contextNeedsConsent:
+      "Le partage du contexte Moodle est désactivé. Activez-le dans les Réglages pour joindre une organisation ou un cours.",
+    contextNeedsSite:
+      "Ouvrez une organisation pour joindre son contexte Moodle.",
+    attached: (name: string) => `Contexte\u00a0: ${name}`,
+    sources: "Sources",
+    openSource: (label: string) => `Ouvrir dans Moodle\u00a0: ${label}`,
+    setupTitle: "Configurer l’assistant",
+    setupHint:
+      "Ajoutez votre propre clé Albert API ou Mistral AI dans les Réglages pour démarrer une conversation.",
+    openSettings: "Ouvrir les Réglages…",
+    emptyTitle: "Posez une question",
+    emptyHint: (provider: string) =>
+      `Vos messages sont envoyés à ${provider}. La conversation reste en mémoire jusqu’à ce que vous quittiez MoodBuro et n’est jamais enregistrée sur le disque.`,
+    confirmTitle: "Marquer cette notification comme lue\u00a0?",
+    confirmBody: (site: string) =>
+      `Dans ${site}. Rien ne change dans Moodle sans votre confirmation.`,
+    confirmApprove: "Marquer comme lue",
+    confirmDecline: "Ne pas marquer",
+    notes: {
+      courses: "Liste de vos cours consultée",
+      activities: "Recherche dans les activités enregistrées sur ce Mac",
+      agenda: "Agenda consulté",
+      notifications:
+        "Objets des notifications enregistrés sur ce Mac consultés",
+      updated: (when: string) => `actualisé ${when}`,
+      updatedNow: "actualisé à l’instant",
+      stale:
+        "actualisation impossible, les données enregistrées ont été utilisées",
+      opened: (label: string) => `Ouvert dans Moodle\u00a0: ${label}`,
+      openedNotifications: "Page des notifications ouverte dans Moodle",
+      openedCalendar: "Calendrier ouvert dans Moodle",
+      marked: (label: string) => `Marquée comme lue\u00a0: ${label}`,
+      declined: (label: string) => `Laissée non lue\u00a0: ${label}`,
+      writeFailed: (label: string) =>
+        `Moodle n’a pas accepté de marquer «\u00a0${label}\u00a0» comme lue.`,
+      refused: "Une action demandée n’est pas disponible et a été ignorée.",
+      stopped: "Arrêté avant la fin de la réponse.",
+    },
+    settings: {
+      title: "Assistant IA",
+      intro:
+        "Facultatif. Discutez dans un panneau latéral avec votre propre clé Albert API ou Mistral AI.",
+      provider: "Fournisseur",
+      providerHint:
+        "Chaque fournisseur conserve sa propre clé et son modèle. Changer de fournisseur efface les conversations.",
+      key: "Clé d’API",
+      keySaved: "Une clé est enregistrée dans le trousseau de votre Mac.",
+      keyMissing: "Aucune clé enregistrée pour l’instant.",
+      keyPlaceholder: "Collez votre clé d’API",
+      saveKey: "Enregistrer la clé",
+      removeKey: "Supprimer la clé…",
+      removeKeyTitle: (provider: string) =>
+        `Supprimer la clé ${provider}\u00a0?`,
+      removeKeyBody:
+        "La clé est supprimée du trousseau de votre Mac et toute réponse en cours s’arrête. La clé elle-même reste valide chez le fournisseur.",
+      removeKeyConfirm: "Supprimer",
+      model: "Modèle",
+      modelHint:
+        "Vérifiez la connexion pour choisir parmi les modèles accessibles avec votre clé.",
+      modelLabel: "Nom du modèle",
+      saveModel: "Enregistrer",
+      check: "Vérifier la connexion",
+      checking: "Vérification…",
+      connected: (count: number) =>
+        `Connexion établie. ${formatNumber("fr", count)} ${plural("fr", count) === "one" ? "modèle de discussion disponible" : "modèles de discussion disponibles"}.`,
+      consent: "Partager le contexte Moodle",
+      consentHint: (provider: string) =>
+        `Désactiver le partage arrête la réponse en cours et efface les conversations. Désactivé\u00a0: l’assistant ne voit que ce que vous saisissez. Activé\u00a0: lorsque vous joignez une organisation ou un cours à un message, MoodBuro envoie aussi à ${provider} le nom de l’organisation ainsi que les noms de cours, les noms d’activités enregistrées, les échéances à venir et les objets de notifications que l’assistant consulte. Les jetons de connexion, les cookies, les clés d’API, votre nom, les adresses des sites et le contenu des fichiers ne sont jamais envoyés.`,
+      history: "Conversations",
+      historyHint:
+        "Conservées en mémoire uniquement, séparément pour chaque compte d’organisation, jusqu’à ce que vous quittiez MoodBuro. Rien n’est écrit sur le disque.",
+      clearAll: "Supprimer toutes les conversations…",
+      clearAllTitle: "Supprimer toutes les conversations\u00a0?",
+      clearAllBody:
+        "Toutes les conversations en mémoire sont oubliées et toute réponse en cours s’arrête.",
+      clearAllConfirm: "Supprimer",
+      cleared: "Toutes les conversations ont été supprimées.",
+      footnote:
+        "Vous utilisez votre propre clé\u00a0: l’usage est facturé ou limité par le fournisseur. L’assistant ne peut ni rendre un devoir, ni modifier une note, ni lire le contenu des pages et des fichiers, et il demande votre accord avant toute modification dans Moodle.",
+    },
+  },
   errors: {
     general: "Une erreur inattendue s’est produite.",
     add: "Impossible de connecter cette organisation.",
@@ -715,6 +950,7 @@ const fr: Messages = {
     settings: "Impossible d’enregistrer ce réglage.",
     remove: "Impossible de retirer cette organisation.",
     navigation: "Impossible d’effectuer cette action.",
+    assistant: "L’assistant n’a pas pu répondre.",
     detail: "Détail\u00a0:",
   },
 };

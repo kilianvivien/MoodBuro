@@ -8,6 +8,54 @@ import { catalogues, type Messages } from "./messages";
  * exact text. Keep this list in step with the Rust messages.
  */
 const french: Record<string, string> = {
+  // AI assistant (src-tauri/src/assistant.rs, md-assistant::Error)
+  "The AI provider rejected this API key. Check the key in Settings.":
+    "Le fournisseur d’IA a refusé cette clé d’API. Vérifiez la clé dans les Réglages.",
+  "This API key is not allowed to use the selected model or service.":
+    "Cette clé d’API n’est pas autorisée à utiliser le modèle ou le service sélectionné.",
+  "The AI provider is limiting requests or your quota is used up. Try again later.":
+    "Le fournisseur d’IA limite les requêtes ou votre quota est épuisé. Réessayez plus tard.",
+  "The selected AI model is not available. Choose another model in Settings.":
+    "Le modèle d’IA sélectionné n’est pas disponible. Choisissez-en un autre dans les Réglages.",
+  "The AI provider refused this request. Try another model in Settings.":
+    "Le fournisseur d’IA a refusé cette requête. Essayez un autre modèle dans les Réglages.",
+  "The AI provider could not be reached. Check your connection and try again.":
+    "Le fournisseur d’IA est injoignable. Vérifiez votre connexion puis réessayez.",
+  "The AI provider returned an unexpected response.":
+    "Le fournisseur d’IA a renvoyé une réponse inattendue.",
+  "The assistant is still answering. Wait for it to finish or stop it.":
+    "L’assistant est encore en train de répondre. Attendez la fin ou arrêtez-le.",
+  "This conversation belongs to another account. Reopen the assistant for the current account.":
+    "Cette conversation appartient à un autre compte. Rouvrez l’assistant pour le compte actuel.",
+  "Add an API key for the AI provider in Settings.":
+    "Ajoutez une clé d’API pour le fournisseur d’IA dans les Réglages.",
+  "Allow sharing Moodle context with the AI provider in Settings first.":
+    "Autorisez d’abord le partage du contexte Moodle avec le fournisseur d’IA dans les Réglages.",
+  "Could not access the AI provider key. Unlock the OS credential store and try again.":
+    "Impossible d’accéder à la clé du fournisseur d’IA. Déverrouillez le trousseau puis réessayez.",
+  "The assistant is unavailable. Restart MoodBuro.":
+    "L’assistant est indisponible. Relancez MoodBuro.",
+  "Unknown AI provider.": "Fournisseur d’IA inconnu.",
+  "Enter a model name using letters, numbers and - _ . / : only.":
+    "Saisissez un nom de modèle composé uniquement de lettres, de chiffres et de - _ . / :",
+  "This does not look like an API key. Paste the key without spaces.":
+    "Ceci ne ressemble pas à une clé d’API. Collez la clé sans espaces.",
+  "Could not save the API key in the OS credential store.":
+    "Impossible d’enregistrer la clé d’API dans le trousseau.",
+  "Could not remove the API key from the OS credential store.":
+    "Impossible de supprimer la clé d’API du trousseau.",
+  "This confirmation is no longer valid.":
+    "Cette confirmation n’est plus valide.",
+  "Invalid assistant request.": "Requête de l’assistant invalide.",
+  "Open an organisation before attaching its context.":
+    "Ouvrez une organisation avant de joindre son contexte.",
+  "There is no unanswered message to retry.":
+    "Aucun message sans réponse à relancer.",
+  "Enter a message of up to 8,000 characters.":
+    "Saisissez un message de 8 000 caractères au maximum.",
+  "Unknown assistant context.": "Contexte de l’assistant inconnu.",
+  "The assistant needed too many steps. Ask a narrower question.":
+    "L’assistant a eu besoin de trop d’étapes. Posez une question plus précise.",
   "Could not read reminder settings.":
     "Impossible de lire les préférences de rappel.",
   "Could not save reminder settings. Reopen the agenda for the current account.":

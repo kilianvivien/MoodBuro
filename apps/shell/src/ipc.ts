@@ -182,6 +182,84 @@ export type ShellView =
 export type NavAction =
   "back" | "forward" | "reload" | "home" | "open_in_browser";
 
+export type AssistantProvider = "albert" | "mistral";
+/** Panel width in points; Rust clamps it and positions the Moodle view beside it. */
+export interface AssistantPanelState {
+  open: boolean;
+  width: number;
+}
+export interface AssistantStatus {
+  provider: AssistantProvider;
+  model: string;
+  /** The key itself never leaves Rust and the OS credential store. */
+  hasKey: boolean;
+  /** Moodle context may be sent to the current provider. */
+  consent: boolean;
+  panel: AssistantPanelState;
+}
+/** A Moodle item an answer relied on; opened through `openPage`. */
+export interface AssistantSource {
+  kind: "course" | "activity" | "deadline" | "notification";
+  id: number;
+  page: MoodlePage;
+  value: number | null;
+  label: string;
+}
+export type AssistantNoteCode =
+  | "courses"
+  | "activities"
+  | "agenda"
+  | "notifications"
+  | "opened"
+  | "opened-notifications"
+  | "opened-calendar"
+  | "marked"
+  | "declined"
+  | "write-failed"
+  | "refused"
+  | "stopped";
+/** What the assistant looked up or did; worded by the shell. */
+export interface AssistantNote {
+  code: AssistantNoteCode;
+  label: string | null;
+  /** Seconds since the data was refreshed. */
+  age: number | null;
+  stale: boolean;
+}
+export interface AssistantEntry {
+  role: "user" | "assistant";
+  text: string;
+  /** Name of the Moodle context attached to a user message. */
+  context: string | null;
+  sources: AssistantSource[];
+  notes: AssistantNote[];
+}
+export interface AssistantContext {
+  kind: "site" | "course";
+  courseId: number | null;
+}
+export interface AssistantPrompt {
+  /** Tags this turn's `assistant://` events. */
+  request: string;
+  siteId: string | null;
+  userId: number | null;
+  text: string | null;
+  context: AssistantContext | null;
+  /** Minutes east of UTC. */
+  utcOffset: number;
+  retry: boolean;
+}
+export type AssistantStep =
+  "courses" | "activities" | "agenda" | "notifications" | "open" | "confirm";
+/** A write the model asked for, described by Rust from the saved notification. */
+export interface AssistantConfirmation {
+  request: string;
+  id: string;
+  site: string;
+  subject: string;
+}
+export const ASSISTANT_WIDTH = { min: 280, max: 520, initial: 340 } as const;
+
 export const desktop = isTauri();
 
 // Dev-only `?demo`: neutral sample organisations so the browser preview can
@@ -398,6 +476,29 @@ export function settingsFrom(raw: Partial<SavedSettings> | null | undefined) {
 // UI says so instead of pretending they were saved.
 let previewSettings: SavedSettings = settingsFrom(null);
 
+// Dev-only assistant: canned answers so the panel can be tried in the browser preview.
+let demoAssistant: AssistantStatus = {
+  provider: "albert",
+  model: "openweight-medium",
+  hasKey: demo,
+  consent: false,
+  panel: { open: false, width: ASSISTANT_WIDTH.initial },
+};
+const demoModels: Record<AssistantProvider, string[]> = {
+  albert: ["openweight-large", "openweight-medium", "openweight-small"],
+  mistral: ["mistral-large-latest", "mistral-small-latest"],
+};
+const demoChats = new Map<string, AssistantEntry[]>();
+const demoChat = (siteId: string | null) => {
+  const key = siteId ?? "general";
+  if (!demoChats.has(key)) demoChats.set(key, []);
+  return demoChats.get(key)!;
+};
+const assistantWidth = (width: number) =>
+  Number.isFinite(width)
+    ? Math.min(ASSISTANT_WIDTH.max, Math.max(ASSISTANT_WIDTH.min, width))
+    : ASSISTANT_WIDTH.initial;
+
 const demoReminders = new Map<string, ReminderSettings>();
 const demoOfflineCopies: OfflineCopy[] = [];
 const demoResources: OfflineResource[] = [
@@ -421,6 +522,148 @@ const demoResources: OfflineResource[] = [
   },
 ];
 export const ipc = {
+  assistant: (): Promise<AssistantStatus> =>
+    desktop
+      ? invoke<AssistantStatus>("assistant_status")
+      : Promise.resolve({ ...demoAssistant }),
+  configureAssistant: (change: {
+    provider?: AssistantProvider;
+    model?: string;
+    consent?: boolean;
+  }): Promise<AssistantStatus> => {
+    if (desktop)
+      return invoke<AssistantStatus>("assistant_configure", { ...change });
+    if (!demo) return desktopFeature();
+    if (
+      change.consent === false ||
+      (change.provider && change.provider !== demoAssistant.provider)
+    )
+      demoChats.clear();
+    if (change.provider && change.provider !== demoAssistant.provider)
+      demoAssistant = {
+        ...demoAssistant,
+        provider: change.provider,
+        model: demoModels[change.provider][1],
+        consent: false,
+      };
+    demoAssistant = {
+      ...demoAssistant,
+      ...(change.model ? { model: change.model } : {}),
+      ...(change.consent === undefined ? {} : { consent: change.consent }),
+    };
+    return Promise.resolve({ ...demoAssistant });
+  },
+  setAssistantKey: (provider: AssistantProvider, key: string) => {
+    if (desktop)
+      return invoke<AssistantStatus>("assistant_key_set", { provider, key });
+    if (!demo) return desktopFeature();
+    demoAssistant = { ...demoAssistant, hasKey: true };
+    return Promise.resolve({ ...demoAssistant });
+  },
+  removeAssistantKey: (provider: AssistantProvider) => {
+    if (desktop)
+      return invoke<AssistantStatus>("assistant_key_remove", { provider });
+    if (!demo) return desktopFeature();
+    demoAssistant = { ...demoAssistant, hasKey: false };
+    return Promise.resolve({ ...demoAssistant });
+  },
+  /** Checks the saved key with the provider and lists its chat models. */
+  assistantModels: async (): Promise<string[]> => {
+    if (desktop) return invoke<string[]>("assistant_models");
+    if (!demo) return desktopFeature();
+    await pause(500);
+    return demoModels[demoAssistant.provider];
+  },
+  /** `commit` false while dragging: the Moodle view follows, nothing is saved. */
+  assistantPanel: (
+    open: boolean,
+    width: number,
+    commit = true,
+  ): Promise<AssistantPanelState> => {
+    if (desktop)
+      return invoke<AssistantPanelState>("assistant_panel", {
+        open,
+        width,
+        commit,
+      });
+    demoAssistant = {
+      ...demoAssistant,
+      panel: { open, width: assistantWidth(width) },
+    };
+    return Promise.resolve({ ...demoAssistant.panel });
+  },
+  assistantHistory: (siteId: string | null, userId: number | null) =>
+    desktop
+      ? invoke<AssistantEntry[]>("assistant_history", { siteId, userId })
+      : Promise.resolve(demo ? [...demoChat(siteId)] : []),
+  /** Resolves with the whole conversation once the answer is complete. */
+  assistantSend: async (prompt: AssistantPrompt): Promise<AssistantEntry[]> => {
+    if (desktop) return invoke<AssistantEntry[]>("assistant_send", { prompt });
+    if (!demo) return desktopFeature();
+    const chat = demoChat(prompt.siteId);
+    const course = demoData.courses.find(
+      (c) =>
+        c.siteId === prompt.siteId &&
+        (prompt.context?.courseId == null || c.id === prompt.context.courseId),
+    );
+    if (!prompt.retry)
+      chat.push({
+        role: "user",
+        text: prompt.text ?? "",
+        context: prompt.context
+          ? prompt.context.kind === "course"
+            ? (course?.name ?? null)
+            : (demoSites.find((s) => s.id === prompt.siteId)?.name ?? null)
+          : null,
+        sources: [],
+        notes: [],
+      });
+    await pause(900);
+    chat.push(
+      prompt.context && course
+        ? {
+            role: "assistant",
+            text: `Sample answer from the browser preview. Your next item is in ${course.name}.`,
+            context: null,
+            sources: [
+              {
+                kind: "course",
+                id: course.id,
+                page: "course",
+                value: course.id,
+                label: course.name,
+              },
+            ],
+            notes: [{ code: "courses", label: null, age: 240, stale: false }],
+          }
+        : {
+            role: "assistant",
+            text: "Sample answer from the browser preview. Connect a provider in the desktop app for real answers.",
+            context: null,
+            sources: [],
+            notes: [],
+          },
+    );
+    return [...chat];
+  },
+  assistantCancel: () =>
+    desktop ? invoke<void>("assistant_cancel") : Promise.resolve(),
+  assistantConfirm: (id: string, approve: boolean) =>
+    desktop
+      ? invoke<void>("assistant_confirm", { id, approve })
+      : Promise.resolve(),
+  /** Forgets one account's conversation, or all of them. */
+  clearAssistant: (
+    siteId: string | null,
+    userId: number | null,
+    all = false,
+  ) => {
+    if (desktop)
+      return invoke<void>("assistant_clear", { siteId, userId, all });
+    if (all) demoChats.clear();
+    else demoChats.delete(siteId ?? "general");
+    return Promise.resolve();
+  },
   reminders: (): Promise<ReminderSettings[]> =>
     desktop
       ? invoke<ReminderSettings[]>("reminders_list")

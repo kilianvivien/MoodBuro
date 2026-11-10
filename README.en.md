@@ -24,6 +24,8 @@ MoodBuro hosts the **real Moodle site** in a macOS-first Tauri application. Ente
 
 - Opt-in local deadline reminders per organisation (24 hours / 1 hour), with persistent duplicate prevention and honest cache/delivery limits. Native delivery qualification remains open.
 
+- Optional AI assistant side panel with Albert API or Mistral AI and your own API key, explicit Moodle context sharing, source links and individually confirmed notification-read actions. Conversations stay in memory until quit; live/native qualification remains open. See [assistant scope and QA](docs/assistant-qa.md).
+
 ## Development
 
 Install Node 22+, pnpm 9.15.9, Rust and Xcode command line tools. The Rust toolchain is pinned in the repository.

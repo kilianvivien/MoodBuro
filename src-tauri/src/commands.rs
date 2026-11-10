@@ -614,6 +614,8 @@ async fn complete_sign_in(
         return Err(error);
     }
     crate::notifications::start(app, saved_site(app, id)?);
+    // A turn or confirmation started for the previous account must not finish.
+    crate::assistant::invalidate(app, id);
     record(AuthEvent::CredentialsSaved);
     drop(pending);
     if let Some(view) = app.get_webview(&format!("site-{id}")) {
@@ -837,6 +839,7 @@ pub async fn site_remove(
         .remove(&id)
         .map_err(|_| "Could not remove the saved organisation.")?;
     crate::notifications::stop(&app, &id);
+    crate::assistant::invalidate(&app, &id);
     *app.state::<AppState>()
         .active
         .lock()
@@ -981,4 +984,107 @@ pub fn reminders_set(
 ) -> Result<(), String> {
     shell(&webview)?;
     crate::reminders::set(&app, &site_id, user_id, hour, day)
+}
+
+#[tauri::command]
+pub fn assistant_status(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<crate::assistant::Status, String> {
+    shell(&webview)?;
+    crate::assistant::status(&app)
+}
+#[tauri::command]
+pub fn assistant_configure(
+    webview: tauri::Webview,
+    app: AppHandle,
+    provider: Option<String>,
+    model: Option<String>,
+    consent: Option<bool>,
+) -> Result<crate::assistant::Status, String> {
+    shell(&webview)?;
+    crate::assistant::configure(&app, provider, model, consent)
+}
+#[tauri::command]
+pub fn assistant_key_set(
+    webview: tauri::Webview,
+    app: AppHandle,
+    provider: String,
+    key: String,
+) -> Result<crate::assistant::Status, String> {
+    shell(&webview)?;
+    crate::assistant::set_key(&app, &provider, &key)
+}
+#[tauri::command]
+pub fn assistant_key_remove(
+    webview: tauri::Webview,
+    app: AppHandle,
+    provider: String,
+) -> Result<crate::assistant::Status, String> {
+    shell(&webview)?;
+    crate::assistant::remove_key(&app, &provider)
+}
+#[tauri::command]
+pub async fn assistant_models(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Vec<String>, String> {
+    shell(&webview)?;
+    crate::assistant::models(&app).await
+}
+#[tauri::command]
+pub fn assistant_panel(
+    webview: tauri::Webview,
+    app: AppHandle,
+    open: bool,
+    width: f64,
+    commit: bool,
+) -> Result<crate::assistant::Panel, String> {
+    shell(&webview)?;
+    crate::assistant::set_panel(&app, open, width, commit)
+}
+#[tauri::command]
+pub fn assistant_history(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: Option<String>,
+    user_id: Option<i64>,
+) -> Result<Vec<crate::assistant::Entry>, String> {
+    shell(&webview)?;
+    crate::assistant::history(&app, site_id.as_deref(), user_id)
+}
+#[tauri::command]
+pub async fn assistant_send(
+    webview: tauri::Webview,
+    app: AppHandle,
+    prompt: crate::assistant::Prompt,
+) -> Result<Vec<crate::assistant::Entry>, String> {
+    shell(&webview)?;
+    crate::assistant::send(&app, prompt).await
+}
+#[tauri::command]
+pub fn assistant_cancel(webview: tauri::Webview, app: AppHandle) -> Result<(), String> {
+    shell(&webview)?;
+    crate::assistant::cancel(&app)
+}
+#[tauri::command]
+pub fn assistant_confirm(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+    approve: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::assistant::confirm(&app, &id, approve)
+}
+#[tauri::command]
+pub fn assistant_clear(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: Option<String>,
+    user_id: Option<i64>,
+    all: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::assistant::clear(&app, site_id.as_deref(), user_id, all)
 }

@@ -1,4 +1,11 @@
-import { useEffect, useEffectEvent, useReducer, useRef, useState } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useReducer,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { listen } from "@tauri-apps/api/event";
 import {
   desktop,
@@ -10,6 +17,9 @@ import {
 } from "./ipc";
 import { useSites } from "./stores/sites";
 import { useSettings } from "./stores/settings";
+import { useAssistant } from "./stores/assistant";
+import { AssistantPanel } from "./components/AssistantPanel";
+import { AssistantSettings } from "./views/AssistantSettings";
 import { connection as reduce, idle } from "./lib/connection";
 import {
   isLocal,
@@ -35,6 +45,9 @@ type Removal = { name: string | undefined } | { error: string };
 export default function App() {
   const { sites, active, refresh, select } = useSites();
   const settings = useSettings();
+  const assistant = useAssistant();
+  // Bumped whenever the panel should take keyboard focus.
+  const [assistantFocus, setAssistantFocus] = useState(0);
   const [linkRequest, setLinkRequest] = useState(0);
   const [prefill, setPrefill] = useState({ url: "", revision: 0 });
   const consumingLink = useRef(false);
@@ -151,6 +164,13 @@ export default function App() {
       void openPage(target.siteId, "activity", target.activityId);
     else if (target.view === "settings") void showSettings();
     else void showLocal(target.view);
+  }
+
+  /** Rust resizes the Moodle view first, so the panel never sits under it. */
+  async function toggleAssistant() {
+    const open = !useAssistant.getState().panel.open;
+    await useAssistant.getState().setOpen(open);
+    if (open) setAssistantFocus((revision) => revision + 1);
   }
 
   /** Done/Cancel/Escape: back to the last site, else the onboarding view. */
@@ -279,6 +299,7 @@ export default function App() {
   const onLaunch = useEffectEvent(async (cancelled: () => boolean) => {
     // Load the language before the first view renders, without delaying sites.
     const settingsLoaded = settings.load();
+    void assistant.load();
     try {
       await refresh();
     } catch (cause) {
@@ -340,6 +361,8 @@ export default function App() {
       listen<string>("sites://removed", () => onSiteRemoved()),
       listen<string>("shell://navigate", (e) => onNavigate(e.payload)),
       listen<string>("shell://error", (e) => setError(e.payload)),
+      // View › AI Assistant (⇧⌘A).
+      listen("assistant://toggle", () => void toggleAssistant()),
       listen<string | null>("auth://finished", (e) =>
         onAuthFinished(e.payload),
       ),
@@ -378,7 +401,17 @@ export default function App() {
 
   return (
     <I18nProvider locale={locale}>
-      <div className="app">
+      <div
+        className="app"
+        data-assistant={assistant.panel.open || undefined}
+        style={
+          assistant.panel.open
+            ? ({
+                "--assistant-width": `${assistant.panel.width}px`,
+              } as CSSProperties)
+            : undefined
+        }
+      >
         <Sidebar
           sites={sites}
           unread={unread}
@@ -392,10 +425,15 @@ export default function App() {
         <Toolbar
           view={view}
           site={site}
-          error={error}
+          error={error ?? assistant.error}
           canLeave={view !== "onboarding" || sites.length > 0}
           onNav={(action: NavAction) => void ipc.nav(action).catch(failed)}
-          onDismissError={() => setError(null)}
+          onDismissError={() => {
+            setError(null);
+            useAssistant.setState({ error: null });
+          }}
+          onAssistant={ready ? () => void toggleAssistant() : undefined}
+          assistantOpen={assistant.panel.open}
           onLeave={leave}
           onDownloads={() => void showDownloads()}
           paused={palette}
@@ -497,9 +535,22 @@ export default function App() {
               onReauthenticate={(id) => void reauthenticate(id)}
               onRemove={removeSite}
               onAdd={() => void showOnboarding()}
-            />
+            >
+              <AssistantSettings />
+            </Settings>
           )}
         </main>
+        {ready && assistant.panel.open && (
+          <AssistantPanel
+            site={site}
+            focus={assistantFocus}
+            onOpenPage={(source, siteId) =>
+              void openPage(siteId, source.page, source.value ?? undefined)
+            }
+            onSettings={() => void showSettings()}
+            onClose={() => void toggleAssistant()}
+          />
+        )}
       </div>
     </I18nProvider>
   );

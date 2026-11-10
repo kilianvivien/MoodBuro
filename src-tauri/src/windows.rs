@@ -14,6 +14,30 @@ pub const TOOLBAR: f64 = 52.;
 #[cfg(not(target_os = "macos"))]
 pub const TOOLBAR: f64 = 44.;
 const CONTENT_TOP: f64 = TOOLBAR;
+// AI assistant panel, on the trailing edge below the toolbar. Keep in sync with
+// `--assistant-*` in styles.css and `ASSISTANT_*` in components/AssistantPanel.tsx.
+pub const ASSISTANT_MIN: f64 = 280.;
+pub const ASSISTANT_MAX: f64 = 520.;
+pub const ASSISTANT_DEFAULT: f64 = 340.;
+/// Width the Moodle view always keeps beside an open panel.
+const ASSISTANT_CONTENT_MIN: f64 = 320.;
+pub fn assistant_clamp(width: f64) -> f64 {
+    if width.is_finite() {
+        width.clamp(ASSISTANT_MIN, ASSISTANT_MAX)
+    } else {
+        ASSISTANT_DEFAULT
+    }
+}
+/// The panel's width in a window this wide: the saved width, less whatever the
+/// content area needs. Mirrors `--assistant-panel` in styles.css.
+pub fn assistant_effective(open: bool, width: f64, window: f64) -> f64 {
+    if !open {
+        return 0.;
+    }
+    assistant_clamp(width)
+        .min(window - SIDEBAR - ASSISTANT_CONTENT_MIN)
+        .max(0.)
+}
 /// Native traffic lights, vertically centred in the unified toolbar.
 #[cfg(target_os = "macos")]
 const TRAFFIC_LIGHTS: tauri::utils::config::LogicalPosition =
@@ -73,11 +97,12 @@ pub fn resize(app: &AppHandle) -> tauri::Result<()> {
     let size = window
         .inner_size()?
         .to_logical::<f64>(window.scale_factor()?);
+    let panel = crate::assistant::panel_width(app, size.width);
     for (label, view) in app.webviews() {
         if label.starts_with("site-") {
             view.set_position(LogicalPosition::new(SIDEBAR, CONTENT_TOP))?;
             view.set_size(LogicalSize::new(
-                (size.width - SIDEBAR).max(1.),
+                (size.width - SIDEBAR - panel).max(1.),
                 (size.height - CONTENT_TOP).max(1.),
             ))?;
         }
@@ -563,6 +588,20 @@ pub async fn history_state(view: &tauri::Webview, base: url::Url) -> Result<(boo
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn assistant_panel_never_squeezes_the_moodle_view() {
+        assert_eq!(assistant_effective(false, 400., 1120.), 0.);
+        assert_eq!(assistant_effective(true, 400., 1120.), 400.);
+        assert_eq!(assistant_effective(true, 10., 1120.), ASSISTANT_MIN);
+        assert_eq!(assistant_effective(true, 9000., 2000.), ASSISTANT_MAX);
+        assert_eq!(
+            assistant_effective(true, f64::NAN, 1120.),
+            ASSISTANT_DEFAULT
+        );
+        // At the 760 pt minimum window the content keeps 320 pt.
+        assert_eq!(assistant_effective(true, 520., 760.), 368.);
+        assert_eq!(assistant_effective(true, 340., 300.), 0.);
+    }
     #[test]
     fn cookie_domain_boundaries() {
         assert!(cookie_matches("moodle.example.org", ".example.org"));

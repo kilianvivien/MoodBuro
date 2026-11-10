@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-assistant-panel"
+description = "Enables the assistant_panel command without any pre-configured scope."
+commands.allow = ["assistant_panel"]
+
+[[permission]]
+identifier = "deny-assistant-panel"
+description = "Denies the assistant_panel command without any pre-configured scope."
+commands.deny = ["assistant_panel"]

@@ -44,3 +44,24 @@ pub fn get_optional(site: &str, kind: Kind) -> Result<Option<Zeroizing<String>>,
         Err(error) => Err(error),
     }
 }
+
+/// Bring-your-own AI provider keys, one entry per provider. Never site-scoped.
+fn provider_entry(provider: &str) -> Result<keyring::Entry, keyring::Error> {
+    keyring::Entry::new(SERVICE, &format!("ai:{provider}:key"))
+}
+pub fn provider_put(provider: &str, value: &str) -> Result<(), keyring::Error> {
+    provider_entry(provider)?.set_password(value)
+}
+pub fn provider_get(provider: &str) -> Result<Option<Zeroizing<String>>, keyring::Error> {
+    match provider_entry(provider)?.get_password() {
+        Ok(value) => Ok(Some(Zeroizing::new(value))),
+        Err(keyring::Error::NoEntry) => Ok(None),
+        Err(error) => Err(error),
+    }
+}
+pub fn provider_delete(provider: &str) -> Result<(), keyring::Error> {
+    match provider_entry(provider)?.delete_credential() {
+        Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+        Err(error) => Err(error),
+    }
+}

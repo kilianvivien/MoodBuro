@@ -175,6 +175,7 @@ pub struct Activity {
     pub module: String,
     pub refreshed_at: i64,
 }
+mod assistant;
 mod offline;
 mod reminders;
 pub use offline::OfflineCopy;

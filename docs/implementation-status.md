@@ -6,7 +6,7 @@ Use [the working plan](plan.md) to track completed tasks and next priorities.
 
 At the product owner's request, the [Alpha scope amendment](alpha-feature-expansion.md) brings forward: A1 notification inbox and richer download controls; A2 course browser/pins and quick-open; A3 selected files saved offline with manual refresh; A4 upcoming agenda and opt-in local reminders; A5 manual ICS snapshot export. The original full background-sync/live-calendar/upload features are not implied by these smaller slices. The original six-week estimate requires re-estimation; existing release/security gates remain open.
 
-A first pass over A1, A2 and the read-only A4 agenda is implemented (see the last section). A3 selected offline files and A5 export are now implemented against fixtures (see below); local reminders are implemented against fixtures (see the latest section). [plan.md](plan.md) lists what is checked and what is still open.
+A first pass over A1, A2 and the read-only A4 agenda is implemented (see the last section). A3 selected offline files and A5 export are now implemented against fixtures (see below); local reminders and the A6 assistant are implemented against fixtures (see the later sections). [plan.md](plan.md) lists what is checked and what is still open.
 
 ## Delivered
 
@@ -157,3 +157,12 @@ The shell reports stale agenda data, sanitized refresh errors and known failed a
 Checks: 92 UI tests, 73 Rust tests, frontend build/lint/format, workspace Clippy/format and IPC boundary checks. Fixtures cover persistent deduplication, schema migration, account changes, deadlines moved/deleted/unavailable, wake/clock gaps, out-of-order responses and DST timestamps. [Real-site and installed-app reminder qualification](reminders-qa.md) remains pending. A6 is the next unimplemented feature slice; existing Alpha release gates remain open.
 
 The local development bundle `target/debug/bundle/macos/MoodBuro.app` was rebuilt with reminders, ad-hoc signed after bundling and verified with `codesign --verify --deep --strict`. Its icon matches the existing generated new icon. No real-account refresh or native reminder delivery was triggered during implementation.
+
+
+## A6 AI assistant — 10 November 2026
+
+Implemented the final Alpha feature slice: Albert/Mistral BYOK settings and model discovery, Rust-only streamed requests, cancel/retry, session-only account-scoped history and deletion, explicit provider-specific context consent, and a collapsible/resizable bilingual panel beside the native Moodle view. Keys use separate OS credential-store entries; non-secret preferences use namespaced SQLite settings.
+
+Six typed tools cover course/activity/deadline/notification lookup, fixed-route navigation and individually confirmed notification-read writes. Model arguments cannot supply a URL or service name. Citations resolve only against metadata actually attached/looked up. Account replacement/removal cancels work; provider changes and consent withdrawal clear conversations. Detached requests omit earlier Moodle-derived answers, including orphaned answers at a bounded-history boundary. Stop prevents subsequent tool execution; both approval and account validity are rechecked before a write. Mistral model capabilities take precedence over its base/fine-tuned type label, and embedding-only lists are not offered as chat models.
+
+Checks: 100 frontend tests and 95 Rust tests pass, along with frontend lint/format/build, workspace Clippy with warnings denied, Rust formatting and shell-only IPC guards. Rust HTTP tests ran with localhost mock-server access. The local debug `MoodBuro.app` bundle builds; its reused signature was replaced with an ad-hoc signature and passes `codesign --verify --deep --strict`. Verification and limits are recorded in [assistant qualification](assistant-qa.md). Provider endpoints/protocols were checked against official references and tested with local HTTP fixtures. Live provider credentials, real-site tool behavior, native panel/focus/VoiceOver, Keychain lifecycle and runtime IPC probes remain unqualified; the Alpha release gate remains open.

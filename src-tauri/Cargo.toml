@@ -23,6 +23,8 @@ url.workspace = true
 uuid.workspace = true
 md-moodle = { path = "../crates/md-moodle" }
 md-secrets = { path = "../crates/md-secrets" }
+md-assistant = { path = "../crates/md-assistant" }
+serde_json.workspace = true
 md-store = { path = "../crates/md-store" }
 
 [target.'cfg(target_os = "macos")'.dependencies]

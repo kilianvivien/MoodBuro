@@ -16,6 +16,8 @@ MoodBuro affiche **le vrai site Moodle** dans une application macOS, avec une in
 
 > **État du projet :** premières phases de l’Alpha. L’application se compile et dispose de tests automatisés, mais la connexion SSO réelle et la matrice de compatibilité ne sont pas encore validées. Aucun installateur signé ou notarié n’est publié pour le moment.
 
+Assistant IA facultatif dans un panneau latéral, avec Albert API ou Mistral AI et votre propre clé : partage explicite du contexte Moodle, sources et confirmation avant de marquer une notification comme lue. Les conversations restent en mémoire jusqu’à la fermeture de l’application. La qualification réelle et native reste ouverte ; voir le [périmètre et les vérifications](docs/assistant-qa.md).
+
 ## Une interface pensée pour macOS
 
 - **Une coque discrète :** barre latérale, barre d’outils compacte, icônes cohérentes et vrais contrôles de fenêtre macOS.

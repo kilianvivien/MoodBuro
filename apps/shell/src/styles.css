@@ -10,6 +10,14 @@
   --sidebar-width: 72px;
   --toolbar-height: 44px;
   --traffic-inset: 0px;
+  /* AI assistant panel. --assistant-width is set by the shell from the width Rust
+     saved; --assistant-panel is what it actually takes (0 while closed). The limits
+     and the 320px the content keeps must match ASSISTANT_* in windows.rs. */
+  --assistant-min: 280px;
+  --assistant-max: 520px;
+  --assistant-width: 340px;
+  --assistant-content-min: 320px;
+  --assistant-panel: 0px;
 
   /* Radii: small controls → buttons → fields → groups → app icon. */
   --radius-xs: 4px;
@@ -253,7 +261,8 @@ body {
 }
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
   color: inherit;
   letter-spacing: inherit;
@@ -261,7 +270,8 @@ select {
 button {
   cursor: default;
 }
-input {
+input,
+textarea {
   -webkit-user-select: text;
   user-select: text;
 }
@@ -295,9 +305,18 @@ ol {
 .app {
   height: 100vh;
 }
+.app[data-assistant] {
+  --assistant-panel: max(
+    0px,
+    min(
+      clamp(var(--assistant-min), var(--assistant-width), var(--assistant-max)),
+      100vw - var(--sidebar-width) - var(--assistant-content-min)
+    )
+  );
+}
 .content {
   position: fixed;
-  inset: var(--toolbar-height) 0 0 var(--sidebar-width);
+  inset: var(--toolbar-height) var(--assistant-panel) 0 var(--sidebar-width);
   overflow-y: auto;
   overscroll-behavior: none;
   display: flex;
@@ -481,6 +500,13 @@ ol {
   background: transparent;
   color: var(--label-3);
   transform: none;
+}
+.tool[aria-pressed="true"] {
+  background: var(--fill-2);
+  color: var(--accent);
+}
+:root[data-inactive] .tool[aria-pressed="true"] {
+  color: var(--label-2);
 }
 .tool.small {
   width: 20px;
@@ -1509,6 +1535,221 @@ ol {
   color: var(--label-2);
 }
 
+/* ---------- AI assistant panel ---------- */
+
+/* On the trailing edge, below the toolbar. Rust sizes the Moodle view to stop
+   where this panel starts, so its width is never animated. */
+.assistant {
+  position: fixed;
+  inset: var(--toolbar-height) 0 0 auto;
+  width: var(--assistant-panel);
+  display: flex;
+  background: var(--sidebar);
+  box-shadow: inset 1px 0 0 var(--separator);
+}
+/* 9 pt wide for the pointer, drawn as the 1 pt edge of the panel. */
+.assistant-resizer {
+  position: absolute;
+  inset: 0 auto 0 -4px;
+  width: 9px;
+  z-index: 1;
+  cursor: col-resize;
+  touch-action: none;
+}
+.assistant-resizer:focus-visible {
+  outline: none;
+  background: linear-gradient(var(--focus), var(--focus)) center / 3px 100%
+    no-repeat;
+}
+.assistant-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px 12px;
+}
+.assistant-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+}
+.assistant-heading {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.assistant-heading h2 {
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+.assistant-heading span,
+.assistant-meta {
+  font-size: var(--text-caption);
+  color: var(--label-2);
+  line-height: 1.4;
+}
+.assistant-heading span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.assistant-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 -12px;
+  padding: 4px 12px;
+}
+.assistant-log:focus-visible {
+  outline-offset: -3px;
+}
+.assistant-message {
+  max-width: 100%;
+  display: grid;
+  gap: 6px;
+  animation: row-in var(--medium) var(--ease-out) both;
+}
+/* The user's words sit in a tinted bubble on the trailing side, as in Messages;
+   answers are plain text on the panel. */
+.assistant-message[data-role="user"] {
+  align-self: flex-end;
+  max-width: 88%;
+  padding: 6px 10px;
+  border-radius: var(--radius-xl);
+  background: var(--selection);
+}
+.assistant-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+  -webkit-user-select: text;
+  user-select: text;
+  cursor: text;
+}
+.assistant-notes {
+  display: grid;
+  gap: 2px;
+  font-size: var(--text-caption);
+  color: var(--label-2);
+  line-height: 1.4;
+}
+.assistant-notes [data-stale] {
+  color: var(--red-text);
+}
+.assistant-sources {
+  display: grid;
+  gap: 4px;
+}
+.assistant-sources ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.assistant-sources .button {
+  max-width: 100%;
+}
+.assistant-sources .button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.assistant-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-small);
+  color: var(--label-2);
+}
+.assistant-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px 4px;
+  text-align: center;
+}
+.assistant-empty .button {
+  margin-top: 8px;
+}
+.assistant-target {
+  margin-top: 6px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.assistant-error {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.assistant-error .section-message {
+  margin: 0;
+}
+.assistant-composer {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+.assistant-composer .popup-button {
+  max-width: 100%;
+}
+.assistant-field {
+  justify-self: stretch;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 6px 6px 6px 10px;
+  border-radius: var(--radius-l);
+  background: var(--control);
+  box-shadow:
+    0 0 0 0.5px var(--control-border),
+    0 0.5px 1px rgb(0 0 0 / 0.06);
+  transition: box-shadow var(--fast) var(--ease);
+}
+.assistant-field:focus-within {
+  box-shadow:
+    0 0 0 0.5px var(--accent),
+    0 0 0 3.5px var(--focus);
+}
+.assistant-field textarea {
+  flex: 1;
+  min-width: 0;
+  max-height: 160px;
+  padding: 2px 0;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--label);
+  font-size: var(--text-body);
+  line-height: 1.45;
+  field-sizing: content;
+}
+.assistant-field textarea::placeholder {
+  color: var(--label-3);
+}
+.assistant-field .button {
+  border-radius: 50%;
+}
+/* Settings: the key and model fields sit in the row's trailing controls. */
+.text-field.assistant-key,
+.text-field.assistant-model {
+  width: 168px;
+}
+.row-actions .popup-button {
+  max-width: 220px;
+}
+
 /* ---------- Motion & accessibility ---------- */
 
 /* A local view entering: a short rise and fade, as when a pane changes in
@@ -1617,6 +1858,9 @@ ol {
   .progress,
   .confirm {
     box-shadow: 0 0 0 1px var(--separator);
+  }
+  .assistant-message[data-role="user"] {
+    box-shadow: inset 0 0 0 1px var(--control-border);
   }
   .tag,
   .row-icon,

@@ -93,6 +93,9 @@ pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<(
         MenuItemBuilder::with_id("quick-open", text("Quick Open…", "Ouverture rapide…"))
             .accelerator("CmdOrCtrl+L")
             .build(app)?;
+    let assistant = MenuItemBuilder::with_id("assistant", text("AI Assistant", "Assistant IA"))
+        .accelerator("CmdOrCtrl+Shift+A")
+        .build(app)?;
     let reload = MenuItemBuilder::with_id("reload", text("Reload Page", "Recharger la page"))
         .accelerator("CmdOrCtrl+R")
         .build(app)?;
@@ -141,6 +144,8 @@ pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<(
         .item(&agenda)
         .item(&downloads)
         .separator()
+        .item(&assistant)
+        .separator()
         .item(&reload)
         .fullscreen_with_text(text("Enter Full Screen", "Activer le plein écran"))
         .build()?;
@@ -179,6 +184,9 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
         let view = if id == "add-site" { "onboarding" } else { id };
         if LOCAL_VIEWS.contains(&view) {
             show_local_view(app, view);
+        } else if id == "assistant" {
+            // Not a local view: the panel sits beside the Moodle view, which stays visible.
+            let _ = app.emit_to("shell", "assistant://toggle", ());
         } else if matches!(
             id,
             "home" | "back" | "forward" | "reload" | "open_in_browser" | "save"

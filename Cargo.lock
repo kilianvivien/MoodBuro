@@ -2313,6 +2313,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "md-assistant"
+version = "0.1.0-alpha.0"
+dependencies = [
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "tokio",
+ "url",
+ "wiremock",
+]
+
+[[package]]
 name = "md-moodle"
 version = "0.1.0-alpha.0"
 dependencies = [
@@ -2423,6 +2436,7 @@ version = "0.1.0-alpha.0"
 dependencies = [
  "block2",
  "chrono",
+ "md-assistant",
  "md-moodle",
  "md-notifier",
  "md-os",
@@ -2435,6 +2449,7 @@ dependencies = [
  "objc2-quick-look-ui",
  "objc2-web-kit",
  "serde",
+ "serde_json",
  "tauri",
  "tauri-build",
  "tauri-plugin-global-shortcut",

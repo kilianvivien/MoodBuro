@@ -1,6 +1,17 @@
 fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
+            "assistant_status",
+            "assistant_configure",
+            "assistant_key_set",
+            "assistant_key_remove",
+            "assistant_models",
+            "assistant_panel",
+            "assistant_history",
+            "assistant_send",
+            "assistant_cancel",
+            "assistant_confirm",
+            "assistant_clear",
             "offline_resources",
             "offline_saved",
             "offline_save",

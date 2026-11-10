@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Segmented } from "../components/ui";
 import {
   ArrowUp,
@@ -332,7 +332,10 @@ export function Settings({
   onReauthenticate,
   onRemove,
   onAdd,
+  children,
 }: {
+  /** Further sections (the AI assistant), shown above the organisations. */
+  children?: ReactNode;
   desktop: boolean;
   sites: Site[];
   appearance: Appearance;
@@ -519,6 +522,8 @@ export function Settings({
         )}
         <p className="section-footnote">{t.settings.filesFootnote}</p>
       </section>
+
+      {children}
 
       <section aria-labelledby="accounts-heading">
         <div className="section-header">
