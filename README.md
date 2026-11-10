@@ -12,41 +12,64 @@
 </p>
 <p align="center">Français · <a href="README.en.md">English</a></p>
 
-MoodBuro affiche **le vrai site Moodle** dans une application macOS, avec une interface discrète autour de vos cours. Vous renseignez l’adresse Moodle de votre organisation, puis vous vous connectez sur sa propre page. L’application ne dessine jamais de formulaire de mot de passe.
+MoodBuro affiche **le vrai site Moodle** dans une application macOS, avec vos organisations, vos cours et vos outils à portée de main. Vous renseignez l’adresse Moodle de votre organisation et vous vous connectez sur sa propre page.
 
-> **MoodBuro 0.1.0 :** téléchargez la [dernière version](https://github.com/kilianvivien/MoodBuro/releases/latest) et suivez le [guide d’installation](docs/alpha-install.md). Le DMG universel utilise une signature ad hoc et n’est pas notarié. Les vérifications réelles et de compatibilité restent ouvertes.
+<p align="center">
+  <img src="docs/capture@0.5x.png" width="1100" alt="MoodBuro sur macOS : tableau de bord Moodle, barre latérale avec signets et panneau de l’assistant IA." />
+</p>
 
-Assistant IA facultatif dans un panneau latéral, avec Albert API ou Mistral AI et votre propre clé : partage explicite du contexte Moodle, sources et confirmation avant de marquer une notification comme lue. Les conversations restent en mémoire jusqu’à la fermeture de l’application. La qualification réelle et native reste ouverte ; voir le [périmètre et les vérifications](docs/assistant-qa.md).
+## Télécharger et installer
 
-## Une interface pensée pour macOS
+**[Télécharger MoodBuro 0.1.0 pour macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)** · [Notes de version](docs/releases/v0.1.0.md) · [Guide d’installation](docs/alpha-install.md)
 
-- **Une coque discrète :** barre latérale, barre d’outils compacte, icônes cohérentes et vrais contrôles de fenêtre macOS.
-- **Barre de titre intégrée :** titre centré, surface continue et lisible, zone de déplacement et véritables boutons macOS.
-- **Français et anglais dès l’accueil :** langue du système par défaut, choix explicite dans Réglages, modes automatique/clair/sombre et prise en compte des préférences d’accessibilité.
-- **Plusieurs organisations :** ajout d’une URL Moodle, changement de site et retour rapide à vos cours.
-- **Des réglages utiles :** apparence, langue, abréviation personnalisable pour chaque organisation, reconnexion et retrait avec confirmation.
+Le DMG universel contient les versions **Apple Silicon et Intel**, avec macOS 12 comme version minimale configurée. Téléchargez le DMG et `SHA256SUMS.txt`, vérifiez la somme de contrôle, puis glissez MoodBuro dans Applications. Pour une mise à jour, quittez d’abord l’application.
 
-## Ce qui fonctionne déjà
+La version 0.1.0 utilise une **signature ad hoc et n’est pas notariée**. macOS peut demander d’autoriser sa première ouverture ; le guide détaille la procédure. Les mises à jour s’installent manuellement. L’accès au dépôt est nécessaire pour télécharger les versions si celui-ci est privé.
 
-| Domaine | Implémentation actuelle |
+## Vos cours, dans une interface pensée pour le Mac
+
+- **Plusieurs organisations Moodle**, chacune avec son accès, son abréviation personnalisable et, sur macOS 14 et versions ultérieures, son profil WebKit persistant distinct.
+- **Une interface discrète**, avec de vrais contrôles de fenêtre, des menus natifs, une barre d’outils compacte et une fenêtre qui retrouve sa taille et sa position.
+- **Français et anglais**, langue du système ou choix explicite, apparence automatique, claire ou sombre et prise en compte des préférences de contraste et de mouvement.
+- **Ouverture rapide avec ⌘K**, pour retrouver cours, activités, organisations et vues locales au-dessus de la page en cours.
+
+| Fonction | Ce que vous pouvez faire |
 | --- | --- |
-| Accueil | Saisie de l’URL de l’organisation, découverte de la configuration mobile et suivi de la connexion |
-| Authentification | Fenêtre dédiée, vérification du retour signé et validation du jeton auprès du serveur |
-| Sessions | Restauration par l’API d’autoconnexion, réutilisation des vues déjà ouvertes et reconnexion |
-| Identifiants | Stockage des jetons dans le trousseau du système ; aucune copie dans SQLite ou le navigateur local |
-| Navigation | Précédent, suivant, rechargement, ouverture dans le navigateur et menus/raccourcis natifs |
-| Profils | Stockage WebKit distinct par organisation sur macOS 14 et versions ultérieures |
-| Qualité | Tests Rust et React, contrats HTTP simulés, vérifications des permissions et CI Linux/macOS |
+| Signets | Enregistrer une page Moodle avec ⌘D, personnaliser son nom et choisir parmi huit icônes. Cinq signets sont visibles dans la barre latérale ; les suivants sont accessibles dans un menu natif. |
+| Notifications | Consulter la boîte de réception, gérer les notifications lues et retrouver les compteurs dans la barre latérale, le Dock et la barre des menus. |
+| Cours et agenda | Retrouver les cours, leurs activités et les échéances, épingler des cours et exporter l’agenda au format ICS. |
+| Rappels | Activer les rappels locaux par organisation ou choisir un rappel pour une échéance. Ils sont désactivés par défaut. |
+| Téléchargements | Suivre les transferts, retrouver l’historique, ouvrir les fichiers ou les afficher dans le Finder, avec un classement par organisation et par cours lorsque celui-ci est identifié. |
+| Fichiers hors connexion | Sélectionner des fichiers de cours à conserver sur le Mac et les actualiser manuellement, en préservant les modifications locales et les versions précédentes. |
+| Lecture de documents | Consulter les PDF et documents Office pris en charge dans des fenêtres de lecture natives. |
+| Assistant IA facultatif | Utiliser Albert API ou Mistral AI avec votre propre clé, joindre explicitement un contexte Moodle, consulter les sources et confirmer les actions proposées. |
 
-Le premier site de validation est celui de l’INSP. Il n’est **pas préconfiguré** : MoodBuro reste une application générique pour les organisations disposant de Moodle et de ses services mobiles.
+L’assistant peut notamment retrouver des cours, activités, notifications, fichiers et échéances. Les actions qui modifient des données ou enregistrent un fichier demandent une confirmation. Les conversations restent en mémoire jusqu’à la fermeture de l’application ; voir le [périmètre de l’assistant](docs/assistant-qa.md).
 
-- Fichiers simples hors connexion depuis Cours → Fichiers, sélection explicite, ouverture des copies enregistrées et actualisation manuelle conservant les modifications locales et les versions précédentes. La qualification native et sur Moodle réel reste ouverte.
+## Raccourcis utiles
 
-- Rappels locaux des échéances par organisation (24 heures / 1 heure), désactivés par défaut, avec déduplication persistante et limites de cache/livraison explicites. La qualification native reste ouverte.
+| Action | Raccourci |
+| --- | --- |
+| Ouverture rapide | ⌘K |
+| Ajouter la page aux signets | ⌘D |
+| Assistant IA | ⇧⌘A |
+| Notifications · Cours · Agenda | ⌘1 · ⌘2 · ⌘3 |
+| Réglages | ⌘, |
+| Quitter | ⌘Q |
 
-## Démarrer en développement
+Fermer la fenêtre la masque et laisse le suivi des notifications et des rappels actif. **Quitter** arrête l’application. Si Moodle limite temporairement la connexion automatique après un redémarrage, la barre d’outils explique l’attente et indique l’heure du prochain essai.
 
-Sur Mac, installez Node.js 22+, pnpm 9.15.9, Rust et les outils de ligne de commande Xcode. Le dépôt fixe la version du compilateur Rust dans `rust-toolchain.toml`.
+## Identifiants et données locales
+
+MoodBuro ne dessine pas de formulaire de mot de passe Moodle. Les jetons et clés d’API restent côté Rust et dans le trousseau du système ; ils ne sont pas stockés dans SQLite ni transmis à l’interface locale. Sur macOS, ils partagent un élément du trousseau et une lecture au démarrage. La première migration peut encore demander une autorisation pour chaque ancien élément.
+
+Les pages Moodle et les fenêtres de connexion n’ont aucun accès aux commandes privilégiées de l’application. Les téléchargements sont limités à l’origine HTTPS autorisée. Les signets sont locaux et liés à leur compte ; le retrait ou le remplacement du compte les supprime.
+
+Le retrait d’une organisation efface ses identifiants et métadonnées et demande la suppression de son profil isolé. Les fichiers téléchargés sont conservés. L’effacement WebKit est asynchrone ; certaines données et sessions SSO partagées peuvent subsister sur les anciennes versions de macOS.
+
+## Développer et vérifier
+
+Installez Node.js 22+, pnpm 9.15.9, Rust et les outils Xcode. Le compilateur Rust est fixé dans `rust-toolchain.toml`.
 
 ```sh
 git clone https://github.com/kilianvivien/MoodBuro.git
@@ -55,65 +78,43 @@ pnpm install --frozen-lockfile
 pnpm tauri dev
 ```
 
-Pour travailler uniquement sur l’interface : `pnpm dev`. La connexion Moodle et le stockage sécurisé nécessitent l’application Tauri ; le mode navigateur ne simule pas une connexion réussie.
-
-Pour produire une application macOS locale de développement :
+`pnpm dev` lance seulement l’interface web. La connexion Moodle et le stockage sécurisé nécessitent Tauri. Le mode de démonstration `http://127.0.0.1:1420/?mac&demo` utilise des données fictives en mémoire, sans connexion réelle.
 
 ```sh
-pnpm tauri build --debug --bundles app
-```
-
-Cette commande ne produit pas une version de distribution signée et notariée.
-
-## Architecture et sécurité
-
-```text
-apps/shell/       React · TypeScript · Vite · Zustand · interface FR/EN
-src-tauri/        Fenêtres natives, menus, commandes et permissions
-crates/md-moodle/ Protocole Moodle, HTTP et politiques de navigation
-crates/md-secrets/ Trousseau du système
-crates/md-store/  Métadonnées SQLite et préférences
-crates/md-notifier/ Décisions de suivi des notifications
-crates/md-os/     Point d’extension pour les adaptateurs système
-docs/             PRD, plan Alpha, décisions et état d’implémentation
-```
-
-Seule l’interface locale possède des permissions IPC ; les barres d’outils des fenêtres Moodle disposent de droits distincts limités à leur propre navigation. Les pages Moodle et les fenêtres de connexion n’ont aucun accès aux commandes privilégiées. Les jetons restent côté Rust et dans le trousseau ; les erreurs HTTP sont filtrées et les URL d’autoconnexion ne sont pas transmises à l’interface.
-
-Le retrait d’un site supprime ses identifiants et ses métadonnées, et demande l’effacement de son profil isolé. L’effacement WebKit est asynchrone. Sur les anciennes versions de macOS utilisant le stockage partagé, certaines données de navigateur et sessions SSO partagées peuvent subsister : c’est un point de validation encore ouvert.
-
-## Vérifier une modification
-
-```sh
-pnpm build
 pnpm lint
-pnpm test
 pnpm format:check
+pnpm test
+pnpm build
+cargo fmt --all --check
 cargo test --workspace --locked
 cargo clippy --workspace --all-targets --locked -- -D warnings
 python3 scripts/check-security.py
 ```
 
-Les contrats HTTP utilisent des réponses simulées. Ils complètent les essais réels ; ils ne prouvent pas la compatibilité avec toutes les versions de Moodle ou tous les fournisseurs SSO.
+La version 0.1.0 a passé **109 tests d’interface et 112 tests Rust**, ainsi que les vérifications de format, de compilation, Clippy et de permissions IPC. Les tests automatisés et les contrats HTTP simulés ne remplacent pas la qualification sur des comptes et environnements réels.
 
-## Prochaines étapes
+## Architecture
 
-- Valider la connexion INSP et les environnements Moodle 4.5/5.3 avec SAML et OIDC.
-- Vérifier les profils, le trousseau et l’isolation IPC dans l’application installée.
-- Qualifier les notifications, le badge et les contrôles de barre des menus désormais implémentés.
-- Qualifier les liens profonds et la capture des téléchargements désormais implémentés, puis ajouter le classement par cours.
-- Préparer les distributions universelles macOS, puis la signature et la notarisation.
+```text
+apps/shell/          React · TypeScript · Vite · Zustand · interface FR/EN
+src-tauri/           Fenêtres natives, menus, commandes et permissions
+crates/md-moodle/    Protocole Moodle, HTTP et politiques de navigation
+crates/md-secrets/   Trousseau du système
+crates/md-store/     Métadonnées SQLite et préférences
+crates/md-assistant/ Fournisseurs IA, conversations et outils contrôlés
+crates/md-notifier/  Décisions de suivi des notifications
+crates/md-os/        Adaptateurs système et opérations sur les fichiers
+docs/               Plans, décisions, guides et état d’implémentation
+```
 
-Les téléchargements HTTPS de même origine sont capturés dans un dossier par organisation, avec historique, ouverture, affichage dans le Finder et confirmation des types risqués. Le classement par cours et la validation des transferts natifs restent à réaliser. Fermer la fenêtre la masque et conserve le suivi des notifications en arrière-plan. Utiliser Quitter pour arrêter l’application. La livraison native et les clics restent à qualifier avec le [script de test](docs/background-qa.md). Windows et Linux sont des cibles ultérieures, pas des plateformes validées de cette Alpha.
+## Compatibilité et suite du projet
 
-## Documentation
+La distribution actuelle cible macOS. La qualification complète des versions de macOS, de l’exécution sur Intel, des fournisseurs SSO, des notifications natives et de l’accessibilité reste ouverte, de même que la signature Developer ID, la notarisation et les mises à jour automatiques. Windows et Linux sont des cibles ultérieures.
 
-[Suivi d’avancement](docs/plan.md) · [PRD](docs/prd.md) · [Plan Alpha](docs/alpha-plan.md) · [État de l’implémentation](docs/implementation-status.md) · [Décisions d’architecture](docs/adr/0001-alpha-foundation.md) · [Interface](docs/ui-design.md) · [Charte d’interface](docs/design-guidelines.md)
+Le lecteur PDF utilise un rappel privé de WebKit pour l’enregistrement ; sa compatibilité doit être vérifiée sur les versions de macOS prises en charge. MoodBuro est générique : aucune organisation n’est préconfigurée. Le projet est indépendant de Moodle HQ.
 
-Le nom « Moodle Desk » présent dans les documents initiaux est le nom de travail historique. Le code utilise MoodBuro. Le projet est indépendant de Moodle HQ.
+[Suivi d’avancement](docs/plan.md) · [État de l’implémentation](docs/implementation-status.md) · [PRD](docs/prd.md) · [Architecture](docs/adr/0001-alpha-foundation.md) · [Interface](docs/ui-design.md) · [Charte d’interface](docs/design-guidelines.md)
 
 ## Licence
 
 [MIT](LICENSE) — © 2026 Kilian Vivien.
-
-Le bouton Accueil Moodle permet de quitter un PDF indépendamment de son historique. Les fenêtres contextuelles Moodle conservent leur page parente et disposent de leur propre barre d’outils. L’adaptateur d’enregistrement du lecteur PDF natif utilise un rappel privé de WebKit : sa compatibilité reste à valider sur les versions macOS prises en charge.
