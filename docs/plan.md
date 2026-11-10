@@ -12,7 +12,7 @@ This is the working checklist for project advancement. The [PRD](prd.md) defines
 | --- | --- | --- |
 | M0 — architecture and sign-in spike | In progress | Repeatable three-site login/SSO tests, platform/security validation and D1–D5 decisions |
 | M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, course download routing and installed-app validation |
-| Expanded Alpha features — A1–A5 | A1, A2 and the read-only A4 agenda partly implemented against fixtures; A3, A5 and reminders not started | Live/native validation of the built parts; remaining A1/A2 items, selected offline files, reminders and manual ICS export |
+| Expanded Alpha features — A1–A5 | A1, A2 and the read-only A4 agenda implemented against fixtures; A3, A5 and reminders not started | Live/native validation of the built parts; selected offline files, reminders and manual ICS export |
 | A6 — AI assistant | Planned, not started; final Alpha feature | Both BYOK providers, explicit context sharing, bounded tools and isolation checks |
 | First tester Alpha | Not ready for distribution | All Alpha exit criteria, universal packaging and private distribution setup |
 
@@ -64,7 +64,7 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 - [x] Grant privileged IPC only to the local shell, with explicit command permissions and caller checks.
 - [x] Enforce origin-based navigation policy; capture managed downloads and isolate controlled same-origin popups behind separate local toolbar permissions.
 - [x] Add unit/contract tests for callback and URL policies, HTTP behavior, metadata/settings/lifecycle and localization.
-- [x] Pass the latest local frontend build, lint/format checks, **71 UI tests**, **49 Rust tests**, workspace Clippy and shell-capability regression checks.
+- [x] Pass the latest local frontend build, lint/format checks, **79 UI tests**, **55 Rust tests**, workspace Clippy and shell-capability regression checks.
 - [x] Build a local ad-hoc-signed macOS app bundle; this is not a notarized distribution release.
 - [x] Review available dev logs and metadata schema without exposing credentials; record findings in the [auth review](auth-review.md).
 
@@ -108,14 +108,15 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 - [x] Capture same-origin authenticated downloads into a per-site Downloads folder, sanitize names and publish atomically without overwriting collisions.
 - [x] Add metadata-backed module-context mapping and course-folder routing, refreshed explicitly from Downloads; unmatched files remain in Downloads.
 - [x] Migrate download history, mark interrupted transfers failed on restart, and expose recent downloads with Open/Show in Finder from the toolbar, native menu and tray.
-- [x] Require inline confirmation for risky/unknown file types, revalidate paths in Rust and never auto-open downloads.
+- [x] Require inline confirmation for risky/unknown file types, revalidate paths in Rust and never auto-open downloads. One opt-in exception since 10 November 2026: a PDF or raster image saved by the "Save and Open" file-handling choice opens after its path is revalidated; every other download still never opens by itself.
 - [ ] Verify installed-app deep links and session-authenticated downloads across the test rigs.
 
 ### 4. Build the expanded user-facing Alpha (planned A1–A5)
 
 The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies and acceptance criteria. The original bullets were split on 9 November 2026 so that built parts can be checked without implying the rest. A checked item here means implemented with passing automated checks against synthetic data; live-site and installed-app validation is tracked separately at the end of this section. Partial PRD coverage must not be reported as the full v1.0 feature.
 
-- [ ] Stabilize PDF saving, native history and popup parent return; add a public-API save fallback before extending file workflows.
+- [x] Add a public-API save fallback: File › Save to Downloads (⌘S) requests the shown Moodle file again and saves that response through managed downloads. It covers `pluginfile.php` addresses without credentials; blob documents still rely on the PDFKit adapter.
+- [ ] Stabilize PDF saving, native history and popup parent return in real sessions (native validation; see the follow-up section).
 - [x] **A1:** notification inbox across sites (day groups, organisation and unread filters) with safe Open, Mark as Read and Mark All as Read; the server is asked first and the poller then reconciles badge, Dock and menu-bar counts.
 - [x] **A1:** state unread conversations separately from notifications, with a fixed link to Moodle's Messages page.
 - [x] **A1:** latest unread notifications per organisation in bounded tray submenus; selecting an item opens the fixed notifications page.
@@ -123,12 +124,12 @@ The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies 
 - [x] **A1:** course filter with an Unknown Course bucket and course labels in download history.
 - [x] **A1:** shared Rust-owned native reader for downloaded PDF, DOCX, XLSX and PPTX files on macOS, with a separate Preview action and the existing default-app Open action.
 - [x] **A1:** failed-download Return to Moodle fallback: opens a still-cached course or the organisation, with explicit copy that the transfer is not restarted.
-- [ ] **A1:** PDF/image handling preference.
+- [x] **A1:** PDF/image handling preference per type (View in Moodle by default, Save, Save and Open), decided on top-level responses and routed through managed downloads. With both choices at their default no response is handled differently from before. Only a transfer the preference started may open afterwards, limited to PDFs and raster images.
 - [x] **A2:** account-bound course cache and browser with search and local pins, refresh/stale/error states per organisation, and rejection of late responses for a replaced account.
 - [x] **A2:** metadata-backed course/context mapping and course-folder routing with an explicit Refresh Course Folders action. Live-site qualification remains open.
 - [x] **A2:** ⌘L Quick Open over saved course names, organisations and shell views, from the Go menu, the toolbar and the keyboard.
 - [x] **A2:** explicitly refresh/cache course activities and search them in Quick Open, with oldest metadata refresh and connection limits stated.
-- [ ] **A2:** optional global Cmd+Shift+M with conflict handling.
+- [x] **A2:** opt-in global ⌘⇧M for Quick Open, registered from Rust only, saved only after a successful registration, reported in Settings when registration fails at launch, released when disabled or on quit. Cross-app conflicts that macOS does not report are a native QA item.
 - [ ] **A3:** choose course files to save offline, with known sizes, bounded transfers and safe course/section folders.
 - [ ] **A3:** browse/open saved files offline and manually refresh selected files without overwriting local edits or propagating server deletions.
 - [x] **A4:** read-only upcoming agenda across sites, grouped by day, with fixed Moodle calendar links, the Mac's time zone stated and last-refresh/stale state.
@@ -136,6 +137,7 @@ The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies 
 - [ ] **A5:** manually export the selected agenda to a token-free ICS snapshot; validate/import it in Apple Calendar. Live subscriptions remain later.
 - [ ] Validate the built A1/A2/A4 parts against a real account and the 4.5/5.3 rigs: `core_enrol_get_users_courses`, `core_calendar_get_calendar_upcoming_view`, `core_message_mark_notification_read` / `mark_all_notifications_as_read`, access-denied responses, and count reconciliation after Mark as Read.
 - [ ] Check natively with `pnpm tauri dev`: the ⌘1/⌘2/⌘3/⌘L/⌥⌘L menu commands, the tray Inbox entry, hiding and restoring the Moodle view around Quick Open, keyboard focus landing in its field when ⌘L is pressed from a Moodle page, warm and cold opening of a course/calendar/notifications page, Copy Path, and the new motion under Reduce Motion and Increase Contrast.
+- [ ] Check the 10 November additions natively: a PDF and an image opened directly with each handling choice (main view and popup, including the blank popup a saved file leaves behind), a forced-download link (unchanged behaviour expected), Save to Downloads on an inline PDF/image and on an ordinary page, open-after-save, embedded PDFs staying in the page, ⌘⇧M from another app with the window hidden/minimised/on another Space, a combination already used by another app, and release on quit.
 - [ ] Verify the combined A1–A5 acceptance cases, access-denied behavior, account replacement/cleanup, FR/EN and keyboard paths.
 
 ### 5. AI chat side panel — final Alpha feature (A6)

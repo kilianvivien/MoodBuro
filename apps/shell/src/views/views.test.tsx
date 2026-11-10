@@ -36,11 +36,19 @@ function settings(
       appearanceSaving={false}
       language="system"
       languageSaving={false}
+      globalShortcut={false}
+      globalShortcutSaving={false}
+      shortcutUnavailable={false}
+      files={{ pdf: "inline", images: "inline" }}
+      filesSaving={{ pdf: false, images: false }}
       settingsError={null}
+      settingsErrorIn="general"
       connection={idle}
       accountMessage={null}
       onAppearance={vi.fn()}
       onLanguage={vi.fn()}
+      onGlobalShortcut={vi.fn()}
+      onFileHandling={vi.fn()}
       onOpenSite={vi.fn()}
       onReauthenticate={vi.fn()}
       onRemove={vi.fn()}
@@ -59,6 +67,38 @@ describe("Settings", () => {
     expect(html).toContain('aria-label="Remove Example University"');
     // Removal always asks first: no confirmation until the user requests it.
     expect(html).not.toContain("alertdialog");
+  });
+
+  it("offers per-type file handling, with viewing in Moodle as the default", () => {
+    const html = settings({ files: { pdf: "open", images: "inline" } });
+    expect(html).toContain('name="handling-pdf" checked="" value="open"');
+    expect(html).toContain('name="handling-images" checked="" value="inline"');
+    expect(html).toContain("Save and Open");
+    expect(settings({}, "fr")).toContain("Enregistrer et ouvrir");
+  });
+
+  it("keeps the global shortcut off by default and reports a failed registration", () => {
+    const html = settings();
+    expect(html).toContain('name="global-shortcut" checked="" value="off"');
+    expect(html).not.toContain("could not be registered");
+    expect(
+      settings({ globalShortcut: true, shortcutUnavailable: true }),
+    ).toContain("could not be registered when MoodBuro started");
+    // Off again: nothing to warn about.
+    expect(
+      settings({ globalShortcut: false, shortcutUnavailable: true }),
+    ).not.toContain("could not be registered");
+  });
+
+  it("reports a failed save under the group it concerns", () => {
+    const error = "Could not save settings.";
+    const general = settings({ settingsError: error });
+    const files = settings({ settingsError: error, settingsErrorIn: "files" });
+    const before = (html: string) =>
+      html.indexOf(error) < html.indexOf('id="files-heading"');
+    expect(before(general)).toBe(true);
+    expect(before(files)).toBe(false);
+    expect(files.split(error)).toHaveLength(2);
   });
 
   it("tells browser-preview users what does not persist", () => {

@@ -466,11 +466,33 @@ export default function App() {
               appearanceSaving={settings.saving.appearance}
               language={settings.language}
               languageSaving={settings.saving.language}
+              globalShortcut={settings.globalShortcut}
+              globalShortcutSaving={settings.saving.globalShortcut}
+              shortcutUnavailable={settings.shortcutUnavailable}
+              files={{ pdf: settings.pdf, images: settings.images }}
+              filesSaving={{
+                pdf: settings.saving.pdf,
+                images: settings.saving.images,
+              }}
               settingsError={settings.error}
+              settingsErrorIn={
+                settings.errorField === "pdf" ||
+                settings.errorField === "images"
+                  ? "files"
+                  : "general"
+              }
               connection={connection}
               accountMessage={accountMessage}
               onAppearance={(value) => void settings.setAppearance(value)}
               onLanguage={(value) => void settings.setLanguage(value)}
+              onGlobalShortcut={(enabled) =>
+                void settings.setGlobalShortcut(enabled)
+              }
+              onFileHandling={(kind, value) =>
+                void (kind === "pdf"
+                  ? settings.setPdf(value)
+                  : settings.setImages(value))
+              }
               onOpenSite={(id) => void openSite(id)}
               onReauthenticate={(id) => void reauthenticate(id)}
               onRemove={removeSite}

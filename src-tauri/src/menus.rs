@@ -68,6 +68,12 @@ pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<(
     )
     .accelerator("CmdOrCtrl+N")
     .build(app)?;
+    let save = MenuItemBuilder::with_id(
+        "save",
+        text("Save to Downloads", "Enregistrer dans Téléchargements"),
+    )
+    .accelerator("CmdOrCtrl+S")
+    .build(app)?;
     let home = MenuItemBuilder::with_id("home", text("Moodle Home", "Accueil Moodle"))
         .accelerator("CmdOrCtrl+Shift+H")
         .build(app)?;
@@ -115,6 +121,8 @@ pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<(
         .build()?;
     let file = SubmenuBuilder::new(app, text("File", "Fichier"))
         .item(&add)
+        .separator()
+        .item(&save)
         .separator()
         .close_window_with_text(text("Close Window", "Fermer la fenêtre"))
         .build()?;
@@ -173,7 +181,7 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
             show_local_view(app, view);
         } else if matches!(
             id,
-            "home" | "back" | "forward" | "reload" | "open_in_browser"
+            "home" | "back" | "forward" | "reload" | "open_in_browser" | "save"
         ) {
             if let Err(error) = crate::commands::navigate(app, id) {
                 let _ = app.emit_to("shell", "shell://error", error);

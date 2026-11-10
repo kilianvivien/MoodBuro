@@ -221,7 +221,7 @@ const en = {
   },
   settings: {
     previewBanner:
-      "Browser preview: appearance and language changes last until reload, and accounts can only be managed in the desktop app.",
+      "Browser preview: settings changes last until reload, and accounts can only be managed in the desktop app.",
     general: "General",
     shortLabel: "Short label",
     shortLabelHint:
@@ -234,6 +234,22 @@ const en = {
     language: "Language",
     languageHint: "Automatic follows your Mac’s preferred language.",
     languages: { system: "Automatic", fr: "Français", en: "English" },
+    globalShortcut: "Quick Open from any app",
+    globalShortcutHint:
+      "⌘⇧M shows MoodBuro and opens Quick Open while the app is running.",
+    shortcutFootnote:
+      "macOS does not always report a shortcut conflict: if another app already uses ⌘⇧M, that app may keep it.",
+    shortcutOptions: { off: "Off", on: "On" },
+    shortcutUnavailable:
+      "⌘⇧M could not be registered when MoodBuro started. Turn it off and on again to retry.",
+    files: "Files",
+    pdf: "PDF documents",
+    pdfHint: "Opened directly by a Moodle page.",
+    images: "Images",
+    imagesHint: "Opened directly by a Moodle page.",
+    handling: { inline: "View in Moodle", save: "Save", open: "Save and Open" },
+    filesFootnote:
+      "Saved files go to the course folder, or to Downloads when the course is unknown. Save and Open then opens the file in its default app. Files embedded in a Moodle page stay in the page. To save the file you are viewing, choose File › Save to Downloads (⌘S).",
     organisations: "Organisations",
     siteCount: (count: number) =>
       `${formatNumber("en", count)} ${plural("en", count) === "one" ? "site" : "sites"}`,
@@ -497,7 +513,7 @@ const fr: Messages = {
   },
   settings: {
     previewBanner:
-      "Aperçu dans le navigateur\u00a0: les changements d’apparence et de langue durent jusqu’au rechargement, et les comptes ne peuvent être gérés que dans l’app de bureau.",
+      "Aperçu dans le navigateur\u00a0: les changements de réglages durent jusqu’au rechargement, et les comptes ne peuvent être gérés que dans l’app de bureau.",
     general: "Général",
     shortLabel: "Abréviation",
     shortLabelHint:
@@ -510,6 +526,26 @@ const fr: Messages = {
     language: "Langue",
     languageHint: "Automatique suit la langue préférée de votre Mac.",
     languages: { system: "Automatique", fr: "Français", en: "English" },
+    globalShortcut: "Ouverture rapide depuis n’importe quelle app",
+    globalShortcutHint:
+      "⌘⇧M affiche MoodBuro et l’ouverture rapide tant que l’app est lancée.",
+    shortcutFootnote:
+      "macOS ne signale pas toujours un conflit de raccourci\u00a0: si une autre app utilise déjà ⌘⇧M, elle peut le conserver.",
+    shortcutOptions: { off: "Désactivé", on: "Activé" },
+    shortcutUnavailable:
+      "⌘⇧M n’a pas pu être enregistré au lancement de MoodBuro. Désactivez-le puis réactivez-le pour réessayer.",
+    files: "Fichiers",
+    pdf: "Documents PDF",
+    pdfHint: "Ouverts directement par une page Moodle.",
+    images: "Images",
+    imagesHint: "Ouvertes directement par une page Moodle.",
+    handling: {
+      inline: "Afficher dans Moodle",
+      save: "Enregistrer",
+      open: "Enregistrer et ouvrir",
+    },
+    filesFootnote:
+      "Les fichiers enregistrés vont dans le dossier du cours, ou dans Téléchargements si le cours est inconnu. «\u00a0Enregistrer et ouvrir\u00a0» ouvre ensuite le fichier dans son application par défaut. Les fichiers intégrés à une page Moodle restent dans la page. Pour enregistrer le fichier affiché, choisissez Fichier › Enregistrer dans Téléchargements (⌘S).",
     organisations: "Organisations",
     siteCount: (count: number) =>
       `${formatNumber("fr", count)} ${plural("fr", count) === "one" ? "site" : "sites"}`,

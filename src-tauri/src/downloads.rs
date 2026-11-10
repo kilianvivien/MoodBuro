@@ -19,6 +19,8 @@ pub struct Transfer {
     staged: PathBuf,
     folder: PathBuf,
     filename: String,
+    /// Started by the "save and open" preference for a PDF or image.
+    open_after: bool,
 }
 fn finish_transfer(
     transfers: &mut Transfers,
@@ -88,6 +90,14 @@ pub fn handle_for_user(
                     .downloads
                     .lock()
                     .map_err(|_| "Download unavailable.")?;
+                // One mark per organisation, set just before WebKit starts this transfer.
+                // Taken first, so a refused request cannot leave it for a later download.
+                let open_after = state
+                    .open_next
+                    .lock()
+                    .ok()
+                    .and_then(|mut pending| pending.remove(site_id))
+                    .is_some_and(|at| at.elapsed() < crate::OPEN_PENDING);
                 let key = (site_id.to_owned(), url.to_string());
                 let site = state
                     .store
@@ -176,6 +186,7 @@ pub fn handle_for_user(
                         ambiguous: false,
                         finished: false,
                         user_id: site.user_id,
+                        open_after,
                     },
                 );
                 Ok(())
@@ -238,6 +249,16 @@ pub fn handle_for_user(
                 let _ = std::fs::remove_file(&transfer.staged);
                 if let Some(parent) = transfer.staged.parent() {
                     let _ = std::fs::remove_dir(parent);
+                }
+                // The preference covers PDFs and images only. The path is revalidated and
+                // the risky-type gate still applies, so nothing else ever opens by itself.
+                if completed.is_some() && transfer.open_after && saved {
+                    if let Ok(path) = self::path(app, &transfer.id, false, true) {
+                        if policy::opens_after_save(&path) {
+                            use tauri_plugin_opener::OpenerExt;
+                            let _ = app.opener().open_path(path.to_string_lossy(), None::<&str>);
+                        }
+                    }
                 }
                 if saved {
                     let fr = crate::menus::french(app);
@@ -416,6 +437,7 @@ mod tests {
                 ambiguous: true,
                 finished: false,
                 user_id: 1,
+                open_after: false,
             },
         );
         assert!(finish_transfer(&mut transfers, &key, false).is_none());

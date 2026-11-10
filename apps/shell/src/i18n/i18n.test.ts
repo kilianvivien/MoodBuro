@@ -66,6 +66,7 @@ describe("catalogues", () => {
           "Organisation",
           "Notifications",
           "Agenda",
+          "Images",
           "Site",
           "Français",
           "English",

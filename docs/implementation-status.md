@@ -108,3 +108,20 @@ The AI assistant is now **A6**, the final Alpha feature after A1–A5 and before
 - Failed downloads offer Return to Moodle, using a still-cached course or the organisation. Copy explicitly says the transfer is not restarted. No stale source URL is replayed.
 
 Verification: 73 frontend tests and 52 Rust tests pass, along with frontend lint/format/build, Rust formatting, workspace Clippy with warnings denied and the shell-only IPC guard. Rust HTTP-contract tests require localhost binding and passed outside the restricted sandbox. Tests cover stock-shaped activity metadata, navigation input rejection, stale-account write rejection, course reconciliation, tray filtering/order/bounds and the failed-download controls in both languages. A local debug `MoodBuro.app` bundle also builds successfully. Live Moodle activity links, installed-app tray selection and keyboard/VoiceOver qualification remain open. The global shortcut, PDF/image preference, A3, reminders, ICS and A6 remain unfinished.
+
+### File handling, Save to Downloads and the global shortcut — 10 November 2026
+
+Closes the A1 and A2 checklists as built-against-fixtures; A3, reminders and A5 are next, A6 last.
+
+- **PDF/image preference.** Settings → Files has one choice per type: View in Moodle (default), Save, Save and Open. The navigation-delegate proxy that already handles embedded frames now also decides top-level responses with the public `WKNavigationResponsePolicy::Download`, so WebKit hands the transfer to the existing download delegate and `downloads::handle_for_user` remains the only writer. The decision is a pure function (`md_moodle::response_downloads`): the organisation's own HTTPS origin only, PDF and PNG/JPEG/GIF/WebP only, never frames or other origins.
+- **Defaults unchanged.** With both choices on View in Moodle every response is forwarded untouched, including forced downloads of types WebKit can display, which still render as before. Saving those consistently is left as a separate decision.
+- **Save to Downloads (⌘S, File menu).** The public-API fallback for the PDFKit Save adapter: when the view shows a credential-free `pluginfile.php` file of this installation, it is requested again and that one response is saved. Anything else is refused with a message and no navigation.
+- **Open after save.** Only a transfer started by the "Save and Open" choice is opened, after the published path is revalidated and only for PDF/raster-image extensions. A download link the user clicked, the Save command and every other type are saved and nothing more.
+- **Global shortcut.** `tauri-plugin-global-shortcut` (pinned) is used from Rust only; no webview has a plugin permission and the combination is fixed. `settings_set` registers before saving and rolls back on failure; a failure at launch never blocks start-up and is reported by `settings_get`. The shortcut shows the window and takes the ⌘L path.
+- **Settings plumbing.** `md_store::Settings` gained `pdf`, `images` and `globalShortcut` (existing `settings` table, no schema change); `settings_set` now restores every field on failure.
+
+Evidence: 79 frontend tests, 55 Rust tests, frontend lint/format/build, Rust formatting, workspace Clippy and the IPC guard pass.
+
+**Not viewed:** unlike earlier slices, the new Settings rows were not looked at in the browser preview; their layout was only checked against the CSS (single-line hints, 640 pt column).
+
+**Not verified natively:** none of this was run in the app. Open points: that WebKit keeps the current page when a top-level response becomes a download; that Moodle's direct file links arrive as top-level responses with the expected MIME type (4.5 and 5.3 rigs); a `target=_blank` file leaving an empty popup window after it is saved; open-after-save timing; and whether ⌘⇧M registration fails or silently loses to an app that already holds it. These are listed in [plan.md](plan.md) §4.

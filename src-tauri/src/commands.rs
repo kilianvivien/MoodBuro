@@ -682,62 +682,103 @@ pub fn shell_view(webview: tauri::Webview, app: AppHandle, view: String) -> Resu
     }
     show_local(&app)
 }
-#[tauri::command]
-pub fn settings_get(
-    webview: tauri::Webview,
-    state: tauri::State<AppState>,
-) -> Result<md_store::Settings, String> {
-    shell(&webview)?;
-    state
-        .store
-        .lock()
-        .map_err(|_| "Settings unavailable.")?
-        .settings()
-        .map_err(|_| "Could not read settings.".into())
+/// Saved preferences plus whether the saved global shortcut is actually registered.
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SettingsView {
+    #[serde(flatten)]
+    settings: md_store::Settings,
+    shortcut_unavailable: bool,
+}
+fn settings_view(app: &AppHandle, settings: md_store::Settings) -> SettingsView {
+    SettingsView {
+        settings,
+        shortcut_unavailable: app
+            .state::<AppState>()
+            .shortcut_unavailable
+            .load(std::sync::atomic::Ordering::Relaxed),
+    }
 }
 #[tauri::command]
-pub fn settings_set(
-    webview: tauri::Webview,
-    app: AppHandle,
-    appearance: Option<md_store::Appearance>,
-    language: Option<md_store::Language>,
-) -> Result<md_store::Settings, String> {
+pub fn settings_get(webview: tauri::Webview, app: AppHandle) -> Result<SettingsView, String> {
     shell(&webview)?;
-    let previous = app
+    let settings = app
         .state::<AppState>()
         .store
         .lock()
         .map_err(|_| "Settings unavailable.")?
         .settings()
         .map_err(|_| "Could not read settings.")?;
-    let settings = app
-        .state::<AppState>()
-        .store
-        .lock()
-        .map_err(|_| "Settings unavailable.")?
-        .set_preferences(appearance, language)
-        .map_err(|_| "Could not save settings.")?;
-    if windows::apply_appearance(&app, settings.appearance)
-        .and_then(|()| crate::menus::rebuild(&app, settings.language))
-        .is_err()
-    {
-        let _ = app
-            .state::<AppState>()
+    Ok(settings_view(&app, settings))
+}
+#[tauri::command]
+pub async fn settings_set(
+    webview: tauri::Webview,
+    app: AppHandle,
+    appearance: Option<md_store::Appearance>,
+    language: Option<md_store::Language>,
+    pdf: Option<md_store::FileHandling>,
+    images: Option<md_store::FileHandling>,
+    global_shortcut: Option<bool>,
+) -> Result<SettingsView, String> {
+    shell(&webview)?;
+    let state = app.state::<AppState>();
+    let save = |change| {
+        state
             .store
             .lock()
             .map_err(|_| "Settings unavailable.")?
-            .set_preferences(Some(previous.appearance), Some(previous.language));
-        let _ = windows::apply_appearance(&app, previous.appearance);
-        let _ = crate::menus::rebuild(&app, previous.language);
-        return Err("Could not apply the application preferences.".into());
+            .set_preferences(change)
+            .map_err(|_| "Could not save settings.")
+    };
+    let previous = state
+        .store
+        .lock()
+        .map_err(|_| "Settings unavailable.")?
+        .settings()
+        .map_err(|_| "Could not read settings.")?;
+    // Register first: the preference is saved only for a shortcut that works.
+    if let Some(enabled) = global_shortcut {
+        crate::shortcut::set(&app, enabled)?;
+        state
+            .shortcut_unavailable
+            .store(false, std::sync::atomic::Ordering::Relaxed);
     }
-    crate::notifications::publish(&app);
-    for (label, _) in app.webviews() {
-        if label.starts_with("chrome-popup-") {
-            let _ = app.emit_to(label, "navigation://changed", ());
+    let restore = || {
+        let _ = save(md_store::Change::from(&previous));
+        let _ = crate::shortcut::set(&app, previous.global_shortcut);
+    };
+    let settings = match save(md_store::Change {
+        appearance,
+        language,
+        pdf,
+        images,
+        global_shortcut,
+    }) {
+        Ok(settings) => settings,
+        Err(error) => {
+            restore();
+            return Err(error.into());
+        }
+    };
+    if appearance.is_some() || language.is_some() {
+        if windows::apply_appearance(&app, settings.appearance)
+            .and_then(|()| crate::menus::rebuild(&app, settings.language))
+            .is_err()
+        {
+            restore();
+            let _ = windows::apply_appearance(&app, previous.appearance);
+            let _ = crate::menus::rebuild(&app, previous.language);
+            return Err("Could not apply the application preferences.".into());
+        }
+        crate::notifications::publish(&app);
+        for (label, _) in app.webviews() {
+            if label.starts_with("chrome-popup-") {
+                let _ = app.emit_to(label, "navigation://changed", ());
+            }
         }
     }
-    Ok(settings)
+    Ok(settings_view(&app, settings))
 }
 #[tauri::command]
 pub async fn site_remove(
@@ -807,6 +848,19 @@ pub fn navigate_view(
             crate::tray::show(app);
             let _ = app.emit_to("shell", "navigation://site-opened", id);
             return Ok(());
+        }
+        "save" => {
+            // Public-API save for a file shown in the view (PDF, image…): ask Moodle for
+            // it again and hand that response to managed downloads.
+            let url = view.url().map_err(|_| "Could not read the current page.")?;
+            let base = normalize_site(&site.wwwroot).map_err(|e| e.to_string())?;
+            if !md_moodle::saveable_file(&base, &url) {
+                return Err("This page is not a Moodle file. Use the file’s own download link.".into());
+            }
+            #[cfg(target_os = "macos")]
+            return crate::frame_guard::save_current(view, url);
+            #[cfg(not(target_os = "macos"))]
+            return Err("Could not save this file.".into());
         }
         "reload" => view.reload(),
         "open_in_browser" => {

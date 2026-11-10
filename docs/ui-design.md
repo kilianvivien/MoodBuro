@@ -80,3 +80,9 @@ Product-owner choices for this slice: build A1, A2 and the read-only part of A4 
 - **Downloads.** History is paged (25 rows, Show More) with a filename search, organisation pop-up and state filter. Copy Path writes to the pasteboard from Rust, so paths still never reach the shell. Clear History asks first, keeps files and keeps transfers in progress listed.
 - **Motion.** The earlier "colour fades only" rule was replaced at the product owner's request; the rules are in the guidelines. The window geometry and the Moodle view never animate.
 - **Not verified natively.** Everything above was checked in the browser preview with sample data and by automated tests. The native menu shortcuts, the tray Inbox entry, hiding/restoring the Moodle view around Quick Open, and all live Moodle calls remain to be checked in the app with a real account.
+
+## File handling and the global shortcut (November 2026)
+
+- **Settings → General → Quick Open from any app.** Off by default. An Off/On segmented control rather than a new switch component. Turning it on registers ⌘⇧M first and saves only if that worked; a failure leaves it off with the reason. The hint states the limit plainly: macOS does not always report a combination another app already uses.
+- **Settings → Files.** PDF documents and Images each get View in Moodle / Save / Save and Open. The footnote says where saved files go, that embedded files stay in the page, and names File › Save to Downloads (⌘S).
+- **Save to Downloads is a menu command only.** While a file is shown the Moodle view has focus, so it must be a menu accelerator; a toolbar button would be disabled on almost every page.

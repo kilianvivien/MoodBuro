@@ -281,6 +281,58 @@ pub fn file_context(base: &Url, target: &Url) -> Option<i64> {
     let id = tail.split('/').next()?.parse::<i64>().ok()?;
     (id > 0).then_some(id)
 }
+/// The types the inline-file preference covers: PDFs and common raster images.
+/// SVG is active content and stays with the page.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InlineKind {
+    Pdf,
+    Image,
+}
+pub fn inline_kind(mime: &str) -> Option<InlineKind> {
+    let mime = mime.split(';').next().unwrap_or("").trim();
+    match mime.to_ascii_lowercase().as_str() {
+        "application/pdf" => Some(InlineKind::Pdf),
+        "image/png" | "image/jpeg" | "image/gif" | "image/webp" => Some(InlineKind::Image),
+        _ => None,
+    }
+}
+/// `Content-Disposition: attachment`, with or without a filename.
+pub fn is_attachment(disposition: &str) -> bool {
+    disposition
+        .split(';')
+        .next()
+        .is_some_and(|kind| kind.trim().eq_ignore_ascii_case("attachment"))
+}
+/// Whether a top-level response becomes a managed download instead of being rendered.
+/// Only the organisation's own HTTPS pages qualify; frames and other origins never do.
+/// With both preferences off nothing changes: WebKit renders what it can show.
+pub fn response_downloads(
+    base: &Url,
+    target: &Url,
+    mime: &str,
+    save_pdf: bool,
+    save_images: bool,
+) -> bool {
+    if target.scheme() != "https" || navigation(base, target) != Navigation::Allow {
+        return false;
+    }
+    match inline_kind(mime) {
+        Some(InlineKind::Pdf) => save_pdf,
+        Some(InlineKind::Image) => save_images,
+        None => false,
+    }
+}
+/// A Moodle file shown in the view that Save to Downloads may request again: a
+/// `pluginfile.php` address of this installation carrying no credential.
+pub fn saveable_file(base: &Url, target: &Url) -> bool {
+    target.scheme() == "https"
+        && shareable_url(target)
+        && file_context(base, target).is_some()
+        && target
+            .path()
+            .strip_prefix(base.path())
+            .is_some_and(|path| path.starts_with("pluginfile.php"))
+}
 #[derive(Clone, Deserialize)]
 pub struct EventCourse {
     pub id: i64,
@@ -821,6 +873,65 @@ mod contract_tests {
             "https://example.org/moodle/pluginfile.php/not-an-id/x",
         ] {
             assert!(file_context(&base, &Url::parse(target).unwrap()).is_none());
+        }
+    }
+    #[test]
+    fn inline_files_download_only_on_the_site_and_only_when_asked() {
+        let base = normalize_site("example.org/moodle").unwrap();
+        let file = base
+            .join("pluginfile.php/42/mod_resource/content/0/notes.pdf")
+            .unwrap();
+        assert_eq!(inline_kind("Application/PDF"), Some(InlineKind::Pdf));
+        assert_eq!(
+            inline_kind("image/jpeg; charset=binary"),
+            Some(InlineKind::Image)
+        );
+        for mime in ["image/svg+xml", "text/html", "application/pdfx", ""] {
+            assert!(inline_kind(mime).is_none());
+        }
+        assert!(is_attachment("attachment; filename=\"notes.pdf\""));
+        assert!(is_attachment(" Attachment"));
+        assert!(!is_attachment("inline; filename=\"attachment.pdf\""));
+        assert!(!is_attachment(""));
+        // Default preferences leave PDFs and images in the page.
+        let decide =
+            |target: &Url, mime, pdf, images| response_downloads(&base, target, mime, pdf, images);
+        assert!(!decide(&file, "application/pdf", false, false));
+        assert!(decide(&file, "application/pdf", true, false));
+        assert!(!decide(&file, "image/png", true, false));
+        assert!(decide(&file, "image/png", false, true));
+        // Moodle pages and every other type are never captured.
+        assert!(!decide(&file, "text/html", true, true));
+        assert!(!decide(&file, "text/plain", true, true));
+        for other in [
+            "https://evil.org/moodle/pluginfile.php/42/notes.pdf",
+            "http://example.org/moodle/pluginfile.php/42/notes.pdf",
+            "blob:https://example.org/3f0c",
+        ] {
+            let other = Url::parse(other).unwrap();
+            assert!(!decide(&other, "application/pdf", true, true));
+        }
+    }
+    #[test]
+    fn only_credential_free_moodle_files_can_be_saved_again() {
+        let base = normalize_site("example.org/moodle").unwrap();
+        for path in [
+            "pluginfile.php/42/mod_resource/content/0/notes.pdf",
+            "pluginfile.php/42/mod_folder/content/0/photo.png?forcedownload=1",
+            "pluginfile.php?file=%2F42%2Fmod_resource%2Fcontent%2Fnotes.pdf",
+        ] {
+            assert!(saveable_file(&base, &base.join(path).unwrap()));
+        }
+        for target in [
+            "https://example.org/moodle/my/",
+            "https://example.org/moodle/mod/resource/view.php?id=42",
+            "https://example.org/moodle/webservice/pluginfile.php/42/x.pdf",
+            "https://example.org/moodle/pluginfile.php/42/x.pdf?token=secret",
+            "https://example.org/other/pluginfile.php/42/x.pdf",
+            "https://evil.org/moodle/pluginfile.php/42/x.pdf",
+            "blob:https://example.org/3f0c",
+        ] {
+            assert!(!saveable_file(&base, &Url::parse(target).unwrap()));
         }
     }
     #[tokio::test]

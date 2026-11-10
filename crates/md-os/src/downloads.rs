@@ -52,6 +52,18 @@ pub fn needs_confirmation(path: &Path) -> bool {
         "pdf" | "txt" | "csv" | "docx" | "xlsx" | "pptx" | "png" | "jpg" | "jpeg" | "gif" | "webp"
     )
 }
+/// The only types the "save and open" preference may open without a click.
+pub fn opens_after_save(path: &Path) -> bool {
+    let ext = path
+        .extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    matches!(
+        ext.as_str(),
+        "pdf" | "png" | "jpg" | "jpeg" | "gif" | "webp"
+    )
+}
 /// Refuse symlinks in directories owned by the app's download routing.
 pub fn directory(path: &Path) -> io::Result<()> {
     match fs::create_dir(path) {
@@ -124,6 +136,19 @@ mod tests {
         assert!(needs_confirmation(Path::new("lesson.dmg")));
         assert!(needs_confirmation(Path::new("script")));
         assert!(!needs_confirmation(Path::new("lesson.PDF")));
+        for name in ["lesson.PDF", "photo.jpeg", "scan.webp"] {
+            assert!(opens_after_save(Path::new(name)));
+        }
+        // Everything `opens_after_save` accepts is also below the confirmation gate.
+        for name in [
+            "notes.docx",
+            "lesson.pdf.app",
+            "image.svg",
+            "script",
+            "a.zip",
+        ] {
+            assert!(!opens_after_save(Path::new(name)));
+        }
     }
     #[test]
     fn publication_never_overwrites_and_rejects_symlinks() {

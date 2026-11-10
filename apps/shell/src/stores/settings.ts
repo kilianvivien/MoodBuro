@@ -3,6 +3,7 @@ import {
   ipc,
   message,
   type Appearance,
+  type FileHandling,
   type Language,
   type Settings,
 } from "../ipc";
@@ -26,10 +27,25 @@ interface SettingsState extends Settings {
   saving: Record<Field, boolean>;
   /** Raw backend message; views translate it. */
   error: string | null;
+  /** The setting whose save failed, so the message shows under its group. */
+  errorField: Field | null;
+  /** The saved ⌘⇧M shortcut could not be registered when the app started. */
+  shortcutUnavailable: boolean;
   load: () => Promise<void>;
   setAppearance: (appearance: Appearance) => Promise<void>;
   setLanguage: (language: Language) => Promise<void>;
+  setPdf: (handling: FileHandling) => Promise<void>;
+  setImages: (handling: FileHandling) => Promise<void>;
+  setGlobalShortcut: (enabled: boolean) => Promise<void>;
 }
+
+const idle: Record<Field, boolean> = {
+  appearance: false,
+  language: false,
+  pdf: false,
+  images: false,
+  globalShortcut: false,
+};
 
 export const useSettings = create<SettingsState>((set, get) => {
   /** Optimistic so controls, theme and language respond immediately. */
@@ -43,6 +59,7 @@ export const useSettings = create<SettingsState>((set, get) => {
       [field]: value,
       saving: { ...state.saving, [field]: true },
       error: null,
+      errorField: null,
     }));
     try {
       const saved = await ipc.saveSettings({ [field]: value });
@@ -51,6 +68,10 @@ export const useSettings = create<SettingsState>((set, get) => {
       set((state) => ({
         [field]: saved[field],
         saving: { ...state.saving, [field]: false },
+        // A successful toggle re-registered (or released) the shortcut.
+        ...(field === "globalShortcut"
+          ? { shortcutUnavailable: saved.shortcutUnavailable }
+          : {}),
       }));
     } catch (cause) {
       apply(previous);
@@ -58,6 +79,7 @@ export const useSettings = create<SettingsState>((set, get) => {
         [field]: previous,
         saving: { ...state.saving, [field]: false },
         error: message(cause),
+        errorField: field,
       }));
     }
   }
@@ -65,19 +87,27 @@ export const useSettings = create<SettingsState>((set, get) => {
   return {
     appearance: "system",
     language: "system",
+    pdf: "inline",
+    images: "inline",
+    globalShortcut: false,
+    shortcutUnavailable: false,
     loaded: false,
-    saving: { appearance: false, language: false },
+    saving: idle,
     error: null,
+    errorField: null,
     load: async () => {
       try {
-        const { appearance, language } = await ipc.settings();
-        applyAppearance(appearance);
-        set({ appearance, language, loaded: true, error: null });
+        const saved = await ipc.settings();
+        applyAppearance(saved.appearance);
+        set({ ...saved, loaded: true, error: null });
       } catch (cause) {
         set({ loaded: true, error: message(cause) });
       }
     },
     setAppearance: (appearance) => save("appearance", appearance),
     setLanguage: (language) => save("language", language),
+    setPdf: (handling) => save("pdf", handling),
+    setImages: (handling) => save("images", handling),
+    setGlobalShortcut: (enabled) => save("globalShortcut", enabled),
   };
 });

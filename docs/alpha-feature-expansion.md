@@ -45,7 +45,7 @@ First implementation pass over A1, A2 and the read-only half of A4, against synt
 - [x] Replace the 20-row-only Downloads view with paginated history and filename/site/state filters; add course filtering when A2 supplies a reliable association. Keep an explicit Unknown Course bucket. _(Built: paging and filename/site/state/course filters with Unknown Course. Course mapping comes from explicit Moodle module-metadata refresh; live qualification remains open.)_
 - [x] Add Copy Path and per-site Clear History, keeping files on disk. Confirm history clearing and describe its effect.
 - [x] Offer failed downloads a Return to Moodle fallback, using a still-cached course or the organisation. No old source URL is persisted or replayed; the UI states that navigation does not restart the transfer. Fresh-source retry remains later.
-- [ ] Add a PDF/image handling preference: retain inline viewing by default; offer an explicit Save/Open in Default App route through managed downloads. Risky/unknown types always retain confirmation and never auto-open.
+- [x] Add a PDF/image handling preference: retain inline viewing by default; offer an explicit Save/Open in Default App route through managed downloads. Risky/unknown types always retain confirmation and never auto-open. _(Built: per-type Settings choice, File › Save to Downloads for the file being viewed, and open-after-save restricted to PDFs/raster images from transfers the preference started. Embedded files and blob documents are untouched. Not yet exercised in the native app.)_
 
 **Acceptance:** a notification can be opened/read with badge/tray counts reconciled; reconnect and permission failures are honest; an old download remains discoverable after restart; clearing history leaves files untouched; missing files, risky types and expired source links follow the existing guards. Native actions have an in-app fallback.
 
@@ -54,7 +54,7 @@ First implementation pass over A1, A2 and the read-only half of A4, against synt
 - [x] Fetch enrolled-course metadata with bounded requests, cache it per account, and expose refresh, empty, offline/stale and permission-error states.
 - [x] Add a compact course browser with local pins and course/site labels. Opening a result routes through the existing session bridge and navigation guard.
 - [x] Add Cmd+L Quick Open across course names and explicitly cached activities, organisations and views. Show the oldest saved metadata refresh and state that Moodle pages need a connection. Activities are indexed by Refresh Activities in Courses or Refresh Course Folders in Downloads.
-- [ ] Offer an opt-in global Cmd+Shift+M shortcut; handle registration conflicts visibly and unregister it when disabled or quitting.
+- [x] Offer an opt-in global Cmd+Shift+M shortcut; handle registration conflicts visibly and unregister it when disabled or quitting. _(Built: a refused registration leaves the setting off with the reason; a failure at launch is shown in Settings. The macOS hot-key API accepts a combination another app already holds, so that case cannot be detected and the copy says so.)_
 - [x] Reuse course/context identifiers to finish course-folder download routing. Keep the Downloads fallback when association is unknown; never infer a course from a similar name.
 - [x] Clear metadata/pins on removal or account replacement and reject late responses from the previous user.
 

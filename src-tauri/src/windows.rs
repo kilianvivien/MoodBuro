@@ -159,7 +159,9 @@ pub fn switch_at(app: &AppHandle, id: &str, target: Option<url::Url>) -> Result<
     if let Some(view) = app.get_webview(&label) {
         crate::pdf_save::install(app, &view, id, site.user_id)
             .map_err(|_| "Could not prepare PDF saving.")?;
-        crate::frame_guard::install(&view).map_err(|_| "Could not prepare the Moodle view.")?;
+        let base = md_moodle::normalize_site(&site.wwwroot).map_err(|e| e.to_string())?;
+        crate::frame_guard::install(app, &view, id, base)
+            .map_err(|_| "Could not prepare the Moodle view.")?;
     }
     resize(app).map_err(|_| "Could not resize the Moodle view.")?;
     hide_sites(app).map_err(|_| "Could not switch sites.")?;
@@ -415,6 +417,8 @@ fn popup(
         return NewWindowResponse::Deny;
     }
     let label = format!("{prefix}{}", uuid::Uuid::new_v4());
+    #[cfg(target_os = "macos")]
+    let guard_base = base.clone();
     let policy_base = base;
     let navigation_app = app.clone();
     let download_app = app.clone();
@@ -485,7 +489,7 @@ fn popup(
             #[cfg(target_os = "macos")]
             let _ = crate::pdf_save::install(app, window.as_ref(), &site.id, site.user_id);
             #[cfg(target_os = "macos")]
-            let _ = crate::frame_guard::install(window.as_ref());
+            let _ = crate::frame_guard::install(app, window.as_ref(), &site.id, guard_base);
             NewWindowResponse::Create { window }
         }
         Err(_) => NewWindowResponse::Deny,

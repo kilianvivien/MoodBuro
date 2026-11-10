@@ -27,11 +27,67 @@ pub enum Language {
     Fr,
     En,
 }
-#[derive(Clone, Default, Serialize, Deserialize, Debug)]
+/// What happens when a Moodle page navigates straight to a PDF or an image.
+#[derive(Clone, Copy, Default, Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum FileHandling {
+    /// Shown inside the Moodle view, as a browser would.
+    #[default]
+    Inline,
+    /// Saved through managed downloads.
+    Save,
+    /// Saved, then opened in the default app.
+    Open,
+}
+impl FileHandling {
+    fn parse(value: &str) -> Self {
+        match value {
+            "save" => Self::Save,
+            "open" => Self::Open,
+            _ => Self::Inline,
+        }
+    }
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Inline => "inline",
+            Self::Save => "save",
+            Self::Open => "open",
+        }
+    }
+}
+#[derive(Clone, Default, Serialize, Deserialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub appearance: Appearance,
     #[serde(default)]
     pub language: Language,
+    #[serde(default)]
+    pub pdf: FileHandling,
+    #[serde(default)]
+    pub images: FileHandling,
+    /// Opt-in system-wide Quick Open shortcut; off until the user turns it on.
+    #[serde(default)]
+    pub global_shortcut: bool,
+}
+/// Only the fields present are written; the others keep their saved value.
+#[derive(Clone, Copy, Default, Debug)]
+pub struct Change {
+    pub appearance: Option<Appearance>,
+    pub language: Option<Language>,
+    pub pdf: Option<FileHandling>,
+    pub images: Option<FileHandling>,
+    pub global_shortcut: Option<bool>,
+}
+impl From<&Settings> for Change {
+    fn from(settings: &Settings) -> Self {
+        Self {
+            appearance: Some(settings.appearance),
+            language: Some(settings.language),
+            pdf: Some(settings.pdf),
+            images: Some(settings.images),
+            global_shortcut: Some(settings.global_shortcut),
+        }
+    }
 }
 pub struct Notification {
     pub id: i64,
@@ -621,38 +677,55 @@ impl Store {
                         _ => Language::System,
                     }
                 }
+                "pdf" => settings.pdf = FileHandling::parse(&value),
+                "images" => settings.images = FileHandling::parse(&value),
+                "global-shortcut" => settings.global_shortcut = value == "on",
                 _ => {}
             }
         }
         Ok(settings)
     }
-    pub fn set_preferences(
-        &self,
-        appearance: Option<Appearance>,
-        language: Option<Language>,
-    ) -> rusqlite::Result<Settings> {
+    pub fn set_preferences(&self, change: Change) -> rusqlite::Result<Settings> {
         let tx = self.0.unchecked_transaction()?;
-        if let Some(appearance) = appearance {
-            let value = match appearance {
-                Appearance::Light => "light",
-                Appearance::Dark => "dark",
-                Appearance::System => "system",
-            };
-            tx.execute("INSERT INTO settings(key,value) VALUES ('appearance',?1) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [value])?;
-        }
-        if let Some(language) = language {
-            let value = match language {
-                Language::Fr => "fr",
-                Language::En => "en",
-                Language::System => "system",
-            };
-            tx.execute("INSERT INTO settings(key,value) VALUES ('language',?1) ON CONFLICT(key) DO UPDATE SET value=excluded.value", [value])?;
+        let values = [
+            (
+                "appearance",
+                change.appearance.map(|appearance| match appearance {
+                    Appearance::Light => "light",
+                    Appearance::Dark => "dark",
+                    Appearance::System => "system",
+                }),
+            ),
+            (
+                "language",
+                change.language.map(|language| match language {
+                    Language::Fr => "fr",
+                    Language::En => "en",
+                    Language::System => "system",
+                }),
+            ),
+            ("pdf", change.pdf.map(FileHandling::as_str)),
+            ("images", change.images.map(FileHandling::as_str)),
+            (
+                "global-shortcut",
+                change
+                    .global_shortcut
+                    .map(|on| if on { "on" } else { "off" }),
+            ),
+        ];
+        for (key, value) in values {
+            if let Some(value) = value {
+                tx.execute("INSERT INTO settings(key,value) VALUES (?1,?2) ON CONFLICT(key) DO UPDATE SET value=excluded.value", params![key, value])?;
+            }
         }
         tx.commit()?;
         self.settings()
     }
     pub fn set_appearance(&self, appearance: Appearance) -> rusqlite::Result<Settings> {
-        self.set_preferences(Some(appearance), None)
+        self.set_preferences(Change {
+            appearance: Some(appearance),
+            ..Default::default()
+        })
     }
     pub fn update(&self, site: &Site) -> rusqlite::Result<()> {
         let tx = self.0.unchecked_transaction()?;
@@ -751,6 +824,34 @@ mod lifecycle_tests {
         let _ = std::fs::remove_file(path);
     }
     #[test]
+    fn file_handling_and_shortcut_default_off_and_save_independently() {
+        let store = Store::open(":memory:").unwrap();
+        let saved = store.settings().unwrap();
+        assert_eq!(saved.pdf, FileHandling::Inline);
+        assert_eq!(saved.images, FileHandling::Inline);
+        assert!(!saved.global_shortcut);
+        let saved = store
+            .set_preferences(Change {
+                pdf: Some(FileHandling::Open),
+                global_shortcut: Some(true),
+                ..Default::default()
+            })
+            .unwrap();
+        assert_eq!(saved.pdf, FileHandling::Open);
+        assert_eq!(saved.images, FileHandling::Inline);
+        assert!(saved.global_shortcut);
+        assert_eq!(saved.appearance, Appearance::System);
+        // An unknown stored value falls back to the browser-like default.
+        store
+            .0
+            .execute("UPDATE settings SET value='print' WHERE key='pdf'", [])
+            .unwrap();
+        assert_eq!(store.settings().unwrap().pdf, FileHandling::Inline);
+        // Restoring a snapshot writes every field back.
+        let restored = store.set_preferences(Change::from(&saved)).unwrap();
+        assert_eq!(restored, saved);
+    }
+    #[test]
     fn reconnect_updates_the_existing_account() {
         let store = Store::open(":memory:").unwrap();
         let mut site = Site {
@@ -780,10 +881,20 @@ mod language_tests {
     fn language_and_appearance_patches_preserve_each_other() {
         let store = Store::open(":memory:").unwrap();
         assert_eq!(store.settings().unwrap().language, Language::System);
-        store.set_preferences(None, Some(Language::Fr)).unwrap();
-        let settings = store.set_preferences(Some(Appearance::Dark), None).unwrap();
+        store
+            .set_preferences(Change {
+                language: Some(Language::Fr),
+                ..Default::default()
+            })
+            .unwrap();
+        let settings = store.set_appearance(Appearance::Dark).unwrap();
         assert_eq!(settings.language, Language::Fr);
-        let settings = store.set_preferences(None, Some(Language::En)).unwrap();
+        let settings = store
+            .set_preferences(Change {
+                language: Some(Language::En),
+                ..Default::default()
+            })
+            .unwrap();
         assert_eq!(settings.appearance, Appearance::Dark);
         assert_eq!(settings.language, Language::En);
     }

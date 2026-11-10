@@ -107,9 +107,19 @@ export interface UnreadStatus {
 export type Appearance = "system" | "light" | "dark";
 /** UI language; "system" follows the Mac's preferred languages. */
 export type Language = "system" | "fr" | "en";
+/** A PDF or image a Moodle page opens directly: shown there, saved, or saved then opened. */
+export type FileHandling = "inline" | "save" | "open";
 export interface Settings {
   appearance: Appearance;
   language: Language;
+  pdf: FileHandling;
+  images: FileHandling;
+  /** Opt-in system-wide ⌘⇧M for Quick Open. */
+  globalShortcut: boolean;
+}
+/** What Rust returns: the saved values and whether the saved shortcut is registered. */
+export interface SavedSettings extends Settings {
+  shortcutUnavailable: boolean;
 }
 export type ShellView =
   | "onboarding"
@@ -312,8 +322,14 @@ const desktopFeature = () =>
 const appearances: readonly Appearance[] = ["system", "light", "dark"];
 const languages: readonly Language[] = ["system", "fr", "en"];
 
+const handlings: readonly FileHandling[] = ["inline", "save", "open"];
+const handling = (value: unknown): FileHandling =>
+  handlings.includes(value as FileHandling)
+    ? (value as FileHandling)
+    : "inline";
+
 /** Fills values an older settings store does not return yet. */
-export function settingsFrom(raw: Partial<Settings> | null | undefined) {
+export function settingsFrom(raw: Partial<SavedSettings> | null | undefined) {
   return {
     appearance: appearances.includes(raw?.appearance as Appearance)
       ? (raw!.appearance as Appearance)
@@ -321,12 +337,16 @@ export function settingsFrom(raw: Partial<Settings> | null | undefined) {
     language: languages.includes(raw?.language as Language)
       ? (raw!.language as Language)
       : "system",
-  } satisfies Settings;
+    pdf: handling(raw?.pdf),
+    images: handling(raw?.images),
+    globalShortcut: raw?.globalShortcut === true,
+    shortcutUnavailable: raw?.shortcutUnavailable === true,
+  } satisfies SavedSettings;
 }
 
 // The browser preview has no Rust side; settings live in memory only and the
 // UI says so instead of pretending they were saved.
-let previewSettings: Settings = settingsFrom(null);
+let previewSettings: SavedSettings = settingsFrom(null);
 
 export const ipc = {
   popupContext: () => invoke<PopupContext>("popup_context"),
@@ -475,16 +495,16 @@ export const ipc = {
     desktop ? invoke<void>("site_reauthenticate", { id }) : desktopOnly(),
   removeSite: (id: string) =>
     desktop ? invoke<void>("site_remove", { id }) : desktopOnly(),
-  settings: (): Promise<Settings> =>
+  settings: (): Promise<SavedSettings> =>
     desktop
-      ? invoke<Partial<Settings>>("settings_get").then(settingsFrom)
+      ? invoke<Partial<SavedSettings>>("settings_get").then(settingsFrom)
       : Promise.resolve({ ...previewSettings }),
-  /** One command saves either setting; Rust returns both as saved. */
-  saveSettings: (change: Partial<Settings>): Promise<Settings> => {
+  /** One command saves any one setting; Rust returns them all as saved. */
+  saveSettings: (change: Partial<Settings>): Promise<SavedSettings> => {
     if (desktop)
-      return invoke<Partial<Settings>>("settings_set", { ...change }).then(
-        settingsFrom,
-      );
+      return invoke<Partial<SavedSettings>>("settings_set", {
+        ...change,
+      }).then(settingsFrom);
     previewSettings = { ...previewSettings, ...change };
     return Promise.resolve({ ...previewSettings });
   },

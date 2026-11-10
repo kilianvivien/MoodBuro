@@ -14,6 +14,7 @@ import {
   ipc,
   message,
   type Appearance,
+  type FileHandling,
   type Language,
   type Site,
 } from "../ipc";
@@ -35,6 +36,10 @@ const appearanceIcons: Record<Appearance, typeof Sun> = {
   dark: Moon,
 };
 const languageOptions: readonly Language[] = ["system", "fr", "en"];
+const handlingOptions: readonly FileHandling[] = ["inline", "save", "open"];
+/** The file types with a handling preference, in display order. */
+const fileKinds = ["pdf", "images"] as const;
+export type FileKind = (typeof fileKinds)[number];
 
 function RemoveConfirmation({
   site,
@@ -279,11 +284,19 @@ export function Settings({
   appearanceSaving,
   language,
   languageSaving,
+  globalShortcut,
+  globalShortcutSaving,
+  shortcutUnavailable,
+  files,
+  filesSaving,
   settingsError,
+  settingsErrorIn,
   connection,
   accountMessage,
   onAppearance,
   onLanguage,
+  onGlobalShortcut,
+  onFileHandling,
   onOpenSite,
   onReauthenticate,
   onRemove,
@@ -295,13 +308,23 @@ export function Settings({
   appearanceSaving: boolean;
   language: Language;
   languageSaving: boolean;
+  globalShortcut: boolean;
+  globalShortcutSaving: boolean;
+  /** The saved shortcut could not be registered when the app started. */
+  shortcutUnavailable: boolean;
+  files: Record<FileKind, FileHandling>;
+  filesSaving: Record<FileKind, boolean>;
   /** Raw backend message from loading or saving a setting. */
   settingsError: string | null;
+  /** The group the failed setting belongs to. */
+  settingsErrorIn: "general" | "files";
   connection: Connection;
   /** Outcome of the last account action, announced under the list. */
   accountMessage: Notice | null;
   onAppearance: (value: Appearance) => void;
   onLanguage: (value: Language) => void;
+  onGlobalShortcut: (enabled: boolean) => void;
+  onFileHandling: (kind: FileKind, value: FileHandling) => void;
   onOpenSite: (id: string) => void;
   onReauthenticate: (id: string) => void;
   onRemove: (id: string) => Promise<boolean>;
@@ -377,13 +400,75 @@ export function Settings({
               }))}
             />
           </div>
+          <div className="group-row">
+            <div className="row-text">
+              <span className="row-title">{t.settings.globalShortcut}</span>
+              <span className="row-subtitle">
+                {t.settings.globalShortcutHint}
+              </span>
+            </div>
+            <Segmented
+              name="global-shortcut"
+              legend={t.settings.globalShortcut}
+              value={globalShortcut ? "on" : "off"}
+              disabled={globalShortcutSaving}
+              onChange={(value) => onGlobalShortcut(value === "on")}
+              options={(["off", "on"] as const).map((value) => ({
+                value,
+                label: t.settings.shortcutOptions[value],
+              }))}
+            />
+          </div>
         </div>
-        {settingsError && (
+        {settingsError && settingsErrorIn === "general" && (
           <p className="section-message error" role="alert">
             <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
             <ErrorText error={settingsError} context="settings" />
           </p>
         )}
+        {globalShortcut && shortcutUnavailable && (
+          <p className="section-message error" role="status">
+            <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
+            {t.settings.shortcutUnavailable}
+          </p>
+        )}
+        <p className="section-footnote">{t.settings.shortcutFootnote}</p>
+      </section>
+
+      <section aria-labelledby="files-heading">
+        <h2 id="files-heading" className="section-title">
+          {t.settings.files}
+        </h2>
+        <div className="group">
+          {fileKinds.map((kind) => (
+            <div className="group-row" key={kind}>
+              <div className="row-text">
+                <span className="row-title">{t.settings[kind]}</span>
+                <span className="row-subtitle">
+                  {t.settings[`${kind}Hint`]}
+                </span>
+              </div>
+              <Segmented
+                name={`handling-${kind}`}
+                legend={t.settings[kind]}
+                value={files[kind]}
+                disabled={filesSaving[kind]}
+                onChange={(value) => onFileHandling(kind, value)}
+                options={handlingOptions.map((value) => ({
+                  value,
+                  label: t.settings.handling[value],
+                }))}
+              />
+            </div>
+          ))}
+        </div>
+        {settingsError && settingsErrorIn === "files" && (
+          <p className="section-message error" role="alert">
+            <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
+            <ErrorText error={settingsError} context="settings" />
+          </p>
+        )}
+        <p className="section-footnote">{t.settings.filesFootnote}</p>
       </section>
 
       <section aria-labelledby="accounts-heading">

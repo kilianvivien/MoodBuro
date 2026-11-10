@@ -8,6 +8,13 @@ import { catalogues, type Messages } from "./messages";
  * exact text. Keep this list in step with the Rust messages.
  */
 const french: Record<string, string> = {
+  "The ⌘⇧M shortcut could not be registered. Another app or a system shortcut may already use it.":
+    "Le raccourci ⌘⇧M n’a pas pu être enregistré. Une autre app ou un raccourci système l’utilise peut-être déjà.",
+  "The ⌘⇧M shortcut could not be turned off.":
+    "Le raccourci ⌘⇧M n’a pas pu être désactivé.",
+  "This page is not a Moodle file. Use the file’s own download link.":
+    "Cette page n’est pas un fichier Moodle. Utilisez le lien de téléchargement du fichier.",
+  "Could not save this file.": "Impossible d’enregistrer ce fichier.",
   "Could not preview this document.":
     "Impossible d’afficher l’aperçu de ce document.",
   "This document type cannot be previewed.":

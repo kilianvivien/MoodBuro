@@ -12,10 +12,14 @@ mod native_preview;
 mod notifications;
 #[cfg(target_os = "macos")]
 mod pdf_save;
+mod shortcut;
 mod tray;
 mod windows;
 use std::sync::Mutex;
 use tauri::{Emitter, Manager};
+
+/// How long a Save request or an open-after-save mark waits for its response.
+pub const OPEN_PENDING: std::time::Duration = std::time::Duration::from_secs(15);
 
 pub struct AppState {
     store: Mutex<md_store::Store>,
@@ -24,6 +28,10 @@ pub struct AppState {
     active: Mutex<Option<String>>,
     pending: Mutex<Option<String>>,
     switching: tauri::async_runtime::Mutex<()>,
+    /// Organisations whose next download was started by the "save and open" preference.
+    open_next: Mutex<std::collections::HashMap<String, std::time::Instant>>,
+    /// The saved global shortcut could not be registered at launch.
+    shortcut_unavailable: std::sync::atomic::AtomicBool,
 }
 
 pub fn run() {
@@ -41,6 +49,7 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(shortcut::plugin())
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
@@ -51,6 +60,8 @@ pub fn run() {
                 active: Mutex::new(None),
                 pending: Mutex::new(None),
                 switching: tauri::async_runtime::Mutex::new(()),
+                open_next: Mutex::new(Default::default()),
+                shortcut_unavailable: Default::default(),
             });
             app.state::<AppState>()
                 .store
@@ -61,6 +72,8 @@ pub fn run() {
             menus::install(app.handle())?;
             tray::install(app.handle())?;
             notifications::install_click_handler(app.handle())?;
+            // A shortcut that cannot be registered must never stop the app from starting.
+            shortcut::restore(app.handle());
             let sites = app
                 .state::<AppState>()
                 .store
@@ -168,6 +181,9 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("Could not build MoodBuro")
         .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                shortcut::release(app);
+            }
             #[cfg(target_os = "macos")]
             match event {
                 tauri::RunEvent::Reopen { .. } => tray::show(app),
@@ -179,6 +195,6 @@ pub fn run() {
                 _ => {}
             }
             #[cfg(not(target_os = "macos"))]
-            let _ = (app, event);
+            let _ = event;
         });
 }
