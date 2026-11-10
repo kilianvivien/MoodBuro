@@ -636,6 +636,33 @@ impl Store {
         })?;
         rows.collect()
     }
+    /// Move relative to the current order under one transaction.
+    pub fn move_site(&self, id: &str, direction: i32) -> rusqlite::Result<()> {
+        if !matches!(direction, -1 | 1) {
+            return Err(rusqlite::Error::InvalidQuery);
+        }
+        let tx = self.0.unchecked_transaction()?;
+        let mut ids: Vec<String> = {
+            let mut stmt = tx.prepare("SELECT id FROM sites ORDER BY position,rowid")?;
+            let rows = stmt.query_map([], |row| row.get(0))?;
+            rows.collect::<rusqlite::Result<_>>()?
+        };
+        let index = ids
+            .iter()
+            .position(|item| item == id)
+            .ok_or(rusqlite::Error::QueryReturnedNoRows)?;
+        let next = index as i64 + i64::from(direction);
+        if next >= 0 && next < ids.len() as i64 {
+            ids.swap(index, next as usize);
+        }
+        for (position, id) in ids.iter().enumerate() {
+            tx.execute(
+                "UPDATE sites SET position=?2 WHERE id=?1",
+                params![id, position as i64],
+            )?;
+        }
+        tx.commit()
+    }
     pub fn short_label(&self, id: &str) -> rusqlite::Result<Option<String>> {
         use rusqlite::OptionalExtension;
         self.0
@@ -767,7 +794,7 @@ impl Store {
 
     pub fn insert(&self, site: &Site) -> rusqlite::Result<()> {
         self.0.execute(
-            "INSERT INTO sites(id,wwwroot,name,user_id,full_name) VALUES (?1,?2,?3,?4,?5)",
+            "INSERT INTO sites(id,wwwroot,name,user_id,full_name,position) VALUES (?1,?2,?3,?4,?5,(SELECT COALESCE(MAX(position),-1)+1 FROM sites))",
             params![
                 site.id,
                 site.wwwroot,
@@ -1320,5 +1347,53 @@ mod library_tests {
         assert_eq!(store.downloads_clear(Some("other")).unwrap(), 0);
         assert_eq!(store.downloads_clear(Some("site")).unwrap(), 29);
         assert_eq!(store.downloads_page(&all, 0, 50).unwrap().1, 1);
+    }
+}
+
+#[cfg(test)]
+mod order_tests {
+    use super::*;
+    #[test]
+    fn order_survives_reopen_reconnect_removal_and_appends_new_sites() {
+        let path = std::env::temp_dir().join(format!("moodburo-order-{}.db", std::process::id()));
+        let site = |id: &str| Site {
+            id: id.into(),
+            wwwroot: format!("https://{id}.example.org/"),
+            name: id.into(),
+            user_id: 1,
+            full_name: "Learner".into(),
+        };
+        let order = |store: &Store| {
+            store
+                .sites()
+                .unwrap()
+                .into_iter()
+                .map(|s| s.id)
+                .collect::<Vec<_>>()
+        };
+        {
+            let store = Store::open(&path).unwrap();
+            for id in ["a", "b", "c"] {
+                store.insert(&site(id)).unwrap();
+            }
+            store.move_site("c", -1).unwrap();
+            store.move_site("c", -1).unwrap();
+            store.move_site("c", -1).unwrap(); // boundary is a no-op
+            assert_eq!(order(&store), ["c", "a", "b"]);
+            assert!(store.move_site("missing", 1).is_err());
+            assert!(store.move_site("a", 2).is_err());
+            assert_eq!(order(&store), ["c", "a", "b"]);
+            store.update(&site("a")).unwrap();
+        }
+        {
+            let store = Store::open(&path).unwrap();
+            assert_eq!(order(&store), ["c", "a", "b"]);
+            store.remove("a").unwrap();
+            store.insert(&site("d")).unwrap();
+            assert_eq!(order(&store), ["c", "b", "d"]);
+            store.move_site("c", 1).unwrap();
+            assert_eq!(order(&store), ["b", "c", "d"]);
+        }
+        std::fs::remove_file(path).unwrap();
     }
 }

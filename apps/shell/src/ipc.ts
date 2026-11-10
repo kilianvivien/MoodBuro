@@ -447,6 +447,25 @@ export const ipc = {
         course.pinned = pinned;
     return Promise.resolve();
   },
+  exportAgenda: (
+    siteId: string | null,
+    start: number | null,
+    end: number | null,
+  ) =>
+    desktop
+      ? invoke<{ filename: string; count: number; revealed: boolean }>(
+          "agenda_export",
+          { siteId, start, end },
+        )
+      : desktopFeature(),
+  moveSite: async (id: string, direction: -1 | 1) => {
+    if (desktop) return invoke<void>("site_move", { id, direction });
+    if (!demo) return desktopOnly();
+    const index = demoSites.findIndex((site) => site.id === id);
+    const next = index + direction;
+    if (index >= 0 && next >= 0 && next < demoSites.length)
+      [demoSites[index], demoSites[next]] = [demoSites[next], demoSites[index]];
+  },
   agenda: () =>
     desktop
       ? invoke<Listing<AgendaEvent>>("agenda_list")

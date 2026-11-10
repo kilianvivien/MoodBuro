@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-agenda-export"
+description = "Enables the agenda_export command without any pre-configured scope."
+commands.allow = ["agenda_export"]
+
+[[permission]]
+identifier = "deny-agenda-export"
+description = "Denies the agenda_export command without any pre-configured scope."
+commands.deny = ["agenda_export"]

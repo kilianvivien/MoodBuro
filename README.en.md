@@ -1,4 +1,4 @@
-<p align="center"><img src="assets/icon.svg" width="112" alt="MoodBuro icon" /></p>
+<p align="center"><img src="assets/app-icon.png" width="112" alt="MoodBuro icon" /></p>
 <h1 align="center">MoodBuro</h1>
 <p align="center"><strong>Your Moodle, at home on your Mac.</strong><br/>A lightweight desktop home for your organisation’s Moodle.</p>
 <p align="center"><a href="README.md">Français</a> · English</p>

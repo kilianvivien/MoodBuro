@@ -85,6 +85,18 @@ const en = {
   },
   agenda: {
     title: "Upcoming",
+    export: "Export Calendar…",
+    exporting: "Exporting…",
+    from: "From",
+    through: "Through",
+    invalidRange:
+      "Choose a valid date range with the end on or after the start.",
+    exportHint:
+      "Export saves the filtered, cached agenda to Downloads and shows the file in Finder. Import the .ics file into Calendar yourself. This snapshot does not update automatically; repeated imports may create duplicates.",
+    exported: (count: number, filename: string) =>
+      `Saved ${count} events to Downloads: ${filename}.`,
+    revealFailed:
+      "Finder could not show the file. Open your Downloads folder to find it.",
     count: (count: number) =>
       `${formatNumber("en", count)} ${plural("en", count) === "one" ? "event" : "events"}`,
     empty: "Nothing coming up",
@@ -260,6 +272,10 @@ const en = {
     open: "Open",
     signInAgain: "Sign In Again",
     signInAgainLabel: (name: string) => `Sign in again to ${name}`,
+    moveUp: (name: string) => `Move ${name} Up`,
+    moveDown: (name: string) => `Move ${name} Down`,
+    orderHint:
+      "Use the arrows to change organisation order in the sidebar and menu bar. Order is saved on this Mac.",
     remove: "Remove…",
     removeLabel: (name: string) => `Remove ${name}`,
     connecting: "Connecting to the site…",
@@ -372,6 +388,18 @@ const fr: Messages = {
   },
   agenda: {
     title: "À venir",
+    export: "Exporter le calendrier…",
+    exporting: "Exportation…",
+    from: "Du",
+    through: "Au",
+    invalidRange:
+      "Choisissez des dates valides, avec une fin égale ou postérieure au début.",
+    exportHint:
+      "L’export enregistre l’agenda filtré en cache dans Téléchargements et affiche le fichier dans le Finder. Importez vous-même le fichier .ics dans Calendrier. Cet instantané ne s’actualise pas automatiquement\u00a0; des imports répétés peuvent créer des doublons.",
+    exported: (count: number, filename: string) =>
+      `${count} évènements enregistrés dans Téléchargements\u00a0: ${filename}.`,
+    revealFailed:
+      "Le Finder n’a pas pu afficher le fichier. Retrouvez-le dans votre dossier Téléchargements.",
     count: (count: number) =>
       `${formatNumber("fr", count)} ${plural("fr", count) === "one" ? "évènement" : "évènements"}`,
     empty: "Rien de prévu",
@@ -444,7 +472,7 @@ const fr: Messages = {
     returnHint:
       "Après un échec, retournez dans Moodle pour relancer le téléchargement. Cette action ne relance pas le transfert.",
     foldersRefreshed:
-      "Dossiers de cours actualisés. Les nouveaux téléchargements seront classés par cours identifié ; les fichiers existants restent en place.",
+      "Dossiers de cours actualisés. Les nouveaux téléchargements seront classés par cours identifié\u00a0; les fichiers existants restent en place.",
     openLabel: (name: string) => `Ouvrir ${name}`,
     revealLabel: (name: string) => `Afficher ${name} dans le Finder`,
     title: "Téléchargements",
@@ -556,6 +584,10 @@ const fr: Messages = {
     open: "Ouvrir",
     signInAgain: "Se reconnecter",
     signInAgainLabel: (name: string) => `Se reconnecter à ${name}`,
+    moveUp: (name: string) => `Monter ${name}`,
+    moveDown: (name: string) => `Descendre ${name}`,
+    orderHint:
+      "Les flèches changent l’ordre des organisations dans la barre latérale et la barre des menus. Cet ordre est enregistré sur ce Mac.",
     remove: "Retirer…",
     removeLabel: (name: string) => `Retirer ${name}`,
     connecting: "Connexion au site…",

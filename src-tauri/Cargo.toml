@@ -17,6 +17,7 @@ tauri-plugin-global-shortcut = "=2.4.1"
 tokio = { version = "1", features = ["time", "sync", "macros"] }
 md-os = { path = "../crates/md-os" }
 md-notifier = { path = "../crates/md-notifier" }
+chrono = { version = "0.4", default-features = false, features = ["std"] }
 serde.workspace = true
 url.workspace = true
 uuid.workspace = true

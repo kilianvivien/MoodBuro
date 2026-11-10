@@ -2,6 +2,8 @@ fn main() {
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
             "sites_list",
+            "site_move",
+            "agenda_export",
             "popup_context",
             "popup_nav",
             "deep_link_open",

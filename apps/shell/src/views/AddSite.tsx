@@ -1,9 +1,9 @@
+import appIcon from "../../../../assets/app-icon.png";
 import { useState, type FormEvent } from "react";
 import {
   Check,
   CircleAlert,
   Globe,
-  GraduationCap,
   LoaderCircle,
   LockKeyhole,
 } from "lucide-react";
@@ -66,7 +66,7 @@ export function AddSite({
   return (
     <div className="onboarding">
       <div className="app-mark" aria-hidden="true">
-        <GraduationCap size={30} strokeWidth={1.5} />
+        <img src={appIcon} width="64" height="64" alt="" />
       </div>
       <h2 className="onboarding-title">
         {firstRun ? t.onboarding.welcome : t.onboarding.addTitle}

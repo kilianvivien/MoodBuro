@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Segmented } from "../components/ui";
 import {
+  ArrowUp,
+  ArrowDown,
   CircleAlert,
   CircleCheck,
   Languages,
@@ -112,7 +114,14 @@ function SiteRow({
   onOpen,
   onReauthenticate,
   onRemove,
+  order,
 }: {
+  order?: {
+    first: boolean;
+    last: boolean;
+    busy: boolean;
+    move: (direction: -1 | 1) => void;
+  };
   site: Site;
   connection: Connection;
   onOpen: () => void;
@@ -187,6 +196,28 @@ function SiteRow({
         </div>
         {!confirming && (
           <div className="row-actions">
+            {order && (
+              <>
+                <button
+                  className="button small icon"
+                  title={t.settings.moveUp(site.name)}
+                  aria-label={t.settings.moveUp(site.name)}
+                  disabled={order.first || order.busy || busy}
+                  onClick={() => order.move(-1)}
+                >
+                  <ArrowUp size={14} aria-hidden="true" />
+                </button>
+                <button
+                  className="button small icon"
+                  title={t.settings.moveDown(site.name)}
+                  aria-label={t.settings.moveDown(site.name)}
+                  disabled={order.last || order.busy || busy}
+                  onClick={() => order.move(1)}
+                >
+                  <ArrowDown size={14} aria-hidden="true" />
+                </button>
+              </>
+            )}
             <button className="button" onClick={onOpen}>
               {t.settings.open}
             </button>
@@ -330,6 +361,24 @@ export function Settings({
   onRemove: (id: string) => Promise<boolean>;
   onAdd: () => void;
 }) {
+  const [orderBusy, setOrderBusy] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const orderPending = useRef(false);
+  async function moveSite(id: string, direction: -1 | 1) {
+    if (orderPending.current) return;
+    orderPending.current = true;
+    setOrderBusy(true);
+    setOrderError(null);
+    try {
+      await ipc.moveSite(id, direction);
+      await useSites.getState().refresh();
+    } catch (error) {
+      setOrderError(message(error));
+    } finally {
+      orderPending.current = false;
+      setOrderBusy(false);
+    }
+  }
   const { t } = useI18n();
   return (
     <div className="settings">
@@ -480,13 +529,25 @@ export function Settings({
             {t.settings.siteCount(sites.length)}
           </span>
         </div>
+        <p className="section-footnote">{t.settings.orderHint}</p>
+        {orderError && (
+          <p className="section-message error" role="alert">
+            <ErrorText error={orderError} context="settings" />
+          </p>
+        )}
         <div className="group">
           {sites.length > 0 ? (
             <ul className="site-rows" role="list">
-              {sites.map((site) => (
+              {sites.map((site, index) => (
                 <SiteRow
                   key={site.id}
                   site={site}
+                  order={{
+                    first: index === 0,
+                    last: index === sites.length - 1,
+                    busy: orderBusy,
+                    move: (direction) => void moveSite(site.id, direction),
+                  }}
                   connection={connection}
                   onOpen={() => onOpenSite(site.id)}
                   onReauthenticate={() => onReauthenticate(site.id)}

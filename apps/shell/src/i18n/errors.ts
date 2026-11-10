@@ -8,6 +8,14 @@ import { catalogues, type Messages } from "./messages";
  * exact text. Keep this list in step with the Rust messages.
  */
 const french: Record<string, string> = {
+  "Could not reorder organisations.":
+    "Impossible de réordonner les organisations.",
+  "Invalid calendar date range.":
+    "La plage de dates du calendrier est invalide.",
+  "Invalid calendar event.": "Un évènement du calendrier est invalide.",
+  "No calendar events match these filters.":
+    "Aucun évènement ne correspond à ces filtres.",
+  "Could not export the calendar.": "Impossible d’exporter le calendrier.",
   "The ⌘⇧M shortcut could not be registered. Another app or a system shortcut may already use it.":
     "Le raccourci ⌘⇧M n’a pas pu être enregistré. Une autre app ou un raccourci système l’utilise peut-être déjà.",
   "The ⌘⇧M shortcut could not be turned off.":

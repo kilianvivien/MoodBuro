@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-site-move"
+description = "Enables the site_move command without any pre-configured scope."
+commands.allow = ["site_move"]
+
+[[permission]]
+identifier = "deny-site-move"
+description = "Denies the site_move command without any pre-configured scope."
+commands.deny = ["site_move"]

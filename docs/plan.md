@@ -12,7 +12,7 @@ This is the working checklist for project advancement. The [PRD](prd.md) defines
 | --- | --- | --- |
 | M0 — architecture and sign-in spike | In progress | Repeatable three-site login/SSO tests, platform/security validation and D1–D5 decisions |
 | M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, course download routing and installed-app validation |
-| Expanded Alpha features — A1–A5 | A1, A2 and the read-only A4 agenda implemented against fixtures; A3, A5 and reminders not started | Live/native validation of the built parts; selected offline files, reminders and manual ICS export |
+| Expanded Alpha features — A1–A5 | A1, A2, the read-only A4 agenda and A5 export implemented against fixtures; A3 and reminders not started | Live/native validation of the built parts; selected offline files, reminders and native Calendar import qualification |
 | A6 — AI assistant | Planned, not started; final Alpha feature | Both BYOK providers, explicit context sharing, bounded tools and isolation checks |
 | First tester Alpha | Not ready for distribution | All Alpha exit criteria, universal packaging and private distribution setup |
 
@@ -64,7 +64,7 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 - [x] Grant privileged IPC only to the local shell, with explicit command permissions and caller checks.
 - [x] Enforce origin-based navigation policy; capture managed downloads and isolate controlled same-origin popups behind separate local toolbar permissions.
 - [x] Add unit/contract tests for callback and URL policies, HTTP behavior, metadata/settings/lifecycle and localization.
-- [x] Pass the latest local frontend build, lint/format checks, **79 UI tests**, **55 Rust tests**, workspace Clippy and shell-capability regression checks.
+- [x] Pass the latest local frontend build, lint/format checks, **82 UI tests**, **59 Rust tests**, workspace Clippy and shell-capability regression checks.
 - [x] Build a local ad-hoc-signed macOS app bundle; this is not a notarized distribution release.
 - [x] Review available dev logs and metadata schema without exposing credentials; record findings in the [auth review](auth-review.md).
 
@@ -88,7 +88,7 @@ The INSP dashboard has been observed authenticated in the app. This is a success
 
 ### 2. Finish multi-site behavior and build background notifications
 
-- [ ] Add site reorder. (Offline/re-auth/unread indicators exist in the sidebar; reorder does not.)
+- [x] Add persistent organisation ordering from Settings with keyboard-accessible Up/Down buttons; sidebar and tray follow the saved order, and new sites append.
 - [x] Add typed popup notification and unread-conversation count wrappers plus a mark-notification-read API (not yet exposed in the shell).
 - [x] Implement cancellable per-site polling, silent first-poll seeding, restart deduplication and capped backoff.
 - [ ] Verify sleep/wake and add explicit OS lifecycle hooks if needed (relative sleeps currently avoid catch-up bursts).
@@ -134,7 +134,8 @@ The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies 
 - [ ] **A3:** browse/open saved files offline and manually refresh selected files without overwriting local edits or propagating server deletions.
 - [x] **A4:** read-only upcoming agenda across sites, grouped by day, with fixed Moodle calendar links, the Mac's time zone stated and last-refresh/stale state.
 - [ ] **A4:** opt-in local due-date reminders, deduplication and rescheduling after event changes/wake; no delivery promise while quit.
-- [ ] **A5:** manually export the selected agenda to a token-free ICS snapshot; validate/import it in Apple Calendar. Live subscriptions remain later.
+- [x] **A5:** manually export the selected site/date range to a token-free ICS snapshot in Downloads, with UTC times, escaped/folded text, stable account-scoped UIDs and fixed calendar links. Rust fixtures and an independent ICS parser pass.
+- [ ] **A5 native qualification:** import the snapshot in Apple Calendar, check DST/text and repeat-import behaviour; qualify Finder reveal and saved site ordering in the installed app. Live subscriptions remain later.
 - [ ] Validate the built A1/A2/A4 parts against a real account and the 4.5/5.3 rigs: `core_enrol_get_users_courses`, `core_calendar_get_calendar_upcoming_view`, `core_message_mark_notification_read` / `mark_all_notifications_as_read`, access-denied responses, and count reconciliation after Mark as Read.
 - [ ] Check natively with `pnpm tauri dev`: the ⌘1/⌘2/⌘3/⌘L/⌥⌘L menu commands, the tray Inbox entry, hiding and restoring the Moodle view around Quick Open, keyboard focus landing in its field when ⌘L is pressed from a Moodle page, warm and cold opening of a course/calendar/notifications page, Copy Path, and the new motion under Reduce Motion and Increase Contrast.
 - [ ] Check the 10 November additions natively: a PDF and an image opened directly with each handling choice (main view and popup, including the blank popup a saved file leaves behind), a forced-download link (unchanged behaviour expected), Save to Downloads on an inline PDF/image and on an ordinary page, open-after-save, embedded PDFs staying in the page, ⌘⇧M from another app with the window hidden/minimised/on another Space, a combination already used by another app, and release on quit.
@@ -239,3 +240,13 @@ Verification and remaining live checks are recorded in [native reader/download Q
 Implemented the next A1/A2 batch: latest unread subjects in per-organisation tray submenus; explicit activity metadata refresh in Courses; schema v7 account/course-scoped activity cache; Quick Open activity search with cache-age/connection copy; and a failed-download Return to Moodle fallback. No stale transfer URL is replayed. The tray opens the fixed notifications page without marking read. Removed courses and replaced accounts lose their cached activities; late writes from the previous account fail.
 
 Evidence: 73 frontend tests, 52 Rust tests, frontend lint/format/build, Rust formatting, workspace Clippy, IPC guards and local debug app packaging pass. Native/live-site acceptance remains open; no such gate was marked passed. Next independent implementation items are the PDF/image preference and optional global shortcut, followed by selected offline files, reminders and ICS in the amended delivery order. A6 remains last.
+
+## 10 November 2026 — ordering, calendar snapshots and app icon
+
+- Organisation ordering is transactional and persists across restart/reconnect/removal; Settings disables boundary moves. No new schema migration is needed because `sites.position` already existed.
+- A5 exports the filtered cached agenda on explicit request to a unique `MoodBuro-<UUID>.ics` file in Downloads, published atomically without replacement. Finder reveal failure reports that the file was saved. No automatic import or subscription is configured.
+- `assets/Newicon.png` supplies the bundle PNG/ICNS/ICO files and the onboarding/README mark through `assets/app-icon.png`. Tauri’s `--fit cover` centres the landscape source into a square, keeping the central icon intact; the original asset is retained.
+- Verification: 82 UI tests (also run in Europe/Paris), 59 Rust tests, independent `vobject` 0.9.9 fixture parsing, frontend build/lint/format, workspace Clippy/format and IPC boundary checks. Native Calendar import and installed-app interactions remain unchecked.
+- A3 offline file selection/refresh, A4 reminders and A6 AI remain unimplemented. A5 was independently deliverable on the existing agenda model; this does not close the earlier slices or Alpha release gates.
+
+Local native output: `target/debug/bundle/macos/MoodBuro.app` built with the new icon, ad-hoc signed after bundling and verified with `codesign --verify --deep --strict`. No native account interaction or Calendar import was performed.

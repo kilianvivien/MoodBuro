@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/icon.svg" width="112" alt="Icône MoodBuro" />
+  <img src="assets/app-icon.png" width="112" alt="Icône MoodBuro" />
 </p>
 <h1 align="center">MoodBuro</h1>
 <p align="center"><strong>Votre Moodle, à sa place sur votre Mac.</strong><br/>Une application de bureau légère pour retrouver le Moodle de votre organisation.</p>

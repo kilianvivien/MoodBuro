@@ -10,6 +10,8 @@
     "core:event:allow-listen",
     "core:event:allow-unlisten",
     "allow-sites-list",
+    "allow-site-move",
+    "allow-agenda-export",
     "allow-site-add",
     "allow-site-switch",
     "allow-show-onboarding",

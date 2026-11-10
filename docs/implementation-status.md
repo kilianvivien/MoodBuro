@@ -6,7 +6,7 @@ Use [the working plan](plan.md) to track completed tasks and next priorities.
 
 At the product owner's request, the [Alpha scope amendment](alpha-feature-expansion.md) brings forward: A1 notification inbox and richer download controls; A2 course browser/pins and quick-open; A3 selected files saved offline with manual refresh; A4 upcoming agenda and opt-in local reminders; A5 manual ICS snapshot export. The original full background-sync/live-calendar/upload features are not implied by these smaller slices. The original six-week estimate requires re-estimation; existing release/security gates remain open.
 
-A first pass over A1, A2 and the read-only A4 agenda is implemented (see the last section). A3, A5 and reminders are not started. [plan.md](plan.md) lists what is checked and what is still open.
+A first pass over A1, A2 and the read-only A4 agenda is implemented (see the last section). A5 export is now implemented against fixtures (see below); A3 and reminders are not started. [plan.md](plan.md) lists what is checked and what is still open.
 
 ## Delivered
 
@@ -125,3 +125,15 @@ Evidence: 79 frontend tests, 55 Rust tests, frontend lint/format/build, Rust for
 **Not viewed:** unlike earlier slices, the new Settings rows were not looked at in the browser preview; their layout was only checked against the CSS (single-line hints, 640 pt column).
 
 **Not verified natively:** none of this was run in the app. Open points: that WebKit keeps the current page when a top-level response becomes a download; that Moodle's direct file links arrive as top-level responses with the expected MIME type (4.5 and 5.3 rigs); a `target=_blank` file leaving an empty popup window after it is saved; open-after-save timing; and whether ⌘⇧M registration fails or silently loses to an app that already holds it. These are listed in [plan.md](plan.md) §4.
+
+## Organisation ordering, calendar export and new icon — 10 November 2026
+
+- Settings provides labelled Up/Down actions for organisations. SQLite saves relative moves atomically; the sidebar and menu bar use that order. Reconnect preserves it and new sites append. A disk-backed test covers restart, boundary moves, removal and insertion.
+- Agenda adds inclusive local date filters and manual ICS export for the selected site/range. Rust generates the snapshot from account-bound cached metadata, with stable UIDs, UTC dates, escaped text, UTF-8-safe line folding and fixed Moodle calendar-page URLs. The file publishes without overwriting in Downloads; Finder is asked to reveal it. FR/EN copy explains manual import, snapshot staleness, repeat-import duplicates and reveal failures.
+- The export fixture is checked byte-for-byte by Rust, then independently parsed with `vobject` 0.9.9 using `scripts/check-calendar.py` (install that package in a temporary virtual environment). It verifies accented/multiline text, injected-property escaping, identity, fixed links and the Europe/Paris autumn DST boundary. Apple Calendar import remains unverified.
+- `assets/Newicon.png` is used for the macOS bundle and desktop icon formats, plus onboarding and both READMEs. The original landscape asset is retained; generated assets use Tauri’s centred square cover conversion.
+- Checks: 82 UI tests, 59 Rust tests, frontend build/lint/format, Clippy and cargo format, local shell/popup IPC guard, independent ICS parsing. A3, reminders, A6 and existing live/native/platform gates remain open.
+
+The first parser attempted (`icalendar` 6.3.2 on system Python 3.9) decoded an escaped literal backslash before `n` as a newline. `vobject` 0.9.9 preserves the literal backslash and passes the complete fixture and round-trip checks; the export follows RFC 5545 escaping. This parser difference reinforces the open Apple Calendar import gate.
+
+A debug macOS app was bundled at `target/debug/bundle/macos/MoodBuro.app`, then locally ad-hoc signed after bundling; `codesign --verify --deep --strict` passed. The embedded `icon.icns` matches the generated new asset. This is a local development bundle, not a distribution release.

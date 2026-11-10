@@ -15,7 +15,7 @@ import { Sidebar } from "../components/Sidebar";
 import { Toolbar } from "../components/Toolbar";
 import { QuickOpenPanel, quickOpenResults } from "../components/QuickOpen";
 import { Segmented } from "../components/ui";
-import { AgendaList } from "./Agenda";
+import { Agenda, AgendaList, agendaRange } from "./Agenda";
 import { CourseList } from "./Courses";
 import { InboxList } from "./Inbox";
 
@@ -431,5 +431,36 @@ describe("navigation chrome", () => {
     );
     expect(html.match(/type="radio"/g)).toHaveLength(2);
     expect(html).toContain('checked="" value="unread"');
+  });
+});
+
+describe("calendar export date selection", () => {
+  it("uses local midnight and an exclusive next-day end", () => {
+    const range = agendaRange("2026-10-25", "2026-10-25");
+    expect(range.valid).toBe(true);
+    expect(range.start).toBe(new Date(2026, 9, 25).getTime() / 1000);
+    expect(range.end).toBe(new Date(2026, 9, 26).getTime() / 1000);
+  });
+  it("supports open bounds and rejects reversed or nonexistent dates", () => {
+    expect(agendaRange("", "")).toEqual({
+      start: null,
+      end: null,
+      valid: true,
+    });
+    expect(agendaRange("2026-11-10", "2026-11-09").valid).toBe(false);
+    expect(agendaRange("2026-02-30", "").valid).toBe(false);
+    expect(agendaRange("", "not-a-date").valid).toBe(false);
+  });
+  it("renders accessible export controls and snapshot limitations in both languages", () => {
+    for (const locale of ["en", "fr"] as const) {
+      const html = inLocale(
+        locale,
+        <Agenda sites={sites} onOpenDay={vi.fn()} />,
+      );
+      expect(html).toContain('type="date"');
+      expect(html).toContain(catalogues[locale].agenda.export);
+      expect(html).toContain(catalogues[locale].agenda.exportHint);
+      expect(html).toContain('disabled=""');
+    }
   });
 });

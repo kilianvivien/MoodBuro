@@ -1,4 +1,5 @@
 mod auth_log;
+mod calendar;
 mod commands;
 mod documents;
 mod downloads;
@@ -147,6 +148,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::sites_list,
+            commands::site_move,
+            commands::agenda_export,
             commands::popup_context,
             commands::popup_nav,
             commands::deep_link_open,

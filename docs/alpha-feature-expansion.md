@@ -34,7 +34,7 @@ A completed slice should produce a reviewable local build and its relevant evide
 
 ## Progress — 9 November 2026
 
-First implementation pass over A1, A2 and the read-only half of A4, against synthetic fixtures only. Checked boxes below mean "built and covered by automated tests"; none of the **Acceptance** paragraphs is met yet, because each needs a real account, an installed build or the 4.5/5.3 rigs. Items with an italic note are partly built. A3, A5 and A4's reminders are untouched.
+First implementation pass over A1, A2 and the read-only half of A4, against synthetic fixtures only. Checked boxes below mean "built and covered by automated tests"; none of the **Acceptance** paragraphs is met yet, because each needs a real account, an installed build or the 4.5/5.3 rigs. Items with an italic note are partly built. A3 and A4's reminders are untouched. A5 was implemented on 10 November against fixtures; native import remains open.
 
 ## A1 — Notification inbox and download controls
 
@@ -83,9 +83,9 @@ First implementation pass over A1, A2 and the read-only half of A4, against synt
 
 ## A5 — Manual ICS export
 
-- [ ] Export the selected site/date range from the agenda as a local ICS snapshot, with stable account-scoped event UIDs, proper escaping and explicit time zones/UTC values.
-- [ ] Include only intended event metadata and safe Moodle page links, never web-service tokens, private tokens, calendar secrets or signed login URLs.
-- [ ] Use explicit user export/import actions; explain that the snapshot does not update automatically. Do not call this a calendar subscription.
+- [x] Export the selected site/date range from the agenda as a local ICS snapshot, with stable account-scoped event UIDs, proper escaping and explicit time zones/UTC values.
+- [x] Include only intended event metadata and safe Moodle page links, never web-service tokens, private tokens, calendar secrets or signed login URLs.
+- [x] Use explicit user export/import actions; explain that the snapshot does not update automatically. Do not call this a calendar subscription.
 
 **Acceptance:** validate the generated file with an ICS parser and import a test calendar into Apple Calendar; verify times, accented/multiline text and DST cases. Stable UIDs are provided, but repeat-import merge behavior must be tested rather than assumed. No external calendar account or private hosting is needed for file generation.
 

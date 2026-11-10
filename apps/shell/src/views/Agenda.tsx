@@ -1,10 +1,10 @@
 import { CalendarDays, CircleAlert } from "lucide-react";
-import { ipc, type AgendaEvent, type Site } from "../ipc";
+import { ipc, message, type AgendaEvent, type Site } from "../ipc";
 import { useI18n } from "../i18n/context";
 import { ErrorText } from "../i18n/ErrorText";
 import { dayLabel, groupByDay, timeLabel, timeZone } from "../lib/time";
 import { useListing } from "../lib/useListing";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   EmptyState,
   PageHeader,
@@ -79,6 +79,36 @@ export function AgendaList({
   ));
 }
 
+export function agendaRange(
+  from: string,
+  through: string,
+): { start: number | null; end: number | null; valid: boolean } {
+  const parse = (value: string, nextDay: boolean) => {
+    if (!value) return null;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return NaN;
+    const [year, month, day] = value.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    if (
+      date.getFullYear() !== year ||
+      date.getMonth() !== month - 1 ||
+      date.getDate() !== day
+    )
+      return NaN;
+    if (nextDay) date.setDate(date.getDate() + 1);
+    return date.getTime() / 1000;
+  };
+  const start = parse(from, false);
+  const end = parse(through, true);
+  return {
+    start,
+    end,
+    valid:
+      (start === null || Number.isFinite(start)) &&
+      (end === null || Number.isFinite(end)) &&
+      (start === null || end === null || start < end),
+  };
+}
+
 export function Agenda({
   sites,
   onOpenDay,
@@ -89,9 +119,39 @@ export function Agenda({
   const { t } = useI18n();
   const listing = useListing(sites, ipc.agenda, ipc.refreshAgenda);
   const [siteId, setSiteId] = useState<string | null>(null);
+  const [from, setFrom] = useState("");
+  const [through, setThrough] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exported, setExported] = useState<{
+    filename: string;
+    count: number;
+    revealed: boolean;
+  } | null>(null);
+  const exportPending = useRef(false);
+  const range = agendaRange(from, through);
+  async function exportCalendar() {
+    if (exportPending.current || !range.valid) return;
+    exportPending.current = true;
+    setExporting(true);
+    setExportError(null);
+    setExported(null);
+    try {
+      setExported(await ipc.exportAgenda(siteId, range.start, range.end));
+    } catch (error) {
+      setExportError(message(error));
+    } finally {
+      exportPending.current = false;
+      setExporting(false);
+    }
+  }
   const shownSites = sites.filter((site) => !siteId || site.id === siteId);
-  const events = listing.items.filter((event) =>
-    shownSites.some((site) => site.id === event.siteId),
+  const events = listing.items.filter(
+    (event) =>
+      range.valid &&
+      shownSites.some((site) => site.id === event.siteId) &&
+      (range.start === null || event.timeStart >= range.start) &&
+      (range.end === null || event.timeStart < range.end),
   );
   const failures = sites.filter((site) => listing.errors[site.id]);
   return (
@@ -101,6 +161,18 @@ export function Agenda({
         detail={events.length > 0 ? t.agenda.count(events.length) : undefined}
       >
         <SiteSelect sites={sites} value={siteId} onChange={setSiteId} />
+        <button
+          className="button"
+          disabled={
+            exporting ||
+            !range.valid ||
+            listing.refreshing.length > 0 ||
+            events.length === 0
+          }
+          onClick={() => void exportCalendar()}
+        >
+          {exporting ? t.agenda.exporting : t.agenda.export}
+        </button>
         <RefreshControl
           sites={sites}
           refreshed={listing.refreshed}
@@ -108,6 +180,45 @@ export function Agenda({
           onRefresh={() => void listing.refresh()}
         />
       </PageHeader>
+      <div className="filter-bar">
+        <label className="date-filter">
+          {t.agenda.from}
+          <span className="text-field compact">
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+            />
+          </span>
+        </label>
+        <label className="date-filter">
+          {t.agenda.through}
+          <span className="text-field compact">
+            <input
+              type="date"
+              value={through}
+              onChange={(e) => setThrough(e.target.value)}
+            />
+          </span>
+        </label>
+      </div>
+      {!range.valid && (
+        <p className="section-message error" role="alert">
+          {t.agenda.invalidRange}
+        </p>
+      )}
+      <p className="section-footnote">{t.agenda.exportHint}</p>
+      {exportError && (
+        <p className="section-message error" role="alert">
+          <ErrorText error={exportError} context="navigation" />
+        </p>
+      )}
+      {exported && (
+        <p className="section-message" role="status">
+          {t.agenda.exported(exported.count, exported.filename)}{" "}
+          {exported.revealed ? "" : t.agenda.revealFailed}
+        </p>
+      )}
       {failures.map((site) => (
         <p className="section-message error" role="alert" key={site.id}>
           <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />

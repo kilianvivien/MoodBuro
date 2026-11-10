@@ -26,6 +26,34 @@ fn saved_site(app: &AppHandle, id: &str) -> Result<md_store::Site, String> {
         .find(|s| s.id == id)
         .ok_or("Unknown site.".into())
 }
+#[tauri::command]
+pub fn site_move(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+    direction: i32,
+) -> Result<(), String> {
+    shell(&webview)?;
+    app.state::<AppState>()
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?
+        .move_site(&id, direction)
+        .map_err(|_| "Could not reorder organisations.")?;
+    crate::notifications::publish(&app);
+    Ok(())
+}
+#[tauri::command]
+pub fn agenda_export(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: Option<String>,
+    start: Option<i64>,
+    end: Option<i64>,
+) -> Result<crate::calendar::Exported, String> {
+    shell(&webview)?;
+    crate::calendar::export(&app, site_id.as_deref(), start, end)
+}
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SiteSummary {
