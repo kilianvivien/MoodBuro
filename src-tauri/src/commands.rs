@@ -653,9 +653,20 @@ pub async fn restore_site_at(
     id: &str,
     destination: Option<Url>,
 ) -> Result<(), String> {
+    restore_site_for_user(app, id, destination, None).await
+}
+pub async fn restore_site_for_user(
+    app: &AppHandle,
+    id: &str,
+    destination: Option<Url>,
+    expected_user: Option<i64>,
+) -> Result<(), String> {
     let state = app.state::<AppState>();
     let _switch = state.switching.lock().await;
     let site = saved_site(app, id)?;
+    if expected_user.is_some_and(|user| user != site.user_id) {
+        return Err("This account has changed. Open the page again.".into());
+    }
     // Only request a new autologin key when creating a view; warm switches are local.
     let cold = app.get_webview(&format!("site-{id}")).is_none();
     if cold {
@@ -717,6 +728,9 @@ fn show_local(app: &AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub fn shell_view(webview: tauri::Webview, app: AppHandle, view: String) -> Result<(), String> {
     shell(&webview)?;
+    if view == "quick-open" || view == "quick-open-close" {
+        return windows::quick_open(&app, view == "quick-open");
+    }
     if !crate::menus::LOCAL_VIEWS.contains(&view.as_str()) {
         return Err("Unknown shell view.".into());
     }
@@ -1148,4 +1162,59 @@ pub fn assistant_clear(
 ) -> Result<(), String> {
     shell(&webview)?;
     crate::assistant::clear(&app, site_id.as_deref(), user_id, all)
+}
+
+#[tauri::command]
+pub fn session_status(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Vec<crate::session_restore::Status>, String> {
+    shell(&webview)?;
+    Ok(crate::session_restore::statuses(&app))
+}
+
+#[tauri::command]
+pub fn bookmarks_list(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Vec<md_store::Bookmark>, String> {
+    shell(&webview)?;
+    crate::bookmarks::list(&app)
+}
+#[tauri::command]
+pub async fn bookmark_capture(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<md_store::Bookmark, String> {
+    shell(&webview)?;
+    crate::bookmarks::capture(&app).await
+}
+#[tauri::command]
+pub fn bookmark_save(
+    webview: tauri::Webview,
+    app: AppHandle,
+    bookmark: md_store::Bookmark,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::bookmarks::save(&app, bookmark)
+}
+#[tauri::command]
+pub fn bookmark_delete(webview: tauri::Webview, app: AppHandle, id: String) -> Result<(), String> {
+    shell(&webview)?;
+    crate::bookmarks::delete(&app, &id)
+}
+#[tauri::command]
+pub async fn bookmark_open(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::bookmarks::open(&app, &id).await
+}
+
+#[tauri::command]
+pub fn bookmark_menu(webview: tauri::Webview, app: AppHandle) -> Result<(), String> {
+    shell(&webview)?;
+    crate::bookmarks::menu(&app)
 }

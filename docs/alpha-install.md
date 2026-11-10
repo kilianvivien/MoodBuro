@@ -12,6 +12,8 @@
 
 Quit MoodBuro before replacing it in Applications. Closing the window only hides it and keeps notification polling active; use MoodBuro → Quit. There is no automatic updater in this release: download subsequent DMGs manually. Ad-hoc signing does not provide a stable publisher identity, so Keychain may ask for permission again after an upgrade.
 
+In builds after alpha.3, macOS credentials share one Keychain item and one in-memory read per process. The first launch migrates the old items and can still ask for each old item; subsequent launches use the combined item. Migration writes the combined item before deleting old entries and retries interrupted cleanup. Ad-hoc signing may still require access approval after updates.
+
 Removing an organisation in Settings clears its app-managed credentials and metadata; downloaded/offline files remain. Legacy shared WebKit/SSO data on older macOS may remain, as documented in the authentication review. Deleting the app alone does not remove all application data or Keychain items.
 
 ## Assistant

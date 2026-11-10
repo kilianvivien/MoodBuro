@@ -5,6 +5,8 @@ edition.workspace = true
 license.workspace = true
 [dependencies]
 zeroize.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 keyring = "3"
 [target.'cfg(target_os = "macos")'.dependencies]
 keyring = { version = "3", features = ["apple-native"] }

@@ -265,7 +265,7 @@ export function QuickOpenPanel({
   );
 }
 
-/** ⌘L palette. The Moodle view is hidden by Rust while it is open. */
+/** ⌘K palette. The current view stays visible underneath. */
 export function QuickOpen({
   sites,
   onChoose,

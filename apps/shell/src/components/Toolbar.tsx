@@ -9,10 +9,16 @@ import {
   House,
   RotateCw,
   Search,
+  BookmarkPlus,
   Sparkles,
   X,
 } from "lucide-react";
-import type { DownloadFeedback, NavAction, Site } from "../ipc";
+import type {
+  DownloadFeedback,
+  NavAction,
+  Site,
+  SessionRecovery,
+} from "../ipc";
 import { displayHost } from "../lib/site";
 import type { View } from "./Sidebar";
 import { useI18n } from "../i18n/context";
@@ -23,12 +29,14 @@ export function Toolbar({
   view,
   site,
   error,
+  recovery,
   canLeave,
   onNav,
   onDismissError,
   onLeave,
   onDownloads,
   onQuickOpen,
+  onBookmark,
   downloadFeedback = null,
   onDismissDownload,
   onAssistant,
@@ -45,6 +53,7 @@ export function Toolbar({
    * remote site view covers the content area.
    */
   error: string | null;
+  recovery?: SessionRecovery;
   /** A site exists to return to from onboarding/settings. */
   canLeave: boolean;
   onNav: (action: NavAction) => void;
@@ -54,6 +63,7 @@ export function Toolbar({
   downloadFeedback?: DownloadFeedback | null;
   onDismissDownload?: () => void;
   onQuickOpen?: () => void;
+  onBookmark?: () => void;
   /** Quick Open covers the Moodle view: page commands have nothing to act on. */
   paused?: boolean;
 }) {
@@ -84,7 +94,30 @@ export function Toolbar({
       </button>
     </div>
   );
-  const feedback = !alert && downloadFeedback && (
+  const session = !alert && recovery && (
+    <div
+      className="toolbar-alert session-recovery"
+      role="status"
+      title={t.toolbar.sessionHelp}
+    >
+      {recovery.phase !== "failed" && (
+        <LoaderCircle className="spin" {...icon} />
+      )}
+      <span>
+        {recovery.phase === "waiting"
+          ? t.toolbar.sessionWaiting(
+              i18n.date(recovery.retryAt * 1000, {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+            )
+          : recovery.phase === "retrying"
+            ? t.toolbar.sessionRetrying
+            : t.toolbar.sessionFailed}
+      </span>
+    </div>
+  );
+  const feedback = !alert && !session && downloadFeedback && (
     <div
       className="download-feedback"
       data-state={downloadFeedback.state}
@@ -195,8 +228,20 @@ export function Toolbar({
             <span>{displayHost(site.wwwroot)}</span>
           </div>
           {alert}
+          {session}
           {feedback}
           {quickOpen}
+          {onBookmark && (
+            <button
+              className="tool"
+              title={t.bookmarks.add}
+              aria-label={t.bookmarks.add}
+              disabled={paused}
+              onClick={onBookmark}
+            >
+              <BookmarkPlus {...icon} />
+            </button>
+          )}
           {onDownloads && (
             <button
               className="tool"
@@ -224,6 +269,7 @@ export function Toolbar({
             <h1>{local}</h1>
           </div>
           {alert}
+          {session}
           {feedback}
           {view !== "onboarding" && quickOpen}
           {view !== "onboarding" && view !== "downloads" && onDownloads && (

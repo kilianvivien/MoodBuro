@@ -16,7 +16,7 @@ pub fn plugin() -> tauri::plugin::TauriPlugin<tauri::Wry> {
     tauri_plugin_global_shortcut::Builder::new()
         .with_handler(|app, pressed, event| {
             if event.state == ShortcutState::Pressed && *pressed == shortcut() {
-                // Same path as ⌘L: bring the window forward, hide Moodle, focus the field.
+                // Same path as ⌘K: bring the window forward and overlay Quick Open.
                 crate::tray::show(app);
                 crate::menus::show_local_view(app, "quick-open");
             }

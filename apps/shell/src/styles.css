@@ -1490,9 +1490,9 @@ ol {
   animation-delay: 360ms;
 }
 
-/* ---------- Quick Open (⌘L) ---------- */
+/* ---------- Quick Open (⌘K) ---------- */
 
-/* Covers the content area only; the Moodle view is hidden by Rust meanwhile.
+/* Covers the content area only; the Moodle view remains visible underneath.
    Not a dimming overlay: the window stays as it is behind the panel. */
 .quick-open-layer {
   position: fixed;
@@ -2296,5 +2296,109 @@ div.assistant-text {
   border: 0;
   padding: 2px 0;
   text-align: left;
+  font-size: var(--text-small);
+}
+
+/* The window itself stays opaque; only the raised shell's content is clear. */
+:root[data-palette-site],
+:root[data-palette-site] body,
+.app[data-palette][data-view="site"] .content {
+  background: transparent;
+}
+.page-heading {
+  flex: 1 1 240px;
+  flex-wrap: wrap;
+}
+.page-heading h2 {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.page-header > .row-actions {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+
+.page-actions {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.session-recovery {
+  max-width: min(52vw, 520px);
+}
+
+/* Bookmarks share the source-list rhythm and existing grouped editor controls. */
+.bookmark-sidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 0;
+  border-top: 1px solid var(--separator);
+}
+.bookmark-sidebar > li {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.bookmark-sidebar .sidebar-item {
+  height: 34px;
+}
+.bookmark-editor .group-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.bookmark-editor input {
+  flex: 1 1 220px;
+  min-width: 0;
+  max-width: 420px;
+}
+.bookmark-editor .bookmark-preview {
+  justify-content: flex-start;
+}
+.bookmark-preview-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  background: var(--fill);
+  color: var(--label-2);
+  border-radius: var(--radius-l);
+}
+.bookmark-editor .bookmark-actions {
+  justify-content: flex-end;
+}
+.bookmark-list .group-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.bookmark-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 220px;
+  text-align: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius-s);
+}
+.bookmark-link > svg {
+  flex-shrink: 0;
+  color: var(--label-2);
+}
+.bookmark-link:hover .row-title {
+  color: var(--accent);
+}
+.bookmark-confirm {
+  flex-wrap: wrap;
   font-size: var(--text-small);
 }

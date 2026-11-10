@@ -21,6 +21,8 @@ The timestamp survives restarts and is cleared on account replacement/removal.
 Moodle administrators can configure a longer interval; one failed retry then
 stops. See [Moodle's lockout implementation](https://github.com/moodle/moodle/blob/MOODLE_405_STABLE/admin/tool/mobile/classes/external.php#L293-L304).
 
+The toolbar now explains the temporary Moodle limit and shows the scheduled retry time; while retrying it reports restoration, and after a failed attempt it offers manual sign-in/reconnect guidance. The shell can also query this non-secret state so an early page load does not lose the notice. Successful navigation, logout and cancellation clear it.
+
 The retry revalidates the account, mints a fresh one-use key and navigates only
 that existing view, preserving the requested destination and current selection.
 Logout, browsing away, successful SSO/manual login, reconnect and removal cancel

@@ -22,6 +22,8 @@ struct Restore {
     ready_at: Instant,
     destination: Option<Url>,
     scheduled: bool,
+    phase: &'static str,
+    retry_at: i64,
 }
 
 impl Restores {
@@ -31,6 +33,8 @@ impl Restores {
             ready_at: Instant::now() + delay,
             destination,
             scheduled: false,
+            phase: "waiting",
+            retry_at: now().saturating_add(delay.as_secs() as i64),
         });
     }
     fn cancel(&mut self, id: &str) {
@@ -58,6 +62,45 @@ impl Restores {
             .filter(|r| r.generation == generation)
             .map(|r| r.destination.clone())
     }
+}
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Status {
+    site_id: String,
+    phase: &'static str,
+    retry_at: i64,
+}
+pub fn statuses(app: &AppHandle) -> Vec<Status> {
+    app.state::<AppState>()
+        .restores
+        .lock()
+        .map(|r| {
+            r.0.iter()
+                .filter(|(_, r)| r.scheduled)
+                .map(|(id, r)| Status {
+                    site_id: id.clone(),
+                    phase: r.phase,
+                    retry_at: r.retry_at,
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+fn publish(app: &AppHandle) {
+    let _ = app.emit_to("shell", "session://changed", statuses(app));
+}
+fn phase(app: &AppHandle, id: &str, generation: uuid::Uuid, phase: &'static str) {
+    if let Ok(mut restores) = app.state::<AppState>().restores.lock() {
+        if let Some(r) = restores
+            .0
+            .get_mut(id)
+            .filter(|r| r.generation == generation)
+        {
+            r.phase = phase;
+        }
+    }
+    publish(app);
 }
 
 fn now() -> i64 {
@@ -99,6 +142,7 @@ pub fn cancel(app: &AppHandle, id: &str) {
     if let Ok(mut restores) = app.state::<AppState>().restores.lock() {
         restores.cancel(id);
     }
+    publish(app);
 }
 
 fn login_page(base: &Url, url: &Url) -> bool {
@@ -121,6 +165,7 @@ pub fn navigation(app: &AppHandle, id: &str, base: &Url, url: &Url) {
         if let Ok(mut restores) = app.state::<AppState>().restores.lock() {
             restores.browsing_away(id);
         }
+        publish(app);
     }
 }
 
@@ -140,6 +185,7 @@ pub fn loaded(app: &AppHandle, id: &str, base: &Url, url: &Url) {
     let Some((generation, delay)) = task else {
         return;
     };
+    publish(app);
     record(Event::RetryScheduled);
     let app = app.clone();
     let id = id.to_owned();
@@ -178,6 +224,7 @@ pub fn loaded(app: &AppHandle, id: &str, base: &Url, url: &Url) {
         if state.pending.lock().map_or(true, |p| p.is_some()) {
             return;
         }
+        phase(&app, &id, generation, "retrying");
         let result = async {
             let token =
                 md_secrets::get(&id, Kind::Token).map_err(|_| md_moodle::Error::InvalidToken)?;
@@ -203,13 +250,17 @@ pub fn loaded(app: &AppHandle, id: &str, base: &Url, url: &Url) {
                 .is_ok_and(|r| r.destination(&id, generation).is_some());
             if current && view.url().is_ok_and(|url| login_page(&base, &url)) {
                 // Navigate this view directly; a background restore must not select it.
-                let _ = view.navigate(target);
+                view.navigate(target)
+                    .map_err(|_| md_moodle::Error::WebServices)?;
             }
             Ok::<_, md_moodle::Error>(())
         }
         .await;
         if matches!(result, Err(md_moodle::Error::InvalidToken)) {
             let _ = app.emit_to("shell", "auth://needed", &id);
+        }
+        if result.is_err() {
+            phase(&app, &id, generation, "failed");
         }
         // Keep the scheduled flag after failure: no further retries in this view.
         record(Event::RetryFinished);

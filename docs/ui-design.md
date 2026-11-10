@@ -26,7 +26,7 @@ The 72 px sidebar and the toolbar (52 pt unified on macOS, 44 px elsewhere) are 
 | Courses          | Sidebar, ⌘2                 | Hidden (`shell_view('courses')`)                   |
 | Agenda           | Sidebar, ⌘3                 | Hidden (`shell_view('agenda')`)                    |
 | Downloads        | Toolbar, ⌥⌘L, tray          | Hidden (`shell_view('downloads')`)                 |
-| Quick Open       | Toolbar, ⌘L (panel)         | Hidden while open; restored if dismissed           |
+| Quick Open       | Toolbar, ⌘K (panel)         | Visible behind the raised transparent content shell           |
 
 Escape, **Done** or **Cancel** returns to the last site, or the first site if that one was removed.
 
@@ -86,3 +86,8 @@ Product-owner choices for this slice: build A1, A2 and the read-only part of A4 
 - **Settings → General → Quick Open from any app.** Off by default. An Off/On segmented control rather than a new switch component. Turning it on registers ⌘⇧M first and saves only if that worked; a failure leaves it off with the reason. The hint states the limit plainly: macOS does not always report a combination another app already uses.
 - **Settings → Files.** PDF documents and Images each get View in Moodle / Save / Save and Open. The footnote says where saved files go, that embedded files stay in the page, and names File › Save to Downloads (⌘S).
 - **Save to Downloads is a menu command only.** While a file is shown the Moodle view has focus, so it must be a menu accelerator; a toolbar button would be disabled on almost every page.
+
+
+## Follow-up to alpha.3
+
+Quick Open now uses ⌘K natively as well as in the browser, and overlays the current view without hiding Moodle. Bookmark creation uses File → Bookmark This Page… (⌘D) or its toolbar icon; editing uses the existing grouped local-page pattern, not another floating panel. Five monochrome custom-choice icons fit the sidebar and a real native overflow menu handles additional bookmarks. Course headers wrap titles and action groups instead of letting text run behind controls. Restart recovery reports its rate-limit wait/retry time in the toolbar with FR/EN explanations.

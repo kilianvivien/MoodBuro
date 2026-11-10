@@ -447,7 +447,7 @@ describe("navigation chrome", () => {
         />,
       );
       expect(html).toContain(`<h1>${title}</h1>`);
-      expect(html).toContain('aria-label="Ouverture rapide (⌘L)"');
+      expect(html).toContain('aria-label="Ouverture rapide (⌘K)"');
       expect(html).toContain("Terminé");
     }
   });
@@ -503,5 +503,73 @@ describe("calendar export date selection", () => {
       expect(html).toContain(catalogues[locale].agenda.exportHint);
       expect(html).toContain('disabled=""');
     }
+  });
+});
+
+describe("Moodle session recovery notice", () => {
+  it("explains the wait in both languages and shows retry and failure states", () => {
+    for (const locale of ["en", "fr"] as const) {
+      for (const phase of ["waiting", "retrying", "failed"] as const) {
+        const html = inLocale(
+          locale,
+          <Toolbar
+            view="site"
+            site={sites[0]}
+            error={null}
+            canLeave
+            recovery={{ siteId: "a", phase, retryAt: at(1) }}
+            onNav={vi.fn()}
+            onDismissError={vi.fn()}
+            onLeave={vi.fn()}
+          />,
+        );
+        expect(html).toContain('role="status"');
+        expect(html).toContain(locale === "en" ? "six minutes" : "six minutes");
+        expect(html).toContain(
+          phase === "waiting"
+            ? locale === "en"
+              ? "Retrying at"
+              : "Nouvel essai à"
+            : phase === "retrying"
+              ? locale === "en"
+                ? "Restoring"
+                : "Restauration"
+              : locale === "en"
+                ? "failed"
+                : "Échec",
+        );
+      }
+    }
+  });
+});
+
+describe("Bookmarks sidebar", () => {
+  it("shows five custom icons and keeps remaining bookmarks in the overflow command", () => {
+    const bookmarks = Array.from({ length: 8 }, (_, i) => ({
+      id: String(i),
+      siteId: "a",
+      userId: 2,
+      name: `Saved page ${i}`,
+      path: `course/view.php?id=${i + 1}`,
+      icon: i === 0 ? "star" : "book",
+    }));
+    const html = inLocale(
+      "en",
+      <Sidebar
+        sites={sites}
+        active="a"
+        view="site"
+        bookmarks={bookmarks}
+        onBookmark={vi.fn()}
+        onBookmarkMenu={vi.fn()}
+        onSite={vi.fn()}
+        onAdd={vi.fn()}
+        onSettings={vi.fn()}
+      />,
+    );
+    expect(html).toContain('aria-label="Saved page 4"');
+    expect(html).not.toContain('aria-label="Saved page 5"');
+    expect(html).toContain('aria-haspopup="menu"');
+    expect(html).toContain("lucide-star");
   });
 });

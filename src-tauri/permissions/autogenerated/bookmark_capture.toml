@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-bookmark-capture"
+description = "Enables the bookmark_capture command without any pre-configured scope."
+commands.allow = ["bookmark_capture"]
+
+[[permission]]
+identifier = "deny-bookmark-capture"
+description = "Denies the bookmark_capture command without any pre-configured scope."
+commands.deny = ["bookmark_capture"]

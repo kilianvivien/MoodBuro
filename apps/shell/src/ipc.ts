@@ -178,7 +178,9 @@ export type ShellView =
   | "inbox"
   | "courses"
   | "agenda"
-  | "quick-open";
+  | "quick-open"
+  | "quick-open-close"
+  | "bookmarks";
 export type NavAction =
   "back" | "forward" | "reload" | "home" | "open_in_browser";
 
@@ -560,7 +562,74 @@ const demoResources: OfflineResource[] = [
     bytes: null,
   },
 ];
+export interface Bookmark {
+  id: string;
+  siteId: string;
+  userId: number;
+  name: string;
+  path: string;
+  icon: string;
+}
+export interface SessionRecovery {
+  siteId: string;
+  phase: "waiting" | "retrying" | "failed";
+  retryAt: number;
+}
+
+let demoBookmarks: Bookmark[] = demo
+  ? demoData.courses.slice(0, 7).map((course, index) => ({
+      id: `bookmark-${index}`,
+      siteId: course.siteId,
+      userId: demoSites.find((site) => site.id === course.siteId)!.userId,
+      name: course.name,
+      path: `course/view.php?id=${course.id}`,
+      icon: [
+        "book",
+        "star",
+        "file",
+        "message",
+        "calendar",
+        "folder",
+        "graduation",
+      ][index],
+    }))
+  : [];
+
 export const ipc = {
+  bookmarkMenu: () =>
+    desktop ? invoke<void>("bookmark_menu") : Promise.resolve(),
+  bookmarks: () =>
+    desktop
+      ? invoke<Bookmark[]>("bookmarks_list")
+      : Promise.resolve(demoBookmarks.map((b) => ({ ...b }))),
+  bookmarkCapture: (): Promise<Bookmark> =>
+    desktop
+      ? invoke<Bookmark>("bookmark_capture")
+      : demo
+        ? Promise.resolve({ ...demoBookmarks[0], id: crypto.randomUUID() })
+        : desktopFeature(),
+  bookmarkSave: (bookmark: Bookmark): Promise<void> => {
+    if (desktop) return invoke<void>("bookmark_save", { bookmark });
+    if (!demo) return desktopFeature();
+    demoBookmarks = demoBookmarks.some((b) => b.id === bookmark.id)
+      ? demoBookmarks.map((b) => (b.id === bookmark.id ? { ...bookmark } : b))
+      : [...demoBookmarks, { ...bookmark }];
+    return Promise.resolve();
+  },
+  bookmarkDelete: (id: string): Promise<void> => {
+    if (desktop) return invoke<void>("bookmark_delete", { id });
+    if (!demo) return desktopFeature();
+    demoBookmarks = demoBookmarks.filter((b) => b.id !== id);
+    return Promise.resolve();
+  },
+  bookmarkOpen: (id: string): Promise<void> =>
+    desktop
+      ? invoke<void>("bookmark_open", { id })
+      : demo
+        ? Promise.resolve()
+        : desktopFeature(),
+  sessionStatus: () =>
+    desktop ? invoke<SessionRecovery[]>("session_status") : Promise.resolve([]),
   assistant: (): Promise<AssistantStatus> =>
     desktop
       ? invoke<AssistantStatus>("assistant_status")

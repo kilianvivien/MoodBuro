@@ -1,6 +1,14 @@
 import type { KeyboardEvent } from "react";
-import { Bell, BookOpen, CalendarDays, Plus, Settings } from "lucide-react";
-import type { Site, UnreadStatus } from "../ipc";
+import {
+  Bell,
+  BookOpen,
+  CalendarDays,
+  Plus,
+  Settings,
+  Ellipsis,
+} from "lucide-react";
+import type { Site, UnreadStatus, Bookmark } from "../ipc";
+import { BookmarkIcon } from "./Bookmarks";
 import { displayHost, initials } from "../lib/site";
 import { useI18n } from "../i18n/context";
 
@@ -11,7 +19,8 @@ export type View =
   | "downloads"
   | "inbox"
   | "courses"
-  | "agenda";
+  | "agenda"
+  | "bookmarks";
 /** Local shell views; anything else shows a Moodle view positioned by Rust. */
 export const isLocal = (view: View) => view !== "site";
 /** Views reached from the sidebar's top group. */
@@ -53,8 +62,14 @@ export function Sidebar({
   onView,
   onAdd,
   onSettings,
+  bookmarks = [],
+  onBookmark,
+  onBookmarkMenu,
 }: {
   sites: Site[];
+  bookmarks?: Bookmark[];
+  onBookmark?: (bookmark: Bookmark) => void;
+  onBookmarkMenu?: () => void;
   unread?: UnreadStatus[];
   active: string | null;
   view: View;
@@ -168,6 +183,35 @@ export function Sidebar({
           </button>
         </li>
       </ul>
+      {bookmarks.length > 0 && (
+        <ul className="bookmark-sidebar" aria-label={t.bookmarks.title}>
+          {bookmarks.slice(0, 5).map((b) => (
+            <li key={b.id}>
+              <button
+                data-sidebar-item
+                className="sidebar-item"
+                title={`${b.name} — ${sites.find((s) => s.id === b.siteId)?.name ?? ""}`}
+                aria-label={b.name}
+                onClick={() => onBookmark?.(b)}
+              >
+                <BookmarkIcon name={b.icon} />
+              </button>
+            </li>
+          ))}
+          <li>
+            <button
+              data-sidebar-item
+              className="sidebar-item"
+              title={t.bookmarks.more}
+              aria-label={t.bookmarks.more}
+              aria-haspopup="menu"
+              onClick={onBookmarkMenu}
+            >
+              <Ellipsis size={18} strokeWidth={1.75} aria-hidden="true" />
+            </button>
+          </li>
+        </ul>
+      )}
       <button
         data-sidebar-item
         className="sidebar-item settings-button"

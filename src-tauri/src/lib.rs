@@ -1,5 +1,6 @@
 mod assistant;
 mod auth_log;
+mod bookmarks;
 mod calendar;
 mod commands;
 mod documents;
@@ -9,6 +10,8 @@ mod frame_guard;
 mod library;
 mod links;
 mod menus;
+#[cfg(target_os = "macos")]
+mod native_overlay;
 #[cfg(target_os = "macos")]
 mod native_preview;
 mod notifications;
@@ -78,6 +81,15 @@ pub fn run() {
                 .lock()
                 .expect("store")
                 .downloads_interrupt()?;
+            md_secrets::configure_legacy_sites(
+                app.state::<AppState>()
+                    .store
+                    .lock()
+                    .expect("store")
+                    .sites()?
+                    .into_iter()
+                    .map(|site| site.id),
+            );
             assistant::install(app.handle());
             window_state::install(app.handle());
             windows::create_shell(app.handle())?;
@@ -213,6 +225,13 @@ pub fn run() {
             commands::site_reauthenticate,
             commands::site_remove,
             commands::shell_view,
+            commands::session_status,
+            commands::bookmarks_list,
+            commands::bookmark_menu,
+            commands::bookmark_capture,
+            commands::bookmark_save,
+            commands::bookmark_delete,
+            commands::bookmark_open,
             commands::settings_get,
             commands::settings_set
         ])

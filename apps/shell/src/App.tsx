@@ -14,6 +14,8 @@ import {
   type DownloadFeedback,
   type MoodlePage,
   type NavAction,
+  type Bookmark,
+  type SessionRecovery,
   type UnreadStatus,
 } from "./ipc";
 import { useSites } from "./stores/sites";
@@ -29,6 +31,7 @@ import {
   type Destination,
   type View,
 } from "./components/Sidebar";
+import { BookmarksView } from "./components/Bookmarks";
 import { QuickOpen, type QuickTarget } from "./components/QuickOpen";
 import { Inbox } from "./views/Inbox";
 import { Courses } from "./views/Courses";
@@ -61,8 +64,12 @@ export default function App() {
   const [downloadFeedback, setDownloadFeedback] =
     useState<DownloadFeedback | null>(null);
   const [unread, setUnread] = useState<UnreadStatus[]>([]);
+  const [recoveries, setRecoveries] = useState<SessionRecovery[]>([]);
   const [ready, setReady] = useState(false);
-  // ⌘L palette, shown over whatever view is current.
+  // ⌘K palette, shown over whatever view is current.
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [bookmarkDraft, setBookmarkDraft] = useState<Bookmark | null>(null);
+  const [bookmarkRevision, setBookmarkRevision] = useState(0);
   const [palette, setPalette] = useState(false);
   const [connection, dispatch] = useReducer(reduce, idle);
   // Raw backend messages: translated when rendered, so a language switch
@@ -122,7 +129,7 @@ export default function App() {
   }
 
   /** Inbox, Courses, Agenda or Downloads: hide the Moodle view, then render. */
-  async function showLocal(target: Destination | "downloads") {
+  async function showLocal(target: Destination | "downloads" | "bookmarks") {
     setError(null);
     setPalette(false);
     try {
@@ -150,23 +157,53 @@ export default function App() {
     }
   }
 
-  async function openPalette() {
-    if (sites.length === 0) return;
-    setError(null);
+  async function refreshBookmarks() {
+    setBookmarks(await ipc.bookmarks());
+  }
+  async function openBookmark(bookmark: Bookmark) {
     try {
-      // The Moodle view sits above the shell; hide it while the palette is open.
-      await ipc.shellView("quick-open");
-      setPalette(true);
+      await ipc.bookmarkOpen(bookmark.id);
+      select(bookmark.siteId);
+      setView("site");
+      setPalette(false);
     } catch (cause) {
       failed(cause);
     }
   }
-  /** Dismissed without a choice: bring back the Moodle view that was hidden. */
+  async function addBookmark() {
+    try {
+      const draft = await ipc.bookmarkCapture();
+      const existing = bookmarks.find(
+        (b) =>
+          b.siteId === draft.siteId &&
+          b.userId === draft.userId &&
+          b.path === draft.path,
+      );
+      setBookmarkDraft(existing ?? draft);
+      setBookmarkRevision((r) => r + 1);
+      await showLocal("bookmarks");
+    } catch (cause) {
+      failed(cause);
+    }
+  }
+  async function openPalette() {
+    if (sites.length > 0) setPalette(true);
+  }
   function closePalette() {
     setPalette(false);
-    if (view === "site" && site) void ipc.switchSite(site.id).catch(failed);
   }
+  useEffect(() => {
+    document.documentElement.toggleAttribute(
+      "data-palette-site",
+      palette && view === "site",
+    );
+    void ipc
+      .shellView(palette ? "quick-open" : "quick-open-close")
+      .catch(failed);
+    return () => document.documentElement.removeAttribute("data-palette-site");
+  }, [palette, view]);
   function choose(target: QuickTarget) {
+    setPalette(false);
     if (target.kind === "site") void openSite(target.siteId);
     else if (target.kind === "course")
       void openPage(target.siteId, "course", target.courseId);
@@ -293,6 +330,7 @@ export default function App() {
   }, [ready, linkRequest]);
 
   const onSitesChanged = useEffectEvent((id: string) => {
+    void refreshBookmarks().catch(failed);
     void refresh().catch(failed);
     setLinkRequest((revision) => revision + 1);
     if (isLocal(view) && view !== "onboarding") {
@@ -305,6 +343,7 @@ export default function App() {
     setView("site");
   });
   const onSiteRemoved = useEffectEvent(() => {
+    void refreshBookmarks().catch(failed);
     void refresh().catch(failed);
     // Rust hid every site view; Settings stays, anything else falls back.
     setPalette(false);
@@ -314,7 +353,11 @@ export default function App() {
   const onNavigate = useEffectEvent((target: string) => {
     if (target === "settings") void showSettings();
     else if (target === "onboarding") void showOnboarding();
-    else if (
+    else if (target === "bookmarks") {
+      setBookmarkDraft(null);
+      setBookmarkRevision((r) => r + 1);
+      void showLocal("bookmarks");
+    } else if (
       target === "downloads" ||
       target === "inbox" ||
       target === "courses" ||
@@ -322,9 +365,12 @@ export default function App() {
     )
       void showLocal(target);
     else if (target === "quick-open") {
-      if (sites.length > 0) setPalette(true);
+      if (sites.length > 0) setPalette((open) => !open);
       else leave();
     }
+  });
+  const onBookmarkAdd = useEffectEvent(() => {
+    void addBookmark();
   });
   const onAuthFinished = useEffectEvent((result: string | null) =>
     dispatch({ type: "finished", error: result }),
@@ -347,7 +393,7 @@ export default function App() {
     if (!cancelled()) setReady(true);
   });
   const onKey = useEffectEvent((event: KeyboardEvent) => {
-    // The native menu owns ⌘L in the app; the browser preview needs its own.
+    // The native menu owns ⌘K in the app; the browser preview needs its own.
     if (
       !desktop &&
       (event.metaKey || event.ctrlKey) &&
@@ -378,10 +424,14 @@ export default function App() {
       window.removeEventListener("languagechange", languagechange);
     };
     void ipc.unread().then(setUnread).catch(failed);
+    void refreshBookmarks().catch(failed);
     if (!desktop) return stop;
     const listeners = [
       listen("deep-link://pending", () =>
         setLinkRequest((revision) => revision + 1),
+      ),
+      listen<SessionRecovery[]>("session://changed", (e) =>
+        setRecoveries(e.payload),
       ),
       listen<UnreadStatus[]>("unread://changed", (e) => setUnread(e.payload)),
       listen<string>("navigation://site-opened", (e) => {
@@ -399,10 +449,15 @@ export default function App() {
       ),
       // View › AI Assistant (⇧⌘A).
       listen("assistant://toggle", () => void toggleAssistant()),
+      listen("bookmarks://add", () => void onBookmarkAdd()),
       listen<string | null>("auth://finished", (e) =>
         onAuthFinished(e.payload),
       ),
     ];
+    void Promise.all(listeners)
+      .then(() => ipc.sessionStatus())
+      .then(setRecoveries)
+      .catch(failed);
     return () => {
       stop();
       for (const listener of listeners)
@@ -439,6 +494,8 @@ export default function App() {
     <I18nProvider locale={locale}>
       <div
         className="app"
+        data-palette={palette || undefined}
+        data-view={view}
         data-assistant={assistant.panel.open || undefined}
         style={
           assistant.panel.open
@@ -451,6 +508,18 @@ export default function App() {
         <Sidebar
           sites={sites}
           unread={unread}
+          bookmarks={bookmarks.filter((b) =>
+            sites.some((s) => s.id === b.siteId && s.userId === b.userId),
+          )}
+          onBookmark={(b) => void openBookmark(b)}
+          onBookmarkMenu={() => {
+            if (desktop) void ipc.bookmarkMenu().catch(failed);
+            else {
+              setBookmarkDraft(null);
+              setBookmarkRevision((r) => r + 1);
+              void showLocal("bookmarks");
+            }
+          }}
           active={active}
           view={view}
           onSite={(id) => void openSite(id)}
@@ -462,6 +531,7 @@ export default function App() {
           view={view}
           site={site}
           error={error ?? assistant.error}
+          recovery={recoveries.find((r) => r.siteId === active)}
           canLeave={view !== "onboarding" || sites.length > 0}
           onNav={(action: NavAction) => void ipc.nav(action).catch(failed)}
           onDismissError={() => {
@@ -483,6 +553,9 @@ export default function App() {
           onDismissDownload={() => setDownloadFeedback(null)}
           onDownloads={() => void showDownloads()}
           paused={palette}
+          onBookmark={
+            view === "site" && desktop ? () => void addBookmark() : undefined
+          }
           onQuickOpen={
             sites.length > 0
               ? () => (palette ? closePalette() : void openPalette())
@@ -492,6 +565,16 @@ export default function App() {
         <main className="content" aria-busy={!ready} data-view={view}>
           {ready && palette && (
             <QuickOpen sites={sites} onChoose={choose} onClose={closePalette} />
+          )}
+          {ready && view === "bookmarks" && (
+            <BookmarksView
+              key={bookmarkRevision}
+              items={bookmarks}
+              sites={sites}
+              initialDraft={bookmarkDraft}
+              onChanged={refreshBookmarks}
+              onOpen={(b) => void openBookmark(b)}
+            />
           )}
           {ready && view === "inbox" && (
             <Inbox

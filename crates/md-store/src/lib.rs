@@ -176,8 +176,10 @@ pub struct Activity {
     pub refreshed_at: i64,
 }
 mod assistant;
+mod bookmarks;
 mod offline;
 mod reminders;
+pub use bookmarks::Bookmark;
 pub use offline::OfflineCopy;
 pub use reminders::{DueReminder, PickError, ReminderPick, ReminderSettings};
 pub struct Store(Connection);
@@ -185,7 +187,7 @@ impl Store {
     pub fn open(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 11 {
+        if version > 12 {
             return Err(rusqlite::Error::InvalidQuery);
         }
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; BEGIN;
@@ -214,7 +216,8 @@ impl Store {
             CREATE TABLE IF NOT EXISTS reminder_ledger (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, user_id INTEGER NOT NULL, event_id INTEGER NOT NULL, due INTEGER NOT NULL, offset INTEGER NOT NULL, PRIMARY KEY(site_id,user_id,event_id,due,offset));
             CREATE TABLE IF NOT EXISTS autologin_state (site_id TEXT PRIMARY KEY REFERENCES sites(id) ON DELETE CASCADE, minted_at INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS reminder_picks (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, user_id INTEGER NOT NULL, event_id INTEGER NOT NULL, offset INTEGER NOT NULL, due INTEGER NOT NULL, name TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(site_id,event_id,offset));
-            PRAGMA user_version=11; COMMIT;",
+            CREATE TABLE IF NOT EXISTS bookmarks (id TEXT PRIMARY KEY, site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, user_id INTEGER NOT NULL, name TEXT NOT NULL, path TEXT NOT NULL, icon TEXT NOT NULL);
+            PRAGMA user_version=12; COMMIT;",
         )?;
         Ok(Self(connection))
     }
@@ -825,6 +828,7 @@ impl Store {
         let tx = self.0.unchecked_transaction()?;
         // A different account must start with a fresh, silent notification seed.
         for table in [
+            "bookmarks",
             "notifications",
             "notification_state",
             "downloads",

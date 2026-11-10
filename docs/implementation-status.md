@@ -192,3 +192,10 @@ Regression coverage is present for one-shot/generation cancellation, bounded del
 ## Assistant, reminders and session recovery — alpha.3, 10 November 2026
 
 Packages `c2361d1` session recovery and `4164d18` assistant, notification/reminder and tray improvements. Versions are aligned at `0.1.0-alpha.3`; release notes and the installation guide identify the new universal macOS DMG. Automated release checks pass (107 frontend / 104 Rust tests, lint/format/build, workspace Clippy and IPC guards). The installer remains ad-hoc signed, with manual upgrades; live/native acceptance remains open.
+
+
+## Local follow-up to alpha.3 — bookmarks and startup polish
+
+Implemented a single macOS Keychain vault with serialized startup reads, zeroizing secret values, atomic cache updates and a crash-resumable legacy migration/cleanup journal. Existing callers keep their site/provider APIs; Windows/Linux keep their original per-entry backend. Migration tests use synthetic stores and do not read user credentials. The first migration may still prompt for each old item; later startup consumers share one combined-item read.
+
+Added local account-bound bookmarks (SQLite schema 12): native page-title capture, editable names/eight icons, five sidebar shortcuts, native overflow menu, File/toolbar commands and an existing-style grouped manager. Bookmark paths are validated standard same-installation content routes, with authentication/action parameters excluded and account identity rechecked inside the serialized restore. Account replacement/removal clears bookmarks. Added the Moodle rate-limit retry status, ⌘K overlay with native sibling ordering, and wrapping course headers. WebKit fixture checks cover saved names/icons, minimum-width dark/high-contrast/reduced-motion layouts and long course titles. An isolated native smoke test verifies that shell/site ordering changes without hiding either view. Live Moodle and VoiceOver acceptance remain open. These changes are not part of the already-published alpha.3 installer.

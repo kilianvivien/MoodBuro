@@ -34,8 +34,8 @@ pub fn french(app: &AppHandle) -> bool {
     is_french(language)
 }
 /// Local shell views a menu, the tray or the shell itself may show instead of a Moodle view.
-/// `quick-open` is the ⌘L palette, which also needs the Moodle view out of the way.
-pub const LOCAL_VIEWS: [&str; 7] = [
+/// Quick Open overlays the current view and preserves the active account.
+pub const LOCAL_VIEWS: [&str; 8] = [
     "onboarding",
     "settings",
     "downloads",
@@ -43,9 +43,14 @@ pub const LOCAL_VIEWS: [&str; 7] = [
     "courses",
     "agenda",
     "quick-open",
+    "bookmarks",
 ];
 /// Hides the Moodle views and asks the shell to show one of its local views.
 pub fn show_local_view(app: &AppHandle, view: &str) {
+    if view == "quick-open" {
+        let _ = app.emit_to("shell", "shell://navigate", view);
+        return;
+    }
     let _ = crate::windows::hide_sites(app);
     if let Ok(mut active) = app.state::<crate::AppState>().active.lock() {
         *active = None;
@@ -91,7 +96,7 @@ pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<(
         .build(app)?;
     let quick_open =
         MenuItemBuilder::with_id("quick-open", text("Quick Open…", "Ouverture rapide…"))
-            .accelerator("CmdOrCtrl+L")
+            .accelerator("CmdOrCtrl+K")
             .build(app)?;
     let assistant = MenuItemBuilder::with_id("assistant", text("AI Assistant", "Assistant IA"))
         .accelerator("CmdOrCtrl+Shift+A")
@@ -122,10 +127,24 @@ pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<(
         .separator()
         .quit_with_text(text("Quit MoodBuro", "Quitter MoodBuro"))
         .build()?;
+    let bookmark = MenuItemBuilder::with_id(
+        "bookmark-add",
+        text("Bookmark This Page…", "Ajouter cette page aux signets…"),
+    )
+    .accelerator("CmdOrCtrl+D")
+    .build(app)?;
+    let manage_bookmarks = MenuItemBuilder::with_id(
+        "bookmarks",
+        text("Edit Bookmarks…", "Modifier les signets…"),
+    )
+    .build(app)?;
     let file = SubmenuBuilder::new(app, text("File", "Fichier"))
         .item(&add)
         .separator()
         .item(&save)
+        .separator()
+        .item(&bookmark)
+        .item(&manage_bookmarks)
         .separator()
         .close_window_with_text(text("Close Window", "Fermer la fenêtre"))
         .build()?;
@@ -182,8 +201,27 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
     app.on_menu_event(|app, event| {
         let id = event.id().as_ref();
         let view = if id == "add-site" { "onboarding" } else { id };
-        if LOCAL_VIEWS.contains(&view) {
+        if let Some(id) = id.strip_prefix("bookmark:") {
+            let app = app.clone();
+            let id = id.to_owned();
+            tauri::async_runtime::spawn(async move {
+                match crate::bookmarks::open(&app, &id).await {
+                    Ok(()) => {
+                        if let Ok(active) = app.state::<crate::AppState>().active.lock() {
+                            if let Some(id) = active.as_ref() {
+                                let _ = app.emit_to("shell", "navigation://site-opened", id);
+                            }
+                        }
+                    }
+                    Err(error) => {
+                        let _ = app.emit_to("shell", "shell://error", error);
+                    }
+                }
+            });
+        } else if LOCAL_VIEWS.contains(&view) {
             show_local_view(app, view);
+        } else if id == "bookmark-add" {
+            let _ = app.emit_to("shell", "bookmarks://add", ());
         } else if id == "assistant" {
             // Not a local view: the panel sits beside the Moodle view, which stays visible.
             let _ = app.emit_to("shell", "assistant://toggle", ());

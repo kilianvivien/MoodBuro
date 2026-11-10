@@ -80,7 +80,7 @@ pub fn create_shell(app: &AppHandle) -> tauri::Result<()> {
     window.set_background_color(Some(backing))?;
     window.add_child(
         WebviewBuilder::new("shell", WebviewUrl::App("index.html".into()))
-            .background_color(backing)
+            .background_color(tauri::window::Color(0, 0, 0, 0))
             .auto_resize(),
         LogicalPosition::new(0., 0.),
         window
@@ -602,6 +602,27 @@ pub async fn history_state(view: &tauri::Webview, base: url::Url) -> Result<(boo
         let _ = (view, base);
         Ok((true, true))
     }
+}
+
+/// Raise the trusted shell over sibling Moodle views without unloading/hiding them.
+/// CSS makes only the content area transparent while the palette is open.
+pub fn quick_open(app: &AppHandle, open: bool) -> Result<(), String> {
+    let label = if open {
+        Some("shell".to_owned())
+    } else {
+        app.state::<AppState>()
+            .active
+            .lock()
+            .map_err(|_| "Site state unavailable.")?
+            .as_ref()
+            .map(|id| format!("site-{id}"))
+    };
+    if let Some(view) = label.and_then(|label| app.get_webview(&label)) {
+        #[cfg(target_os = "macos")]
+        crate::native_overlay::raise(&view).map_err(|_| "Could not show Quick Open.")?;
+        view.set_focus().map_err(|_| "Could not focus the view.")?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]

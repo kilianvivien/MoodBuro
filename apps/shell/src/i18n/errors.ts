@@ -8,6 +8,20 @@ import { catalogues, type Messages } from "./messages";
  * exact text. Keep this list in step with the Rust messages.
  */
 const french: Record<string, string> = {
+  "This page cannot be bookmarked. Open a Moodle course, activity or other standard content page.":
+    "Cette page ne peut pas être ajoutée aux signets. Ouvrez un cours, une activité ou une autre page de contenu Moodle standard.",
+  "Invalid bookmark.": "Signet non valide.",
+  "This account has changed. Open the page again.":
+    "Ce compte a changé. Ouvrez à nouveau la page.",
+  "Give the bookmark a name.": "Donnez un nom au signet.",
+  "Bookmark limit reached.": "La limite de signets est atteinte.",
+  "Could not read bookmarks.": "Impossible de lire les signets.",
+  "Could not save bookmark.": "Impossible d’enregistrer le signet.",
+  "Could not remove bookmark.": "Impossible de supprimer le signet.",
+  "Bookmark unavailable.": "Ce signet n’est plus disponible.",
+  "Could not show bookmarks.": "Impossible d’afficher les signets.",
+  "Could not show Quick Open.": "Impossible d’afficher l’ouverture rapide.",
+  "Could not focus the view.": "Impossible de sélectionner la vue.",
   // AI assistant (src-tauri/src/assistant.rs, md-assistant::Error)
   "The AI provider rejected this API key. Check the key in Settings.":
     "Le fournisseur d’IA a refusé cette clé d’API. Vérifiez la clé dans les Réglages.",
