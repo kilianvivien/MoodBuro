@@ -1,4 +1,4 @@
-name: Package macOS Alpha
+name: Package macOS
 on:
   workflow_dispatch:
 permissions:

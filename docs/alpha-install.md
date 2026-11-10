@@ -1,18 +1,18 @@
-# Install MoodBuro Alpha
+# Install MoodBuro
 
 ## Download and install
 
-1. Download `MoodBuro_0.1.0-alpha.3_universal.dmg` and `SHA256SUMS.txt` from the private [GitHub prerelease](https://github.com/kilianvivien/MoodBuro/releases/tag/v0.1.0-alpha.3). You need repository access. The universal installer contains both Apple Silicon and Intel binaries. The configured minimum is macOS 12; compatibility across supported OS versions still needs qualification.
+1. Download `MoodBuro_0.1.0_universal.dmg` and `SHA256SUMS.txt` from the [GitHub release](https://github.com/kilianvivien/MoodBuro/releases/tag/v0.1.0). You need repository access. The universal installer contains both Apple Silicon and Intel binaries. The configured minimum is macOS 12; compatibility across supported OS versions still needs qualification.
 2. In Terminal, change to the directory containing both downloads and run `shasum -a 256 -c SHA256SUMS.txt`. The DMG must report `OK` before you open it.
 3. Open the DMG and drag MoodBuro into Applications. Eject the DMG and launch MoodBuro from Applications.
-4. This alpha is ad-hoc signed, **not Developer ID signed or notarized**. If macOS blocks it, follow [Apple's instructions](https://support.apple.com/en-us/102445): after attempting to open the app, go to System Settings → Privacy & Security → Open Anyway, then confirm. Older macOS versions use System Preferences → Security & Privacy. Managed Macs may require administrator approval. Do not disable Gatekeeper globally.
-5. Enter your organisation's Moodle URL and sign in in its own login window. Test with an account appropriate for early Alpha software.
+4. This release is ad-hoc signed, **not Developer ID signed or notarized**. If macOS blocks it, follow [Apple's instructions](https://support.apple.com/en-us/102445): after attempting to open the app, go to System Settings → Privacy & Security → Open Anyway, then confirm. Older macOS versions use System Preferences → Security & Privacy. Managed Macs may require administrator approval. Do not disable Gatekeeper globally.
+5. Enter your organisation's Moodle URL and sign in in its own login window. Test with an account appropriate for initial deployment testing.
 
 ## Upgrades and removal
 
 Quit MoodBuro before replacing it in Applications. Closing the window only hides it and keeps notification polling active; use MoodBuro → Quit. There is no automatic updater in this release: download subsequent DMGs manually. Ad-hoc signing does not provide a stable publisher identity, so Keychain may ask for permission again after an upgrade.
 
-In builds after alpha.3, macOS credentials share one Keychain item and one in-memory read per process. The first launch migrates the old items and can still ask for each old item; subsequent launches use the combined item. Migration writes the combined item before deleting old entries and retries interrupted cleanup. Ad-hoc signing may still require access approval after updates.
+Starting with 0.1.0, macOS credentials share one Keychain item and one in-memory read per process. The first launch migrates the old items and can still ask for each old item; subsequent launches use the combined item. Migration writes the combined item before deleting old entries and retries interrupted cleanup. Ad-hoc signing may still require access approval after updates.
 
 Removing an organisation in Settings clears its app-managed credentials and metadata; downloaded/offline files remain. Legacy shared WebKit/SSO data on older macOS may remain, as documented in the authentication review. Deleting the app alone does not remove all application data or Keychain items.
 
@@ -20,9 +20,9 @@ Removing an organisation in Settings clears its app-managed credentials and meta
 
 The AI Assistant is optional and uses your own Albert API or Mistral AI key. Configure it in Settings. Moodle sharing defaults off and requires consent plus an explicit context attachment. Keys stay in the OS credential store; conversations stay in memory and are deleted on quit. Provider usage may incur charges or quota limits. See [assistant scope and qualification](assistant-qa.md).
 
-## Alpha limits and bug reports
+## Qualification and bug reports
 
-This is an early tester prerelease, not a fully qualified production release. Automated tests do not establish live SSO compatibility, Notification Center delivery, clean-install behavior, Intel runtime behavior, native accessibility or live provider support. Read the feature QA documents linked from [implementation status](implementation-status.md).
+Version 0.1.0 is published as a regular GitHub release. Live/platform qualification remains incomplete. Automated tests do not establish live SSO compatibility, Notification Center delivery, clean-install behavior, Intel runtime behavior, native accessibility or live provider support. Read the feature QA documents linked from [implementation status](implementation-status.md).
 
 Report the app version, macOS version, processor, Moodle version if known, exact reproduction steps and expected/actual result. Remove Moodle tokens, API keys, personal information and sensitive screenshots from reports. Do not post credentials or sign-in callback URLs.
 

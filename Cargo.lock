@@ -2314,7 +2314,7 @@ dependencies = [
 
 [[package]]
 name = "md-assistant"
-version = "0.1.0-alpha.3"
+version = "0.1.0"
 dependencies = [
  "reqwest 0.12.28",
  "serde",
@@ -2327,7 +2327,7 @@ dependencies = [
 
 [[package]]
 name = "md-moodle"
-version = "0.1.0-alpha.3"
+version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "md5",
@@ -2343,14 +2343,14 @@ dependencies = [
 
 [[package]]
 name = "md-notifier"
-version = "0.1.0-alpha.3"
+version = "0.1.0"
 dependencies = [
  "md-moodle",
 ]
 
 [[package]]
 name = "md-os"
-version = "0.1.0-alpha.3"
+version = "0.1.0"
 dependencies = [
  "libc",
  "sha2",
@@ -2358,7 +2358,7 @@ dependencies = [
 
 [[package]]
 name = "md-secrets"
-version = "0.1.0-alpha.3"
+version = "0.1.0"
 dependencies = [
  "keyring",
  "serde",
@@ -2368,7 +2368,7 @@ dependencies = [
 
 [[package]]
 name = "md-store"
-version = "0.1.0-alpha.3"
+version = "0.1.0"
 dependencies = [
  "rusqlite",
  "serde",
@@ -2434,7 +2434,7 @@ dependencies = [
 
 [[package]]
 name = "moodburo"
-version = "0.1.0-alpha.3"
+version = "0.1.0"
 dependencies = [
  "block2",
  "chrono",

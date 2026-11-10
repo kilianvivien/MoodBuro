@@ -5,7 +5,7 @@
 <p align="center"><strong>Votre Moodle, à sa place sur votre Mac.</strong><br/>Une application de bureau légère pour retrouver le Moodle de votre organisation.</p>
 <p align="center">
   <a href="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml"><img src="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
-  <img src="https://img.shields.io/badge/statut-alpha_en_d%C3%A9veloppement-blue" alt="Alpha en développement" />
+  <img src="https://img.shields.io/badge/version-0.1.0-blue" alt="Version 0.1.0" />
   <img src="https://img.shields.io/badge/Tauri-2-24c8db" alt="Tauri 2" />
   <img src="https://img.shields.io/badge/interface-FR%20%2F%20EN-007aff" alt="Interface français et anglais" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-green" alt="Licence MIT" /></a>
@@ -14,7 +14,7 @@
 
 MoodBuro affiche **le vrai site Moodle** dans une application macOS, avec une interface discrète autour de vos cours. Vous renseignez l’adresse Moodle de votre organisation, puis vous vous connectez sur sa propre page. L’application ne dessine jamais de formulaire de mot de passe.
 
-> **Alpha de test :** téléchargez la [dernière préversion](https://github.com/kilianvivien/MoodBuro/releases) et suivez le [guide d’installation](docs/alpha-install.md). Le DMG universel utilise une signature ad hoc et n’est pas notarié. Les vérifications réelles et de compatibilité restent ouvertes.
+> **MoodBuro 0.1.0 :** téléchargez la [dernière version](https://github.com/kilianvivien/MoodBuro/releases/latest) et suivez le [guide d’installation](docs/alpha-install.md). Le DMG universel utilise une signature ad hoc et n’est pas notarié. Les vérifications réelles et de compatibilité restent ouvertes.
 
 Assistant IA facultatif dans un panneau latéral, avec Albert API ou Mistral AI et votre propre clé : partage explicite du contexte Moodle, sources et confirmation avant de marquer une notification comme lue. Les conversations restent en mémoire jusqu’à la fermeture de l’application. La qualification réelle et native reste ouverte ; voir le [périmètre et les vérifications](docs/assistant-qa.md).
 
