@@ -5,7 +5,7 @@
 
 MoodBuro hosts the **real Moodle site** in a macOS-first Tauri application. Enter your organisation’s base URL and sign in on its own page. MoodBuro never draws a password form.
 
-> **Early Alpha development.** Automated tests and local builds pass, but real SSO and the platform/version matrix remain unverified. No signed, notarized installer is published yet.
+> **Tester Alpha.** Download the [latest prerelease](https://github.com/kilianvivien/MoodBuro/releases) and follow the [installation guide](docs/alpha-install.md). The universal DMG is ad-hoc signed, not notarized. Live/platform qualification remains open.
 
 ## Current features
 

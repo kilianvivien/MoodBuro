@@ -14,7 +14,7 @@
 
 MoodBuro affiche **le vrai site Moodle** dans une application macOS, avec une interface discrète autour de vos cours. Vous renseignez l’adresse Moodle de votre organisation, puis vous vous connectez sur sa propre page. L’application ne dessine jamais de formulaire de mot de passe.
 
-> **État du projet :** premières phases de l’Alpha. L’application se compile et dispose de tests automatisés, mais la connexion SSO réelle et la matrice de compatibilité ne sont pas encore validées. Aucun installateur signé ou notarié n’est publié pour le moment.
+> **Alpha de test :** téléchargez la [dernière préversion](https://github.com/kilianvivien/MoodBuro/releases) et suivez le [guide d’installation](docs/alpha-install.md). Le DMG universel utilise une signature ad hoc et n’est pas notarié. Les vérifications réelles et de compatibilité restent ouvertes.
 
 Assistant IA facultatif dans un panneau latéral, avec Albert API ou Mistral AI et votre propre clé : partage explicite du contexte Moodle, sources et confirmation avant de marquer une notification comme lue. Les conversations restent en mémoire jusqu’à la fermeture de l’application. La qualification réelle et native reste ouverte ; voir le [périmètre et les vérifications](docs/assistant-qa.md).
 

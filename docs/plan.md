@@ -14,7 +14,7 @@ This is the working checklist for project advancement. The [PRD](prd.md) defines
 | M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, course download routing and installed-app validation |
 | Expanded Alpha features — A1–A5 | A1–A5 feature slices, including opt-in A4 reminders, implemented against fixtures | Live/native validation of the built parts; offline-file/reminder qualification and native Calendar import qualification |
 | A6 — AI assistant | Implemented against provider/Moodle fixtures | Live BYOK/model qualification, native geometry, keyboard/VoiceOver and adversarial account/tool checks |
-| First tester Alpha | Not ready for distribution | All Alpha exit criteria, universal packaging and private distribution setup |
+| First tester Alpha | v0.1.0-alpha.1 tester prerelease; universal DMG packaging | Combined live/native qualification, stable signing identity and automatic updater remain open |
 
 The INSP dashboard has been observed authenticated in the app. This is a successful real-site observation; it does not close the complete SSO, session-restoration or security test matrix.
 
@@ -158,11 +158,12 @@ Added on 10 November 2026. Plan an optional AI assistant beside the Moodle view,
 ### 6. Prepare the tester Alpha
 
 - [ ] Configure a stable self-signed Alpha identity, updater signing keys and private HTTPS hosting with the product owner.
-- [ ] Implement the universal Apple Silicon/Intel DMG release workflow and verify architectures/signatures/checksums.
+- [x] Implement universal Apple Silicon/Intel DMG packaging and verify architectures/signatures/checksums; [manual Actions workflow](../.github/workflows/package-macos.yml).
+- [ ] Qualify clean-machine installation and run the universal build on Intel and the supported macOS matrix.
 - [ ] Implement the signed Alpha updater channel and test an actual update between builds.
 - [ ] Add rotating/redacted diagnostic logging and configure Rust advisory auditing.
 - [ ] Review and resolve outstanding dependency alerts, then enforce the agreed audit checks in CI.
-- [ ] Write and verify the Gatekeeper installation/tester guide.
+- [x] Write the [Gatekeeper installation/tester guide](alpha-install.md); clean-Mac verification remains open.
 - [ ] Run the full QA matrix, security checks, accessibility pass and bug bash.
 - [ ] Review every exit criterion in the original Alpha plan; resolve P0s before releasing `0.1.0-alpha.1` to internal testers.
 
@@ -269,3 +270,8 @@ Local native output: `target/debug/bundle/macos/MoodBuro.app` built with the new
 - Schema 9 adds account-bound preferences, event observation facts and claim history. Claim precedes delivery, so crashes/errors can lose an attempt but cannot replay it on restart. Five individual notifications plus a summary bound each check; reminder clicks open the local Agenda. Account removal/replacement clears scheduling metadata.
 - Automated evidence: 92 UI tests, 73 Rust tests, frontend build/lint/format, workspace Clippy/format and IPC capability checks. [Native/live reminder qualification](reminders-qa.md) remains unchecked. No claim is made about notification display, delivery while quit or complete Moodle submission status.
 - Next implementation phase: A6 Albert/Mistral BYOK assistant. A1–A5 still require the existing combined live/native/security qualification before release.
+
+
+## First tester prerelease — 10 November 2026
+
+At the product owner's request, package the implemented A1–A6 slices as `v0.1.0-alpha.1` for early testing in the existing private GitHub repository. Versions are aligned across Cargo, the shell and Tauri. The universal DMG is ad-hoc signed and has a SHA-256 download checksum; Developer ID/notarization, a stable Alpha identity, automatic updates and combined live/native qualification remain open. See [installation](alpha-install.md) and [release notes](releases/v0.1.0-alpha.1.md). The manual macOS packaging workflow saves verified universal installers as Actions artifacts. Publishing this tester prerelease does not mark the full Alpha acceptance matrix complete.

@@ -1,0 +1,45 @@
+name: Package macOS Alpha
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  universal-dmg:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.91.1
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+          components: rustfmt,clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint && pnpm format:check && pnpm test
+      - run: cargo fmt --all --check && cargo test --workspace --locked
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - run: python3 scripts/check-security.py
+      - run: pnpm tauri build --ci --target universal-apple-darwin --bundles app,dmg --config src-tauri/tauri.alpha.conf.json
+      - name: Verify and collect installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle=target/universal-apple-darwin/release/bundle
+          codesign --verify --deep --strict "$bundle/macos/MoodBuro.app"
+          archs=$(lipo -archs "$bundle/macos/MoodBuro.app/Contents/MacOS/moodburo")
+          [[ " $archs " == *" arm64 "* && " $archs " == *" x86_64 "* ]]
+          mkdir -p artifacts
+          cp "$bundle"/dmg/*.dmg artifacts/
+          for installer in artifacts/*.dmg; do hdiutil verify "$installer"; done
+          cd artifacts
+          shasum -a 256 ./*.dmg > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MoodBuro-macos-universal
+          path: artifacts/
+          if-no-files-found: error
