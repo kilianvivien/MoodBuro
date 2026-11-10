@@ -17,8 +17,11 @@ export const providers: readonly AssistantProvider[] = ["albert", "mistral"];
  */
 export function withoutMarkers(text: string) {
   return text
-    .replace(/ ?\[(?:course|activity|deadline|notification):\s*\d+\]/gu, "")
-    .replace(/ ?\[(?:c|a|d|n)[a-z]*(?::\s*\d*)?$/u, "");
+    .replace(
+      / ?\[(?:course|activity|deadline|notification|file):\s*\d+\]/gu,
+      "",
+    )
+    .replace(/ ?\[(?:c|a|d|n|f)[a-z]*(?::\s*\d*)?$/u, "");
 }
 
 /** The context pop-up's value: nothing, the organisation, or one of its courses. */
@@ -27,6 +30,19 @@ export function contextFrom(choice: ContextChoice) {
   if (choice === "none") return null;
   if (choice === "site") return { kind: "site" as const, courseId: null };
   return { kind: "course" as const, courseId: Number(choice.slice(7)) };
+}
+
+/** "1.4 MB" / "1,4 Mo": a size for a confirmation, in the reader's language. */
+export function fileSize(locale: Locale, bytes: number) {
+  const [unit, value] =
+    bytes >= 1_000_000
+      ? (["megabyte", bytes / 1_000_000] as const)
+      : (["kilobyte", Math.max(1, bytes / 1000)] as const);
+  return new Intl.NumberFormat(locale, {
+    style: "unit",
+    unit,
+    maximumFractionDigits: value < 10 ? 1 : 0,
+  }).format(value);
 }
 
 /** One line saying what the assistant looked up or did, and how fresh it was. */
@@ -41,6 +57,7 @@ export function noteText(
     case "courses":
     case "activities":
     case "agenda":
+    case "files":
     case "notifications": {
       const detail = note.stale
         ? t.stale
@@ -58,6 +75,20 @@ export function noteText(
       return t.openedNotifications;
     case "opened-calendar":
       return t.openedCalendar;
+    case "saved":
+      return t.saved(label);
+    case "save-failed":
+      return t.saveFailed(label);
+    case "save-declined":
+      return t.saveDeclined(label);
+    case "reminder-day":
+      return t.reminderDay(label);
+    case "reminder-hour":
+      return t.reminderHour(label);
+    case "reminder-failed":
+      return t.reminderFailed(label);
+    case "reminder-declined":
+      return t.reminderDeclined(label);
     case "marked":
       return t.marked(label);
     case "declined":

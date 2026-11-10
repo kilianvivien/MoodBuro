@@ -39,6 +39,55 @@ pub fn set(app: &AppHandle, site: &str, user: i64, hour: bool, day: bool) -> Res
     changed(app);
     Ok(())
 }
+/// One-off reminders on single deadlines, soonest first.
+pub fn picks(app: &AppHandle) -> Result<Vec<md_store::ReminderPick>, String> {
+    app.state::<AppState>()
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?
+        .reminder_picks()
+        .map_err(|_| "Could not read reminder settings.".into())
+}
+/// Adds or removes a one-off reminder `offset` seconds before one cached deadline.
+pub fn pick(
+    app: &AppHandle,
+    site: &str,
+    user: i64,
+    event: i64,
+    offset: i64,
+    on: bool,
+) -> Result<(), String> {
+    {
+        let state = app.state::<AppState>();
+        let store = state
+            .store
+            .lock()
+            .map_err(|_| "Site storage unavailable.")?;
+        if on {
+            store
+                .add_reminder_pick(site, user, event, offset, now())
+                .map_err(|error| match error {
+                    md_store::PickError::Passed => {
+                        "It is too late to be reminded of this deadline at that time."
+                    }
+                    md_store::PickError::Event => {
+                        "This deadline is not available for reminders. Refresh the agenda."
+                    }
+                    _ => "Could not save the reminder. Reopen the agenda for the current account.",
+                })?;
+        } else {
+            store
+                .remove_reminder_pick(site, user, event, offset)
+                .map_err(|_| {
+                    "Could not save the reminder. Reopen the agenda for the current account."
+                })?;
+        }
+    }
+    // A reminder only fires from an agenda refreshed after it was asked for.
+    wake(app);
+    changed(app);
+    Ok(())
+}
 pub fn install(app: &AppHandle) {
     app.manage(Signals::default());
     let handle = app.clone();
@@ -64,25 +113,33 @@ pub fn install(app: &AppHandle) {
     let signal = app.state::<Signals>().refresh.clone();
     tauri::async_runtime::spawn(async move {
         loop {
-            for settings in list(&handle)
+            let mut accounts: Vec<(String, i64)> = list(&handle)
                 .unwrap_or_default()
                 .into_iter()
                 .filter(|s| s.hour || s.day)
-            {
-                let error = crate::library::refresh_agenda_for_user(
-                    &handle,
-                    &settings.site_id,
-                    Some(settings.user_id),
-                )
-                .await
-                .err();
+                .map(|s| (s.site_id, s.user_id))
+                .collect();
+            // One-off reminders need a fresh agenda too, even with the setting off.
+            let picked = handle
+                .state::<AppState>()
+                .store
+                .lock()
+                .ok()
+                .and_then(|store| store.reminder_pick_accounts().ok())
+                .unwrap_or_default();
+            for account in picked {
+                if !accounts.contains(&account) {
+                    accounts.push(account);
+                }
+            }
+            for (site_id, user_id) in accounts {
+                let error =
+                    crate::library::refresh_agenda_for_user(&handle, &site_id, Some(user_id))
+                        .await
+                        .err();
                 let state = handle.state::<AppState>();
                 if let Ok(store) = state.store.lock() {
-                    let _ = store.reminder_refresh_result(
-                        &settings.site_id,
-                        settings.user_id,
-                        error.as_deref(),
-                    );
+                    let _ = store.reminder_refresh_result(&site_id, user_id, error.as_deref());
                 }
                 changed(&handle);
             }
@@ -99,9 +156,15 @@ fn deliver(app: &AppHandle, last: i64, now: i64, fresh_after: i64) {
     let Ok(store) = state.store.lock() else {
         return;
     };
-    let Ok(items) = store.claim_reminders(last, now, fresh_after) else {
+    let Ok(mut items) = store.claim_reminders(last, now, fresh_after) else {
         return;
     };
+    // After the organisation-wide claim, so a deadline both cover is announced once.
+    items.extend(
+        store
+            .claim_reminder_picks(last, now, fresh_after)
+            .unwrap_or_default(),
+    );
     if items.is_empty() {
         return;
     }

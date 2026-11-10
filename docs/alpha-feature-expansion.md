@@ -2,7 +2,7 @@
 
 Decision: 9 November 2026, at the product owner's request to bring more user-facing features into the Alpha.
 
-These are **planned implementation targets, not delivered features**. This amendment replaces the original Alpha's exclusion of all offline files, calendar features and quick-open. It promotes bounded slices of the PRD's later work; it does not bring every part of those requirements forward. The [working tracker](plan.md) owns completion, the [implementation status](implementation-status.md) owns evidence, and the [PRD](prd.md) retains the full v1.0 requirements.
+This is the historical scope amendment. **As of 10 November 2026, the bounded A1–A6 implementations have landed with fixture coverage; combined live/native acceptance remains open.** This amendment replaces the original Alpha's exclusion of all offline files, calendar features and quick-open. It promotes bounded slices of the PRD's later work; it does not bring every part of those requirements forward. The [working tracker](plan.md) owns completion, the [implementation status](implementation-status.md) owns evidence, and the [PRD](prd.md) retains the full v1.0 requirements.
 
 The original six-week schedule was for the smaller core-shell scope. It is now a historical estimate, not a commitment for this expanded Alpha. Estimate each slice after its API/UX spike; no new release date is promised here. The original sign-in, security, platform and packaging gates remain required.
 
@@ -27,14 +27,14 @@ Pins are a small addition to the course browser, stored locally per account. The
 4. **A3:** add explicit offline file selection and manual refresh on top of the course index and safe file-publication rules.
 5. **A4:** add the upcoming agenda and opt-in reminders, independently of file transfers.
 6. **A5:** export the agenda locally as ICS; this depends on A4's normalized event model, not on a server calendar-export token.
-7. **A6:** implement the AI chat side panel last, with the provider, context-sharing and bounded-tool acceptance gate in the [working plan](plan.md#5-ai-chat-side-panel--final-alpha-feature-a6).
+7. **A6:** implement the AI chat side panel last, with the provider, context-sharing and bounded-tool acceptance gate in the [working plan](plan.md#q3--combined-expanded-feature-acceptance-a1a6).
 8. Run the combined feature/security/platform matrix and package the expanded Alpha. Account-dependent checks, signing identity, updater keys and hosting are separate tasks; unavailable intervention must not block unrelated implementation or be recorded as a passed gate.
 
 A completed slice should produce a reviewable local build and its relevant evidence. These slices are the target feature set for the expanded Alpha. If a slice cannot meet its acceptance criteria, record an explicit scope decision in the tracker rather than silently dropping it or marking the full PRD requirement complete.
 
-## Progress — 9 November 2026
+## Progress — reconciled 10 November 2026
 
-First implementation pass over A1, A2 and the read-only half of A4, against synthetic fixtures only. Checked boxes below mean "built and covered by automated tests"; none of the **Acceptance** paragraphs is met yet, because each needs a real account, an installed build or the 4.5/5.3 rigs. Items with an italic note are partly built. A3 was implemented on 10 November against fixtures; its native/live acceptance remains open. A4's local reminders were implemented on 10 November against fixtures; native/live qualification remains open. A5 was implemented on 10 November against fixtures; native import remains open.
+A1–A6 are implemented in their bounded forms. Checked boxes below mean built with recorded automated verification, not live/native acceptance. The **Acceptance** paragraphs remain qualification targets; the [current tracker](plan.md) owns the remaining gates and proposed beta sequence. A6 implementation and qualification details are in [implementation status](implementation-status.md#a6-ai-assistant--10-november-2026) and [assistant QA](assistant-qa.md).
 
 ## A1 — Notification inbox and download controls
 

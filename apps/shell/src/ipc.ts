@@ -207,17 +207,28 @@ export interface AssistantStatus {
 }
 /** A Moodle item an answer relied on; opened through `openPage`. */
 export interface AssistantSource {
-  kind: "course" | "activity" | "deadline" | "notification";
+  kind: "course" | "activity" | "deadline" | "notification" | "file";
   id: number;
   page: MoodlePage;
   value: number | null;
   label: string;
+  /** A course file: its course and resource key, to find the copy saved on this Mac. */
+  course?: number;
+  key?: string;
 }
 export type AssistantNoteCode =
   | "courses"
   | "activities"
   | "agenda"
   | "notifications"
+  | "files"
+  | "saved"
+  | "save-failed"
+  | "save-declined"
+  | "reminder-day"
+  | "reminder-hour"
+  | "reminder-failed"
+  | "reminder-declined"
   | "opened"
   | "opened-notifications"
   | "opened-calendar"
@@ -258,13 +269,32 @@ export interface AssistantPrompt {
   retry: boolean;
 }
 export type AssistantStep =
-  "courses" | "activities" | "agenda" | "notifications" | "open" | "confirm";
-/** A write the model asked for, described by Rust from the saved notification. */
+  | "courses"
+  | "activities"
+  | "agenda"
+  | "notifications"
+  | "files"
+  | "open"
+  | "save"
+  | "confirm";
+/** An action the model asked for, described by Rust from this account's saved data. */
 export interface AssistantConfirmation {
   request: string;
   id: string;
+  kind: "mark-read" | "save-file" | "reminder";
   site: string;
   subject: string;
+  /** `day` or `hour` for a reminder; a size in bytes for a file. */
+  detail: string | null;
+}
+/** A one-off reminder on a single deadline. */
+export interface ReminderPick {
+  siteId: string;
+  eventId: number;
+  /** Seconds before the deadline. */
+  offset: 3600 | 86400;
+  due: number;
+  name: string;
 }
 export const ASSISTANT_WIDTH = { min: 280, max: 520, initial: 340 } as const;
 
@@ -508,6 +538,7 @@ const assistantWidth = (width: number) =>
     : ASSISTANT_WIDTH.initial;
 
 const demoReminders = new Map<string, ReminderSettings>();
+let demoPicks: ReminderPick[] = [];
 const demoOfflineCopies: OfflineCopy[] = [];
 const demoResources: OfflineResource[] = [
   {
@@ -631,7 +662,7 @@ export const ipc = {
       prompt.context && course
         ? {
             role: "assistant",
-            text: `Sample answer from the browser preview. Your next item is in ${course.name}.`,
+            text: `Sample answer from the browser preview. In **${course.name}** I can list:\n\n- Two feedback forms: "Tell us what you thought of the course" and a self-assessment quiz\n- A course sheet and a summary to download\n- Four content parts:\n  - Part 1: Public service ethics as a shared professional framework\n  - Part 2: Values under tension\n\nI cannot read the *contents* of pages or files, only their names.`,
             context: null,
             sources: [
               {
@@ -641,8 +672,32 @@ export const ipc = {
                 value: course.id,
                 label: course.name,
               },
+              ...[
+                "Tell us what you thought of the course – end-of-term survey",
+                "Course sheet",
+                "Part 1: Public service ethics as a shared professional framework",
+                "Part 2: Values under tension",
+              ].map((label, index) => ({
+                kind: "activity" as const,
+                id: 9000 + index,
+                page: "course" as const,
+                value: course.id,
+                label,
+              })),
+              {
+                kind: "file" as const,
+                id: 1,
+                page: "course" as const,
+                value: course.id,
+                label: "course-summary.pdf",
+                course: course.id,
+                key: "c".repeat(64),
+              },
             ],
-            notes: [{ code: "courses", label: null, age: 240, stale: false }],
+            notes: [
+              { code: "courses", label: null, age: 240, stale: false },
+              { code: "files", label: null, age: 0, stale: false },
+            ],
           }
         : {
             role: "assistant",
@@ -710,6 +765,58 @@ export const ipc = {
       deliveryFailed: false,
     });
   },
+  reminderPicks: (): Promise<ReminderPick[]> =>
+    desktop
+      ? invoke<ReminderPick[]>("reminders_picks")
+      : Promise.resolve(demo ? demoPicks.map((pick) => ({ ...pick })) : []),
+  /** Adds or removes a one-off reminder before one deadline. */
+  setReminderPick: async (
+    event: { siteId: string; id: number; timeStart: number; name: string },
+    userId: number,
+    offset: ReminderPick["offset"],
+    on: boolean,
+  ) => {
+    if (desktop)
+      return invoke<void>("reminders_pick", {
+        siteId: event.siteId,
+        userId,
+        eventId: event.id,
+        offset,
+        on,
+      });
+    if (!demo) return desktopFeature();
+    demoPicks = demoPicks.filter(
+      (pick) =>
+        pick.siteId !== event.siteId ||
+        pick.eventId !== event.id ||
+        pick.offset !== offset,
+    );
+    if (on)
+      demoPicks.push({
+        siteId: event.siteId,
+        eventId: event.id,
+        offset,
+        due: event.timeStart,
+        name: event.name,
+      });
+  },
+  /**
+   * A file source in an answer: Rust shows the copy saved on this Mac. Resolves
+   * false when nothing is saved, so the caller opens the activity in Moodle.
+   */
+  assistantOpenFile: (target: OfflineCourse, key: string): Promise<boolean> =>
+    desktop
+      ? invoke<boolean>("assistant_open_file", { target, key })
+      : Promise.resolve(false),
+  /** The course on screen in the organisation's Moodle view, if any. */
+  assistantCurrentCourse: (siteId: string): Promise<number | null> =>
+    desktop
+      ? invoke<number | null>("assistant_current_course", { siteId })
+      : Promise.resolve(
+          demo
+            ? (demoData.courses.find((c) => c.siteId === siteId)?.id ?? null)
+            : null,
+        ),
   offlineResources: (course: OfflineCourse) =>
     desktop
       ? invoke<{ items: OfflineResource[]; skipped: number }>(

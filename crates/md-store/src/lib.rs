@@ -179,13 +179,13 @@ mod assistant;
 mod offline;
 mod reminders;
 pub use offline::OfflineCopy;
-pub use reminders::{DueReminder, ReminderSettings};
+pub use reminders::{DueReminder, PickError, ReminderPick, ReminderSettings};
 pub struct Store(Connection);
 impl Store {
     pub fn open(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 10 {
+        if version > 11 {
             return Err(rusqlite::Error::InvalidQuery);
         }
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; BEGIN;
@@ -213,7 +213,8 @@ impl Store {
             CREATE TABLE IF NOT EXISTS reminder_events (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, event_id INTEGER NOT NULL, due INTEGER NOT NULL, eligible INTEGER NOT NULL, observed_at INTEGER NOT NULL, PRIMARY KEY(site_id,event_id));
             CREATE TABLE IF NOT EXISTS reminder_ledger (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, user_id INTEGER NOT NULL, event_id INTEGER NOT NULL, due INTEGER NOT NULL, offset INTEGER NOT NULL, PRIMARY KEY(site_id,user_id,event_id,due,offset));
             CREATE TABLE IF NOT EXISTS autologin_state (site_id TEXT PRIMARY KEY REFERENCES sites(id) ON DELETE CASCADE, minted_at INTEGER NOT NULL);
-            PRAGMA user_version=10; COMMIT;",
+            CREATE TABLE IF NOT EXISTS reminder_picks (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, user_id INTEGER NOT NULL, event_id INTEGER NOT NULL, offset INTEGER NOT NULL, due INTEGER NOT NULL, name TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(site_id,event_id,offset));
+            PRAGMA user_version=11; COMMIT;",
         )?;
         Ok(Self(connection))
     }
@@ -834,6 +835,7 @@ impl Store {
             "reminder_settings",
             "reminder_events",
             "reminder_ledger",
+            "reminder_picks",
             "course_pins",
             "events",
             "sync_state",

@@ -112,6 +112,64 @@ fn activity_url(base: &url::Url, module: &str, id: i64) -> Result<url::Url, Stri
     base.join(&format!("mod/{module}/view.php?id={id}"))
         .map_err(|_| "Invalid activity metadata.".into())
 }
+/// The course a Moodle page belongs to, when it is a course page or an activity of a
+/// cached course. Only an id from this account's own course list is ever returned.
+pub fn course_on_page(
+    base: &url::Url,
+    page: &url::Url,
+    courses: &[i64],
+    activities: &[(i64, i64)],
+) -> Option<i64> {
+    if page.origin() != base.origin() {
+        return None;
+    }
+    let path = page.path().strip_prefix(base.path())?;
+    let id: i64 = page
+        .query_pairs()
+        .find(|(name, _)| name == "id")
+        .and_then(|(_, value)| value.parse().ok())?;
+    let course = if path == "course/view.php" {
+        id
+    } else {
+        let module = path.strip_prefix("mod/")?.strip_suffix("/view.php")?;
+        if module.is_empty() || module.contains('/') {
+            return None;
+        }
+        activities.iter().find(|(activity, _)| *activity == id)?.1
+    };
+    courses.contains(&course).then_some(course)
+}
+/// The course shown in the organisation's Moodle view right now, if any.
+pub fn current_course(app: &AppHandle, id: &str) -> Result<Option<i64>, String> {
+    let saved = site(app, id)?;
+    let Some(view) = app.get_webview(&format!("site-{id}")) else {
+        return Ok(None);
+    };
+    let Ok(page) = view.url() else {
+        return Ok(None);
+    };
+    let base = normalize_site(&saved.wwwroot).map_err(|e| e.to_string())?;
+    let state = app.state::<AppState>();
+    let store = state
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?;
+    let courses: Vec<i64> = store
+        .courses()
+        .map_err(|_| "Could not read the course list.")?
+        .into_iter()
+        .filter(|c| c.site_id == id)
+        .map(|c| c.id)
+        .collect();
+    let activities: Vec<(i64, i64)> = store
+        .activities()
+        .map_err(|_| "Could not read course activities.")?
+        .into_iter()
+        .filter(|a| a.site_id == id)
+        .map(|a| (a.id, a.course_id))
+        .collect();
+    Ok(course_on_page(&base, &page, &courses, &activities))
+}
 pub fn activities(app: &AppHandle) -> Result<Vec<md_store::Activity>, String> {
     app.state::<AppState>()
         .store
@@ -359,6 +417,49 @@ pub async fn refresh_contexts(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn the_course_on_screen_comes_only_from_this_accounts_lists() {
+        let base = normalize_site("https://example.org/campus/").unwrap();
+        let on = |page: &str| {
+            course_on_page(
+                &base,
+                &url::Url::parse(page).unwrap(),
+                &[5, 6],
+                &[(42, 6), (43, 9)],
+            )
+        };
+        assert_eq!(
+            on("https://example.org/campus/course/view.php?id=5"),
+            Some(5)
+        );
+        assert_eq!(
+            on("https://example.org/campus/course/view.php?id=5&section=2#x"),
+            Some(5)
+        );
+        assert_eq!(
+            on("https://example.org/campus/mod/quiz/view.php?id=42"),
+            Some(6)
+        );
+        // Unknown course, activity of an unlisted course, other pages, other origins.
+        assert_eq!(on("https://example.org/campus/course/view.php?id=7"), None);
+        assert_eq!(
+            on("https://example.org/campus/mod/quiz/view.php?id=43"),
+            None
+        );
+        assert_eq!(
+            on("https://example.org/campus/mod/quiz/view.php?id=99"),
+            None
+        );
+        assert_eq!(on("https://example.org/campus/my/"), None);
+        assert_eq!(on("https://example.org/campus/user/view.php?id=5"), None);
+        assert_eq!(
+            on("https://example.org/campus/mod/a/b/view.php?id=42"),
+            None
+        );
+        assert_eq!(on("https://example.org/other/course/view.php?id=5"), None);
+        assert_eq!(on("https://evil.example/campus/course/view.php?id=5"), None);
+        assert_eq!(on("https://example.org/campus/course/view.php?id=x"), None);
+    }
     #[test]
     fn activity_paths_are_built_from_identifiers_only() {
         let base = normalize_site("https://example.org/campus/").unwrap();

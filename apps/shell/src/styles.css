@@ -244,7 +244,7 @@
 /* macOS desktop app: one unified titlebar + toolbar under the traffic lights. */
 .desktop {
   --toolbar-height: 52px;
-  --traffic-inset: 78px;
+  --traffic-inset: 88px;
 }
 .desktop.fullscreen {
   --traffic-inset: 0px;
@@ -627,6 +627,14 @@ ol {
   color: #fff;
   box-shadow: 0 0.5px 1px rgb(0 0 0 / 0.15);
 }
+.button.destructive:hover:not(:disabled) {
+  background:
+    linear-gradient(rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.08)),
+    var(--red);
+}
+.button.destructive:active:not(:disabled) {
+  background: linear-gradient(rgb(0 0 0 / 0.12), rgb(0 0 0 / 0.12)), var(--red);
+}
 .button.destructive:disabled {
   opacity: 0.6;
 }
@@ -652,7 +660,8 @@ ol {
 .button[aria-pressed="true"] {
   color: var(--accent);
 }
-.pin-toggle {
+.pin-toggle,
+.remind-toggle {
   color: var(--label-3);
 }
 .pin-toggle svg {
@@ -1587,8 +1596,25 @@ ol {
   inset: var(--toolbar-height) 0 0 auto;
   width: var(--assistant-panel);
   display: flex;
-  background: var(--sidebar);
+  background: var(--window);
   box-shadow: inset 1px 0 0 var(--separator);
+  animation: fade-in var(--medium) var(--ease-out) both;
+}
+/* The room is already made (or not yet given back) when the panel moves, so
+   only its content travels: in from the trailing edge, the composer a beat
+   later, and out the same way before Rust widens the Moodle view again. */
+.assistant-body {
+  animation: assistant-in var(--slow) var(--ease-out) both;
+}
+.assistant-composer {
+  animation: row-in var(--slow) var(--ease-out) 60ms both;
+}
+.assistant[data-closing] {
+  animation: assistant-out var(--medium) var(--ease) both;
+}
+.assistant[data-closing] .assistant-body,
+.assistant[data-closing] .assistant-composer {
+  animation: none;
 }
 /* 9 pt wide for the pointer, drawn as the 1 pt edge of the panel. */
 .assistant-resizer {
@@ -1604,29 +1630,36 @@ ol {
   background: linear-gradient(var(--focus), var(--focus)) center / 3px 100%
     no-repeat;
 }
+/* Every child may shrink to the panel: nothing in a conversation (a long
+   source name, a course title) is allowed to widen it. */
 .assistant-body {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px 12px 12px;
+}
+.assistant-body > * {
+  min-width: 0;
 }
 .assistant-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-height: 28px;
+  gap: 2px;
+  min-height: 44px;
+  padding: 0 8px 0 16px;
+  box-shadow: inset 0 -1px 0 var(--separator);
 }
 .assistant-heading {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  margin-right: 6px;
 }
 .assistant-heading h2 {
   font-size: var(--text-body);
   font-weight: 600;
+  line-height: 16px;
 }
 .assistant-heading span,
 .assistant-meta {
@@ -1635,46 +1668,110 @@ ol {
   line-height: 1.4;
 }
 .assistant-heading span {
+  line-height: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.assistant-body > .confirm {
+  margin: 12px 12px 0;
+}
 .assistant-log {
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden auto;
   overscroll-behavior: none;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: 0 -12px;
-  padding: 4px 12px;
+  gap: 16px;
+  padding: 16px;
 }
 .assistant-log:focus-visible {
   outline-offset: -3px;
 }
 .assistant-message {
+  min-width: 0;
   max-width: 100%;
   display: grid;
-  gap: 6px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
   animation: row-in var(--medium) var(--ease-out) both;
 }
-/* The user's words sit in a tinted bubble on the trailing side, as in Messages;
-   answers are plain text on the panel. */
+/* The user's words sit in a neutral bubble on the trailing side; answers are
+   plain text on the panel, so the conversation reads as a document. */
 .assistant-message[data-role="user"] {
   align-self: flex-end;
-  max-width: 88%;
-  padding: 6px 10px;
-  border-radius: var(--radius-xl);
-  background: var(--selection);
+  max-width: 85%;
+  gap: 4px;
+  padding: 7px 12px;
+  border-radius: var(--radius-panel) var(--radius-panel) var(--radius-xs)
+    var(--radius-panel);
+  background: var(--fill-2);
 }
 .assistant-text {
-  white-space: pre-wrap;
   overflow-wrap: anywhere;
-  line-height: 1.45;
+  line-height: 1.5;
   -webkit-user-select: text;
   user-select: text;
   cursor: text;
+}
+p.assistant-text,
+.assistant-text p {
+  white-space: pre-wrap;
+}
+/* An answer: paragraphs and lists, spaced like a note. */
+div.assistant-text {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.assistant-text strong,
+.assistant-subhead {
+  font-weight: 600;
+}
+.assistant-text code {
+  padding: 1px 4px;
+  border-radius: var(--radius-xs);
+  background: var(--fill);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: var(--text-small);
+}
+.assistant-text ul,
+.assistant-text ol {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding-left: 18px;
+}
+.assistant-text ul {
+  list-style: disc;
+}
+.assistant-text ol {
+  list-style: decimal;
+}
+.assistant-text li::marker {
+  color: var(--label-2);
+}
+.assistant-text li[data-depth] {
+  margin-left: 16px;
+  list-style-type: circle;
+}
+.assistant-attached {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-caption);
+  color: var(--label-2);
+  line-height: 1.4;
+}
+.assistant-attached svg {
+  flex-shrink: 0;
+}
+.assistant-attached span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .assistant-notes {
   display: grid;
@@ -1688,19 +1785,57 @@ ol {
 }
 .assistant-sources {
   display: grid;
-  gap: 4px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  padding-top: 8px;
+  box-shadow: inset 0 1px 0 var(--separator);
 }
 .assistant-sources ul {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
 }
-.assistant-sources .button {
+.assistant-sources li {
+  min-width: 0;
   max-width: 100%;
 }
-.assistant-sources .button span {
+/* A source chip: quieter than a push button, and it truncates in place. */
+.assistant-source {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  height: 22px;
+  padding: 0 8px 0 7px;
+  border: 0;
+  border-radius: var(--radius-m);
+  background: var(--fill);
+  color: var(--label);
+  font-size: var(--text-small);
+  transition:
+    background-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
+}
+.assistant-source.more {
+  background: transparent;
+  color: var(--label-2);
+  box-shadow: inset 0 0 0 1px var(--separator);
+}
+.assistant-source:hover {
+  background: var(--fill-2);
+}
+.assistant-source:active {
+  transform: scale(0.97);
+}
+.assistant-source svg {
+  flex-shrink: 0;
+  color: var(--label-2);
+}
+.assistant-source span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .assistant-status {
   display: flex;
@@ -1716,11 +1851,40 @@ ol {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 16px 4px;
+  padding: 16px;
   text-align: center;
 }
 .assistant-empty .button {
   margin-top: 8px;
+}
+/* Ready-made questions under the empty state: quiet rows, not push buttons. */
+.assistant-suggestions {
+  align-self: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  margin-top: 16px;
+}
+.assistant-suggestion {
+  width: 100%;
+  min-height: 30px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-l);
+  background: var(--fill);
+  color: var(--label);
+  font-size: var(--text-small);
+  line-height: 1.4;
+  text-align: left;
+  transition:
+    background-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
+}
+.assistant-suggestion:hover {
+  background: var(--fill-2);
+}
+.assistant-suggestion:active {
+  transform: scale(0.97);
 }
 .assistant-target {
   margin-top: 6px;
@@ -1734,41 +1898,44 @@ ol {
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
+  margin: 0 12px 8px;
 }
 .assistant-error .section-message {
   margin: 0;
+  min-width: 0;
 }
 .assistant-composer {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
-  justify-items: start;
+  padding: 0 12px 12px;
 }
-.assistant-composer .popup-button {
-  max-width: 100%;
+.assistant-composer .assistant-meta {
+  padding: 0 4px;
 }
+/* One field: the message on top, what is attached and Send underneath. */
 .assistant-field {
-  justify-self: stretch;
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
-  padding: 6px 6px 6px 10px;
-  border-radius: var(--radius-l);
+  padding: 8px;
+  border-radius: var(--radius-panel);
   background: var(--control);
   box-shadow:
     0 0 0 0.5px var(--control-border),
     0 0.5px 1px rgb(0 0 0 / 0.06);
   transition: box-shadow var(--fast) var(--ease);
 }
-.assistant-field:focus-within {
+.assistant-field:has(textarea:focus) {
   box-shadow:
     0 0 0 0.5px var(--accent),
     0 0 0 3.5px var(--focus);
 }
 .assistant-field textarea {
-  flex: 1;
   min-width: 0;
+  min-height: 22px;
   max-height: 160px;
-  padding: 2px 0;
+  padding: 2px 4px;
   border: 0;
   outline: none;
   resize: none;
@@ -1781,8 +1948,64 @@ ol {
 .assistant-field textarea::placeholder {
   color: var(--label-3);
 }
-.assistant-field .button {
+.assistant-field-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.assistant-field-bar .button {
   border-radius: 50%;
+}
+.assistant-context {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: var(--radius-m);
+  color: var(--label-2);
+  font-size: var(--text-small);
+  transition: background-color var(--fast) var(--ease);
+}
+.assistant-context:hover:not([data-disabled]) {
+  background: var(--fill);
+}
+.assistant-context:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: -1px;
+}
+.assistant-context[data-attached] {
+  background: var(--accent-tint);
+  color: var(--label);
+}
+.assistant-context[data-attached] > svg:first-child {
+  color: var(--accent);
+}
+.assistant-context[data-disabled] {
+  color: var(--label-3);
+}
+.assistant-context svg {
+  flex-shrink: 0;
+}
+.assistant-context span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.assistant-context select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  cursor: default;
 }
 /* Settings: the key and model fields sit in the row's trailing controls. */
 .text-field.assistant-key,
@@ -1873,6 +2096,18 @@ ol {
     transform: scale(0.6);
   }
 }
+@keyframes assistant-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@keyframes assistant-out {
+  to {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
 @keyframes panel-in {
   from {
     opacity: 0;
@@ -1907,6 +2142,8 @@ ol {
   }
   .tag,
   .row-icon,
+  .assistant-source,
+  .assistant-suggestion,
   .empty-icon {
     box-shadow: inset 0 0 0 1px var(--control-border);
   }

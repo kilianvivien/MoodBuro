@@ -1,282 +1,169 @@
 # MoodBuro — implementation tracker
 
-Last updated: 10 November 2026.
+Last reconciled: 10 November 2026, against repository HEAD `c2361d1`.
 
-This is the working checklist for project advancement. The [PRD](prd.md) defines the product, and the [Alpha implementation plan](alpha-plan.md) supplies the baseline scope and sequence. The [expanded Alpha feature scope](alpha-feature-expansion.md) promotes bounded user-facing slices from later milestones. Work has landed across parts of W1–W3; that does not mean those weeks or their validation gates are complete.
+This is the current planning checklist. The [PRD](prd.md) defines requirements; the [original Alpha plan](alpha-plan.md) and [scope expansion](alpha-feature-expansion.md) retain the baseline and acceptance criteria. [Implementation status](implementation-status.md) retains the delivery history and verification evidence. Historical week labels and six-/thirteen-week estimates are not current commitments.
 
-**How to maintain this file:** check an implementation item when it is built and its relevant checks pass. Keep live/platform validation as separate unchecked items until evidence exists. After each implementation slice, update the completed work, next priorities, verification evidence and any decisions or blockers.
+**Status rule:** checked means implemented with recorded verification, not fully qualified on live Moodle or every supported Mac. Acceptance gates stay unchecked until their evidence is recorded. Record the revision, environment, result and remaining limitations when closing a gate. Keep new delivery history in implementation-status.md rather than appending it to this checklist.
 
 ## Current position
 
-| Milestone | Status | Remaining gate |
+| Milestone | Implementation stocktake | Acceptance / next gate |
 | --- | --- | --- |
-| M0 — architecture and sign-in spike | In progress | Repeatable three-site login/SSO tests, platform/security validation and D1–D5 decisions |
-| M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, course download routing and installed-app validation |
-| Expanded Alpha features — A1–A5 | A1–A5 feature slices, including opt-in A4 reminders, implemented against fixtures | Live/native validation of the built parts; offline-file/reminder qualification and native Calendar import qualification |
-| A6 — AI assistant | Implemented against provider/Moodle fixtures | Live BYOK/model qualification, native geometry, keyboard/VoiceOver and adversarial account/tool checks |
-| First tester Alpha | v0.1.0-alpha.2 tester prerelease; universal DMG packaging | Combined live/native qualification, stable signing identity and automatic updater remain open |
-
-The INSP dashboard has been observed authenticated in the app. This is a successful real-site observation; it does not close the complete SSO, session-restoration or security test matrix.
-
-## Completed implementation
-
-### Foundation and tooling
-
-- [x] Connect the local project to `kilianvivien/MoodBuro` and publish implementation to `main`.
-- [x] Move the PRD and original Alpha plan into `docs/`.
-- [x] Create the pnpm workspace, React/Vite/TypeScript/Zustand shell and Rust/Cargo workspace.
-- [x] Add the Tauri app and separate Moodle, credential-store and SQLite crates.
-- [x] Scaffold notifier and OS-adapter crates as explicit future extension points.
-- [x] Pin toolchains, commit lockfiles, and configure frontend checks and Linux/macOS CI jobs.
-- [x] Add French and English GitHub READMEs and app icon assets.
-
-### Shell and macOS interface
-
-- [x] Build organisation URL onboarding, sidebar, toolbar and Settings.
-- [x] Render the real Moodle site in lazy child webviews, with Rust-owned sizing and site switching.
-- [x] Add back/forward/reload and open-in-browser controls.
-- [x] Add native menus and shortcuts for settings, adding sites and navigation.
-- [x] Provide French/English copy, accessible labels and known-error translations from onboarding.
-- [x] Follow system language/appearance by default; persist explicit language and theme choices.
-- [x] Add keyboard navigation, focus treatment and contrast/motion/transparency preferences.
-- [x] Repair the transparent-titlebar regression: use an opaque, centered title strip with native traffic lights and a local drag region.
-- [x] Adjust remote webview bounds below the integrated window chrome.
-- [x] Add editable per-organisation abbreviations while retaining the full accessible site name.
-
-### Authentication, sessions and local data
-
-- [x] Normalize HTTPS organisation URLs and discover public Moodle mobile configuration.
-- [x] Support same-origin HTTPS redirects and the explicit `/public/` discovery fallback.
-- [x] Open the organisation’s own login page in an unprivileged auth window.
-- [x] Verify one-use token callbacks, bound callback input, and validate tokens with Moodle before persistence.
-- [x] Store tokens in the OS credential store; keep metadata and preferences in SQLite.
-- [x] Add reconnect, cancellation/race guards and credential rollback attempts on failed persistence.
-- [x] Use dedicated persistent WebKit profiles for auth/site views on macOS 14+.
-- [x] Implement cold-view autologin restoration and warm-view reuse.
-- [x] Check restored token/account identity and restrict autologin destinations to the expected Moodle endpoint.
-- [x] Add sanitized service errors, read retries/backoff, timeouts and bounded concurrent requests per HTTP client.
-- [x] Implement typed site-info, autologin and unread-count API wrappers.
-- [x] Add confirmed local account removal, credential/metadata cleanup and isolated-profile deletion requests.
-- [x] Add fixed, development-only authentication milestones that accept no URL or credential payload.
-
-### Security boundaries and automated verification
-
-- [x] Grant privileged IPC only to the local shell, with explicit command permissions and caller checks.
-- [x] Enforce origin-based navigation policy; capture managed downloads and isolate controlled same-origin popups behind separate local toolbar permissions.
-- [x] Add unit/contract tests for callback and URL policies, HTTP behavior, metadata/settings/lifecycle and localization.
-- [x] Pass the latest local frontend build, lint/format checks, **92 UI tests**, **73 Rust tests**, workspace Clippy and shell-capability regression checks.
-- [x] Build a local ad-hoc-signed macOS app bundle; this is not a notarized distribution release.
-- [x] Review available dev logs and metadata schema without exposing credentials; record findings in the [auth review](auth-review.md).
-
-## Next steps — in priority order
-
-**Implementation priority:** finish the current PDF/popup escape paths, then implement A1–A5 below, followed by the A6 AI panel. Run the M0/native validation tasks alongside this work; unavailable account/platform intervention is a deferred check, not a reason to stop unrelated feature implementation. The original six-week baseline no longer estimates the expanded scope; re-estimate each feature slice before promising a release date.
-
-### 1. Close the M0 validation gaps
-
-- [ ] Turn the observed INSP login into a repeatable manual script covering sign-in, cancellation, reconnect, restart and session restoration.
-- [ ] Test autologin rate limiting, unavailable/missing private tokens, expired tokens and network failures.
-- [ ] Provision HTTPS Moodle 4.5 and 5.3 rigs with Keycloak and seeded test users/courses.
-- [ ] Capture sanitized version-specific contract fixtures and test manual login, SAML and OIDC across three sites.
-- [ ] Validate three simultaneous sites, resize/focus/shortcuts and warm switching against the plan’s timing target.
-- [ ] Validate cookie/profile separation on macOS 12–13 fallback, macOS 15 and current macOS.
-- [ ] Test the integrated titlebar’s drag/double-click/fullscreen behavior and light/dark layouts across supported macOS versions.
-- [ ] Inject a runtime IPC-denial probe into remote views; configuration checks alone are insufficient.
-- [ ] Verify installed-app Keychain access, failure/rollback behavior and identity across updates.
-- [ ] Verify asynchronous profile deletion; resolve or explicitly gate legacy shared-browser-data cleanup (SEC-8).
-- [ ] Record measured D1–D5 spike results and accepted fallbacks in `docs/adr/` before claiming M0 complete.
-
-### 2. Finish multi-site behavior and build background notifications
-
-- [x] Add persistent organisation ordering from Settings with keyboard-accessible Up/Down buttons; sidebar and tray follow the saved order, and new sites append.
-- [x] Add typed popup notification and unread-conversation count wrappers plus a mark-notification-read API (not yet exposed in the shell).
-- [x] Implement cancellable per-site polling, silent first-poll seeding, restart deduplication and capped backoff.
-- [ ] Verify sleep/wake and add explicit OS lifecycle hooks if needed (relative sleeps currently avoid catch-up bursts).
-- [x] Persist notification checkpoints/counts and a bounded subject/read-state cache; emit unread/status updates to the shell.
-- [x] Wire native notifications (five plus a summary per poll), aggregate dock badge and menu-bar unread state; installed-app delivery remains a QA gate.
-- [x] Implement tray open/settings/quit/check-now controls and per-site counts/status; wire notification clicks to the saved site’s notifications page.
-- [ ] Qualify notification click delivery (D4), tray behavior (including the new Inbox entry) and the latest-unread menu on installed macOS builds.
-- [x] Hide the main window on close, retain background polling, and reopen through the tray or Dock.
-- [ ] Add menu-bar-only activation preference and window-state persistence.
-- [ ] Verify resource usage, accessibility and three-site behavior with the background services running.
-
-### 3. Add deep links and safe download capture
-
-- [x] Register `moodledesk://` on macOS and single-instance argument forwarding; queue validated links until the shell is ready and route to the accepted installation root.
-- [x] Prefill HTTPS onboarding for unknown deep-link origins without starting sign-in automatically.
-- [ ] Validate WKWebView download destination/finish behavior (D5).
-- [x] Capture same-origin authenticated downloads into a per-site Downloads folder, sanitize names and publish atomically without overwriting collisions.
-- [x] Add metadata-backed module-context mapping and course-folder routing, refreshed explicitly from Downloads; unmatched files remain in Downloads.
-- [x] Migrate download history, mark interrupted transfers failed on restart, and expose recent downloads with Open/Show in Finder from the toolbar, native menu and tray.
-- [x] Require inline confirmation for risky/unknown file types, revalidate paths in Rust and never auto-open downloads. One opt-in exception since 10 November 2026: a PDF or raster image saved by the "Save and Open" file-handling choice opens after its path is revalidated; every other download still never opens by itself.
-- [ ] Verify installed-app deep links and session-authenticated downloads across the test rigs.
-
-### 4. Build the expanded user-facing Alpha (planned A1–A5)
-
-The [feature amendment](alpha-feature-expansion.md) defines scope, dependencies and acceptance criteria. The original bullets were split on 9 November 2026 so that built parts can be checked without implying the rest. A checked item here means implemented with passing automated checks against synthetic data; live-site and installed-app validation is tracked separately at the end of this section. Partial PRD coverage must not be reported as the full v1.0 feature.
+| M0 — architecture and sign-in spike | Secure auth, session bridge and isolated webviews built; an authenticated INSP dashboard was observed | Open: repeatable three-site manual/SAML/OIDC matrix, D1–D5 results, runtime security and installed Keychain checks |
+| M1 — core shell | Multi-site shell, background polling, tray/badge, links and managed downloads built | Open: native/platform qualification, menu-bar-only mode and resource measurements |
+| Expanded Alpha — A1–A6 | All six bounded feature slices built with automated fixture coverage | Open: combined real-account, native, accessibility and provider qualification |
+| Tester distribution | alpha.1/alpha.2 universal DMG packaging recorded; current package version is `0.1.0-alpha.2` | Ad-hoc signing and manual upgrades; clean-machine/Intel execution and full Alpha exit gate remain open |
+| Post-alpha.2 follow-up | One-shot rate-limited cold-session recovery landed in `c2361d1` | Installed-app recovery checks open; inclusion in a subsequent installer not yet recorded |
+| M2 — beta preparation | Proposed work sequence below; expanded Alpha already supplies parts of later requirements | Implement remaining sync/calendar, download/macOS features and GitHub auto-update first; qualify for beta release |
+| M3 — macOS v1.0 | Later release gate in the PRD | Full requirements review, release metrics and outstanding v1.0 requirements; not implied by beta completion |
 
-- [x] Add a public-API save fallback: File › Save to Downloads (⌘S) requests the shown Moodle file again and saves that response through managed downloads. It covers `pluginfile.php` addresses without credentials; blob documents still rely on the PDFKit adapter.
-- [ ] Stabilize PDF saving, native history and popup parent return in real sessions (native validation; see the follow-up section).
-- [x] **A1:** notification inbox across sites (day groups, organisation and unread filters) with safe Open, Mark as Read and Mark All as Read; the server is asked first and the poller then reconciles badge, Dock and menu-bar counts.
-- [x] **A1:** state unread conversations separately from notifications, with a fixed link to Moodle's Messages page.
-- [x] **A1:** latest unread notifications per organisation in bounded tray submenus; selecting an item opens the fixed notifications page.
-- [x] **A1:** paginated/searchable download history with site/state filters, Copy Path (pasteboard written from Rust) and confirmed Clear History that keeps files and active transfers.
-- [x] **A1:** course filter with an Unknown Course bucket and course labels in download history.
-- [x] **A1:** shared Rust-owned native reader for downloaded PDF, DOCX, XLSX and PPTX files on macOS, with a separate Preview action and the existing default-app Open action.
-- [x] **A1:** failed-download Return to Moodle fallback: opens a still-cached course or the organisation, with explicit copy that the transfer is not restarted.
-- [x] **A1:** PDF/image handling preference per type (View in Moodle by default, Save, Save and Open), decided on top-level responses and routed through managed downloads. With both choices at their default no response is handled differently from before. Only a transfer the preference started may open afterwards, limited to PDFs and raster images.
-- [x] **A2:** account-bound course cache and browser with search and local pins, refresh/stale/error states per organisation, and rejection of late responses for a replaced account.
-- [x] **A2:** metadata-backed course/context mapping and course-folder routing with an explicit Refresh Course Folders action. Live-site qualification remains open.
-- [x] **A2:** ⌘L Quick Open over saved course names, organisations and shell views, from the Go menu, the toolbar and the keyboard.
-- [x] **A2:** explicitly refresh/cache course activities and search them in Quick Open, with oldest metadata refresh and connection limits stated.
-- [x] **A2:** opt-in global ⌘⇧M for Quick Open, registered from Rust only, saved only after a successful registration, reported in Settings when registration fails at launch, released when disabled or on quit. Cross-app conflicts that macOS does not report are a native QA item.
-- [x] **A3:** choose course files to save offline, with known sizes, bounded transfers and safe course/section folders.
-- [x] **A3:** browse/open saved files offline and manually refresh selected files without overwriting local edits or propagating server deletions.
-- [ ] **A3 native qualification:** validate resource/folder contracts, file-download permissions, quarantine, offline restart/open and local-edit/account-replacement cases on real Moodle 4.5/5.3 and installed macOS builds; see [offline QA](offline-files-qa.md).
-- [x] **A4:** read-only upcoming agenda across sites, grouped by day, with fixed Moodle calendar links, the Mac's time zone stated and last-refresh/stale state.
-- [x] **A4:** opt-in per-account 24-hour/1-hour deadline reminders, persisted at-most-once attempts, refreshed schedule reconciliation and periodic wake-gap detection; no delivery promise while quit.
-- [ ] **A4 native qualification:** verify delivery/clicks, permissions/Focus, sleep/clock behaviour and Moodle action/completion metadata on the supported platforms and Moodle 4.5/5.3; see [reminder QA](reminders-qa.md).
-- [x] **A5:** manually export the selected site/date range to a token-free ICS snapshot in Downloads, with UTC times, escaped/folded text, stable account-scoped UIDs and fixed calendar links. Rust fixtures and an independent ICS parser pass.
-- [ ] **A5 native qualification:** import the snapshot in Apple Calendar, check DST/text and repeat-import behaviour; qualify Finder reveal and saved site ordering in the installed app. Live subscriptions remain later.
-- [ ] Validate the built A1/A2/A4 parts against a real account and the 4.5/5.3 rigs: `core_enrol_get_users_courses`, `core_calendar_get_calendar_upcoming_view`, `core_message_mark_notification_read` / `mark_all_notifications_as_read`, access-denied responses, and count reconciliation after Mark as Read.
-- [ ] Check natively with `pnpm tauri dev`: the ⌘1/⌘2/⌘3/⌘L/⌥⌘L menu commands, the tray Inbox entry, hiding and restoring the Moodle view around Quick Open, keyboard focus landing in its field when ⌘L is pressed from a Moodle page, warm and cold opening of a course/calendar/notifications page, Copy Path, and the new motion under Reduce Motion and Increase Contrast.
-- [ ] Check the 10 November additions natively: a PDF and an image opened directly with each handling choice (main view and popup, including the blank popup a saved file leaves behind), a forced-download link (unchanged behaviour expected), Save to Downloads on an inline PDF/image and on an ordinary page, open-after-save, embedded PDFs staying in the page, ⌘⇧M from another app with the window hidden/minimised/on another Space, a combination already used by another app, and release on quit.
-- [ ] Verify the combined A1–A5 acceptance cases, access-denied behavior, account replacement/cleanup, FR/EN and keyboard paths.
+**Assessment:** Alpha feature implementation has reached the tester stage. Alpha acceptance is still open. Beta work should build on the delivered slices instead of implementing inbox, course browsing, offline selection, reminders, ICS export or the assistant again.
 
-### 5. AI chat side panel — final Alpha feature (A6)
+## Delivered Alpha scope
 
-Added on 10 November 2026. Plan an optional AI assistant beside the Moodle view, able to answer general questions and interact with Moodle elements exposed to the app. At the product owner’s request, implement this as **A6, after A1–A5 and before combined Alpha qualification and release**. The bounded implementation is complete against fixtures; live/native qualification remains part of the Alpha feature gate. See [assistant qualification](assistant-qa.md). See the [PRD scope amendment](prd.md#ai-assistant-scope-amendment--10-november-2026).
+| Area | Implemented | Evidence / boundary |
+| --- | --- | --- |
+| Foundation | pnpm/React/Vite/TypeScript shell, Cargo workspace, Tauri app, Moodle/store/secrets/notifier/assistant crates and CI | `md-os` remains an extension point. CI runs frontend checks and npm high-severity audit, portable Rust tests, macOS workspace tests/build and shell IPC guard; Rust advisory auditing is still absent. |
+| Shell and accounts | Generic HTTPS onboarding; native menus, FR/EN, theme/accessibility preferences; lazy site webviews, native history, Home, controlled popups, reconnect/removal | macOS 14+ uses dedicated persistent stores; macOS 12–13 shared-store cleanup remains a privacy gate. |
+| Auth and security | One-use signed callbacks, token/account validation, OS credential storage, sanitized errors, bounded requests, shell-only privileged IPC | Runtime IPC denial, real SSO, installed Keychain lifecycle and full deletion remain unqualified. |
+| Background and links | Per-account polling/backoff, silent seeding, persisted deduplication, tray/unread counts, dock badge, hide-on-close; validated `moodledesk://` routing | Only popup notifications generate individual alerts; conversation counts are separate. Native clicks, sleep/wake and cold-launch deep links need qualification. |
+| A1 — inbox and downloads | Inbox/read actions, bounded tray subjects; searchable/paginated history, site/course/state filters, Copy Path, confirmed history clear, Return to Moodle fallback; managed course routing, PDF/image preferences, Save to Downloads and native PDF/Office readers | Return to Moodle does not retry a transfer. Existing files stay in place. Private PDFKit Save adapter/blob support remains a compatibility gate. |
+| A2 — courses and Quick Open | Account-bound course cache, pins, explicit activity indexing, cache age, ⌘L and opt-in global ⌘⇧M; persistent organisation ordering | Metadata search only; no server full-text or file-content search. Global shortcut conflicts need native checks. |
+| A3 — offline files | Selected resource/folder files, bounded serial downloads, offline saved-copy list, manual refresh, hashes and non-overwriting publication | No automatic course mirroring, resume, server-deletion propagation or shared sync/download deduplication. |
+| A4 — agenda/reminders | Cached upcoming agenda and default-off per-account 24-hour/1-hour reminders; persisted at-most-once attempts, stale-data and wake-gap handling | No delivery while quit; permissions/Focus and actual display unqualified. Upcoming-view horizon and incomplete Moodle completion metadata remain limits. |
+| A5 — calendar export | Token-free manual ICS snapshot with stable account-scoped UIDs, UTC dates, escaping/folding and Finder reveal | Independently parsed fixture; Apple Calendar import/re-import still open. No live subscription. |
+| A6 — assistant | Albert/Mistral BYOK settings, streamed chat, session-only history/deletion, explicit context consent, source references, six bounded tools and individually confirmed notification-read writes | Provider/Moodle fixtures only; live providers, native geometry/focus, adversarial account/tool and Keychain checks open. No submissions or grade changes. |
+| alpha.2 polish | Responsive Settings and disclosures, agenda simplification, in-app download feedback/storage guidance, native icon assets, saved main-window geometry | Narrow/light/dark/contrast/motion shell review and isolated native save/relaunch smoke recorded; full VoiceOver/live transfer validation remains open. |
+| Packaging | Universal Intel/Apple Silicon app/DMG, checksums, ad-hoc signing overlay, manual Actions workflow and tester guide | Packaging evidence does not prove clean-machine install, Intel execution, notarization or updates. |
+| Latest session fix | Conservative one-shot cold-restore retry after autologin rate limiting; cancels on logout/navigation/reconnect/removal and preserves destination/selection | Source and regression tests landed after alpha.2 packaging; native checks in [background QA](background-qa.md#rate-limited-startup-restoration). |
 
-- [x] **Provider setup and general chat:** support the Albert API or Mistral AI in bring-your-own-key (BYOK) mode, with provider/model settings, connection validation, streaming responses, cancel/retry and clear authentication, quota and network errors. Validate each provider's endpoint, model availability and tool-calling support during the spike.
-- [x] **Side panel:** add a collapsible, resizable chat panel alongside the active Moodle view, with keyboard access, FR/EN copy and accessible focus handling. Recalculate native Moodle webview bounds when the panel opens, closes or resizes.
-- [x] **Moodle context:** let the user explicitly attach an organisation/course or supported item. Start with courses, exposed activities/resources, upcoming deadlines and notifications available through the app's Moodle API/cache. Show the selected context and link answers back to Moodle sources; state missing permissions or stale data. General questions must work without Moodle context.
-- [x] **Bounded interactions:** expose an allowlist of typed tools through the Rust core, starting with course/activity lookup, deadline lookup and opening a referenced Moodle item. Add selected write actions, such as marking a notification read, only where the site exposes the capability; show the exact target and require user confirmation before each write. Keep submissions, grades and arbitrary page/script execution outside the initial slice.
-- [x] **Keys and data controls:** keep provider keys in the OS credential store and provider requests in Rust. Explain which prompt/context is sent to the selected provider before enabling Moodle context sharing; never send Moodle tokens, cookies or provider keys as model context. Make chat-history retention explicit and provide deletion controls.
-- [x] **Isolation and tool safety:** scope context, conversations and tool calls to the selected Moodle account; clear attached context on account switches and invalidate pending tools on account replacement/removal. Treat Moodle content and model output as untrusted, validate tool arguments and permissions in Rust, and keep remote Moodle webviews without privileged IPC.
-- [ ] **Acceptance gate:** verify both providers, general chat without context, source-linked Moodle answers, permitted lookups/navigation, denied capabilities, confirmed/cancelled writes, prompt-injection resistance, account isolation, credential/log redaction, panel geometry and keyboard access. Use provider/Moodle fixtures plus live qualification before claiming support.
+The latest recorded full suite is **101 frontend / 97 Rust tests at alpha.2**, plus lint, formatting, production frontend build, workspace Clippy and IPC checks. Those are historical verification results, not a fresh run at `c2361d1`. See [release notes](releases/v0.1.0-alpha.2.md) and [implementation evidence](implementation-status.md). The follow-up adds restoration/store regression coverage; its native behavior remains pending.
 
-### 6. Prepare the tester Alpha
+## Alpha carry-over — qualification and missing implementation
 
-- [ ] Configure a stable self-signed Alpha identity, updater signing keys and private HTTPS hosting with the product owner.
-- [x] Implement universal Apple Silicon/Intel DMG packaging and verify architectures/signatures/checksums; [manual Actions workflow](../.github/workflows/package-macos.yml).
-- [ ] Qualify clean-machine installation and run the universal build on Intel and the supported macOS matrix.
-- [ ] Implement the signed Alpha updater channel and test an actual update between builds.
-- [ ] Add rotating/redacted diagnostic logging and configure Rust advisory auditing.
-- [ ] Review and resolve outstanding dependency alerts, then enforce the agreed audit checks in CI.
-- [x] Write the [Gatekeeper installation/tester guide](alpha-install.md); clean-Mac verification remains open.
-- [ ] Run the full QA matrix, security checks, accessibility pass and bug bash.
-- [ ] Review every exit criterion in the original Alpha plan; resolve P0s before releasing `0.1.0-alpha.1` to internal testers.
+These remain Alpha obligations even when executed during beta preparation. Early tester packaging did not waive them.
 
-## Deferred beyond the Alpha
+### Q1 — auth, security and architecture (M0)
 
-The bounded A1–A6 versions above are implemented against fixtures; live/native acceptance gates remain open. The following larger versions remain deferred:
+- [ ] Provision HTTPS Moodle 4.5/5.3 and Keycloak rigs with seeded users/courses; capture sanitized version-specific fixtures. [Rigs are currently instructions only](../test-rigs/README.md).
+- [ ] Repeat manual, SAML and OIDC sign-in across three sites: cancellation, reconnect, restart, missing/expired/private tokens, network failures and rate limits, including the new one-shot recovery.
+- [ ] Measure three-site warm switching against the <300 ms target; verify resize, focus, shortcuts, profile/cookie separation and titlebar/fullscreen behavior on the supported macOS matrix.
+- [ ] Inject a remote-webview IPC-denial probe; verify shell/popup/native-reader privilege boundaries at runtime.
+- [ ] Qualify installed Keychain access, failure/rollback, removal and identity transitions across upgrades; inspect redacted logs/metadata without exposing secrets.
+- [ ] Verify asynchronous profile deletion; resolve SEC-8 shared-store/IdP cleanup on macOS 12–13 or record an explicit support/scope decision.
+- [ ] Record measured D1–D5 decisions and accepted fallbacks in [ADRs](adr/0001-alpha-foundation.md). Static configuration and one real dashboard observation do not close M0.
 
-- [ ] Full scheduled course-folder sync, resumable mirroring, automatic server-deletion handling and full sync/download de-duplication.
-- [ ] Live authenticated calendar subscriptions and automatic external-calendar refresh; the Alpha gets agenda/reminders and manual ICS export only.
-- [ ] Uploads, drag-and-drop submissions and Finder Services/share integration.
-- [ ] File-content search and OS search extensions beyond ordinary indexing of saved files.
-- [ ] Download pause/resume, automatic retention/deletion and expanded Finder tagging/metadata.
-- [ ] Developer ID signing/notarization, managed deployment and Windows/Linux releases.
+### Q2 — native core shell and file handling (M1)
 
+- [ ] Qualify notification delivery/click routing (D4), first-poll silence, deduplication, read-count reconciliation, tray Inbox/latest-unread items and hide/reopen/quit across three sites. [Background QA](background-qa.md).
+- [ ] Measure polling sleep/wake and resource behavior; add OS lifecycle hooks if measurements require them. Verify idle memory against the original <120 MB one-site target.
+- [ ] Qualify cold/warm installed deep links, unknown-site onboarding and authenticated downloads/destinations (D5). [Links/download QA](links-downloads-qa.md).
+- [ ] Qualify PDF Save, blob PDFs, native Back/Forward, popup parent/close behavior, menu sizing and private-adapter compatibility. Test all PDF/image handling choices in main/popup views, embedded files, forced downloads and open-after-save. [Native reader/download QA](native-reader-downloads-qa.md).
+- [ ] Validate live course-folder mapping, missing/risky-file actions, Open/Preview/Finder/Copy Path, account cleanup and history persistence.
+- [ ] Implement menu-bar-only activation preference; main-window geometry persistence is already delivered in alpha.2.
 
-New downloads with an indexed Moodle module context go into a course folder; unmatched files remain in the per-site Downloads folder. Existing files are not moved. Selected offline files and native transfer qualification remain open. Closing the window hides it and keeps polling active; Quit ends the process.
+### Q3 — combined expanded-feature acceptance (A1–A6)
 
-## Evidence and related documents
+- [ ] A1/A2: qualify real course/activity and notification APIs, denied capabilities, read-count reconciliation, cache/account replacement, ordering and warm/cold navigation on both Moodle rigs.
+- [ ] A2: verify ⌘1/⌘2/⌘3/⌘L/⌥⌘L, focus from a Moodle page, native view hide/restore and global ⌘⇧M from other apps/Spaces; conflicts and release on quit.
+- [ ] A3: real resource/folder contracts, permissions, quarantine, offline restart/Open, edited/moved files and account replacement. [Offline QA](offline-files-qa.md).
+- [ ] A4: real action/completion metadata, deadline changes, delivery/clicks, permissions/Focus, sleep/clock/DST and stale schedules. [Reminder QA](reminders-qa.md).
+- [ ] A5: import/re-import in Apple Calendar; verify DST, escaped text, snapshot copy and Finder reveal in an installed build.
+- [ ] A6: both live BYOK providers, model/tool support, context-free and source-linked chat, confirmed/cancelled writes, prompt injection, stop/retry, key lifecycle and account isolation. [Assistant QA](assistant-qa.md).
+- [ ] Run combined FR/EN, keyboard/VoiceOver, Reduce Motion/Increase Contrast, panel geometry and narrow-window checks in the native app.
 
-- [Implementation status](implementation-status.md): verification detail and current limitations.
-- [Authentication review](auth-review.md): inspected evidence and remaining security checks.
-- [UI design](ui-design.md): shell, titlebar, localization and label decisions.
-- [Architecture decisions](adr/0001-alpha-foundation.md): technical choices and corrections.
-- [Alpha plan](alpha-plan.md): baseline and amended scope, spike definitions, QA matrix and release gate.
-- [Expanded Alpha features](alpha-feature-expansion.md): A1–A5 boundaries, delivery order and acceptance criteria.
+### Q4 — distribution and Alpha gate review
 
-## Recent delivery checkpoints
+- [x] Universal DMG packaging, architecture/signature/checksum verification, manual packaging workflow and [tester installation guide](alpha-install.md).
+- [ ] Qualify clean-machine installation and actual Intel execution across the supported macOS matrix; distinguish the macOS 12 binary minimum from tested support.
+- [ ] Add rotating/redacted diagnostic logging; configure Rust advisory auditing and resolve outstanding dependency findings. The npm audit CI step is already present.
+- [x] Supersede the original stable self-signed Alpha identity/updater sequence: GitHub automatic updates are beta scope under B4; Apple Developer ID signing/notarization is post-beta. This records the scope decision only; update implementation remains unchecked. Current Alpha testers use ad-hoc builds/manual replacement.
+- [ ] Run bug bash and review every [original exit criterion](alpha-plan.md#1-scope-team-and-exit-criteria): zero P0s, ≥99% crash-free sessions over the last test week, live/native/security and installation evidence. Record any accepted scope changes; no Alpha completion claim yet.
 
-| Commit | Delivered |
-| --- | --- |
-| `88adb27` | Workspace, shell and secure-sign-in foundation |
-| `76a73f7` | Bilingual macOS shell, session/account lifecycle and READMEs |
-| `4413c62` | Titlebar repair, organisation abbreviations and auth diagnostics/safeguards |
+## Proposed beta implementation sequence (M2)
 
-## Background notification delivery slice
+The PRD retains M3 as the macOS v1.0 gate, but its embedded roadmap does not supply a text M2 task breakdown. **B1–B5 below organize beta preparation**, derived from remaining PRD requirements. Feature-first sequencing, GitHub automatic updates and post-beta Apple signed distribution reflect the product owner’s instructions; individual feature details remain planning targets, not estimates or completed gates. Re-estimate each after its spike. Independent engineering can proceed alongside account/platform qualification; qualification must finish before claiming beta readiness.
 
-Implemented on 9 November 2026. One cancellable worker per saved account polls every 120 seconds, backs off to 15 minutes, and stops for missing/invalid tokens. Check Now coalesces requests. New items are checked even when the unread total is unchanged. SQLite schema v3 migrates existing sites, stores metadata without credentials/context URLs, caps history at 100 rows per site, and deletes notification state with the account. Reconnect preserves checkpoints for the same account and resets them for a different Moodle user. The old worker is invalidated before credential changes.
+### B1 — course sync and shared file identity
 
-Verification: 43 UI tests, 24 Rust tests, frontend production build, lint/format, workspace Clippy and shell-only IPC regression checks pass. HTTP contracts match the published Moodle 4.5 API but remain synthetic. [Background QA](background-qa.md) records the required live/installed-app tests. M0 and release gates remain open; no credentials, certificates or hosting setup were requested.
+- [ ] Spike the existing A3 index/downloader against OS-6/OS-7 and DL-2/DL-3; define stable file identity, shared sync/download lookup and schema migration before adding another transfer path.
+- [ ] Add explicit per-course sync selection, scheduled refresh, bounded concurrency/backoff and visible status/cancellation.
+- [ ] Define and implement restart/resume, server rename/deletion, local-edit conflicts and `.trash/` retention semantics. Preview destructive effects and protect local edits; A3 currently saves alongside existing files.
+- [ ] Reuse unchanged local files for browsing downloads and refresh changed versions under the agreed policy; retain safe endpoint, quarantine and account-isolation boundaries.
+- [ ] Verify offline restart, interrupted transfers, permission loss, disk pressure, account replacement and Spotlight discovery on installed builds.
 
-## Deep links and download capture slice
+**Dependencies:** existing course/offline caches; qualify file contracts while building. **Exit:** selected courses refresh predictably without duplicate transfers or local data loss, including recovery across restart. Full sync must not be marked done based on manual A3 refresh.
 
-Implemented on 9 November 2026. Native macOS URL events and single-instance CLI forwarding share a bounded Rust inbox. Deep links preserve query/fragment, select the longest saved installation root, reject credentials/traversal/credential-bearing parameters and keep the target inside the autologin exchange. Unknown hosts prefill their HTTPS origin for user review. Failed restoration retains the destination for reconnect. No raw link enters logs or SQLite.
+### B2 — live calendar integration
 
-Downloads use WebKit's authenticated session and a private staging directory within `~/Moodle/<site-name>-<uuid>/Downloads/`. Completion URLs map to staged files because macOS omits the completion path. Atomic hard-link publication avoids overwrites and preserves the downloaded inode. Same-URL overlaps are conservatively reserved until restart to avoid mistaking a rejected request's late callback for a later transfer. History excludes source/page URLs and frontend payloads exclude local paths. Schema v4 handles interruption and account cleanup; downloaded files remain on disk after removal.
+- [ ] Resolve the PRD Q6 export-token/capability question and safe credential handling before constructing any subscription URL.
+- [ ] Implement supported Apple Calendar subscription/refresh (OS-8/MAC-5), with explicit consent, permission errors and account removal/revocation behavior; retain manual ICS fallback.
+- [ ] Reconcile upcoming-view coverage with the full reminder requirement; define handling of missing completion/action data and scheduling limitations.
+- [ ] Qualify subscription refresh, time zones/DST, changed/deleted events, token revocation and duplicate prevention in Calendar.
 
-Verification: 46 UI tests and 34 Rust tests, frontend production build/lint/format, workspace Clippy and IPC checks pass. [Deep-link/download QA](links-downloads-qa.md) lists native checks, limitations and remaining D5 qualification. No real-account SSO or authenticated-transfer gate is closed by these checks.
+**Dependencies:** A4/A5 event/export model and subscription token spike; native qualification runs alongside implementation. **Exit:** a qualified live integration with clear refresh/revocation behavior, or an explicit scope decision retaining snapshot-only support.
 
-## Follow-up: PDF escape paths and usable popups
+### B3 — download and macOS workflows
 
-- [x] Add a persistent Moodle Home button and matching Go-menu shortcut.
-- [x] Replace macOS JavaScript Back/Forward with native WKWebView history, with a dashboard escape path.
-- [x] Preserve the parent Moodle page for same-origin popups and provide a local toolbar with history, parent return, Home and Downloads.
-- [x] Route PDFKit Save bytes through managed download history using a bounded macOS delegate compatibility adapter.
-- [x] Shorten menu-bar site rows and group site actions/recent files in native submenus.
-- [ ] Validate native PDF Save, popup/opener/close/history, blob PDFs and menu sizing in real sessions on the supported macOS matrix. The PDF save-data callback is a WebKit-private API and remains an explicit compatibility gate.
+- [ ] Select and implement the beta subset of DL-4/DL-5/DL-6/DL-8/DL-11: cancel/pause/resume/fresh-source retry, native completion actions/progress, metadata and separate cleanup controls. Reuse B1 transfer identity rather than replaying stale authenticated URLs.
+- [ ] Reconcile expanded history/Where From requirements with the current deliberate omission of source URLs; document privacy/security policy before persisting new metadata.
+- [ ] Complete menu-bar-only mode if still open, optional start-at-login (OS-14) and offered Finder sidebar integration (MAC-4); qualify permissions, relaunch and disabled defaults.
+- [ ] Decide whether upload/submission drafts (OS-10) belong in beta or the M3 backlog; if included, spike upload/save-submission contracts and define exact-target confirmation and duplicate/failure handling first.
 
-## Inbox, courses, agenda and motion slice
+**Exit:** the selected beta subset is explicit, implemented and qualified; all remaining v1.0 requirements stay visible for M3. Download retention (DL-9), Finder Services (MAC-7), MDM (MAC-10), dock recent-course menus and other outstanding PRD surfaces need an explicit release assignment before M3 scope is closed.
 
-Implemented on 9 November 2026, at the product owner's choice of "A1 + A2 + agenda (A4)", sidebar icons for the new destinations and "native and fluid" motion.
+### B4 — automatic updates through GitHub Releases
 
-- **Backend.** Moodle wrappers for enrolled courses, the upcoming calendar view and mark-all-read; a `Page` type that builds the only Moodle pages the shell may open; plain-text reduction of server names. SQLite schema v5 adds `courses`, `course_pins`, `events` and `sync_state`, all removed with the account and purged when a different Moodle user reconnects; course and event writes are refused for a replaced user. Download history gains paging, literal filename search, per-site clearing and lookup by id (items beyond the newest 20 can now be opened). Eleven shell-only commands replace `downloads_recent`; the capability/caller regression script passes unchanged.
-- **Shell.** Inbox, Courses and Agenda views, a ⌘L Quick Open panel, a rebuilt Downloads view, shared list components, a sliding segmented control and the motion tokens. Menu: Inbox ⌘1, Courses ⌘2, Agenda ⌘3, Downloads ⌥⌘L, Quick Open… ⌘L. The design guidelines' motion, typography, component and pattern sections were revised to match.
-- **Scope decisions.** Not built in this pass and left unchecked above: tray list of unread items, failed-download retry, PDF/image preference, download-to-course mapping, cached activities in Quick Open, the global shortcut, reminders, A3 and A5. Agenda items open their calendar day rather than the activity page, because the activity URL comes from the server.
-- **Verification.** 70 UI tests and 42 Rust tests, frontend build/lint/format, workspace Clippy and the IPC check pass. The UI was exercised in the browser preview (`?mac&demo`) in light and dark with sample data: view switching, Mark as Read, pinning, filters, Quick Open keyboard use. **Not verified:** anything native (menus, tray, Moodle-view hiding, pasteboard) and every live Moodle call; contract tests use synthetic stock-shaped responses. No acceptance criterion in the amendment is claimed.
+Requested beta scope: discover and install updates distributed through GitHub Releases. This is distinct from Apple Developer ID signing/notarization, which is deferred until after beta.
 
-## Course-aware downloads and native readers — 10 November 2026
+- [ ] Extend the existing universal macOS packaging workflow to produce updater-compatible artifacts, cryptographic update signatures, checksums and a versioned beta manifest alongside the DMG; publish them to GitHub Releases.
+- [ ] Configure the beta update feed, release/prerelease selection and version rules. Keep beta and future stable channels explicit and avoid downgrades or incompatible-platform offers.
+- [ ] Resolve authenticated access for the existing private repository: select a secure delivery/access model without bundling a personal GitHub token or making the repository public implicitly. Record the decision before wiring the feed.
+- [ ] Implement automatic update discovery with available-version/release-note feedback, download progress, install/relaunch controls, failure/retry states and an update-disable preference/policy. State the check cadence and installation consent behavior explicitly.
+- [ ] Store update-signing secrets in CI and verification material in the app; reject altered or unsigned update artifacts. Update signatures remain required even while the app itself uses ad-hoc signing.
+- [ ] Test an actual installed beta→beta update on both architectures, including data/settings/files preservation, credential access, failed/interrupted downloads and invalid-signature rejection. Document manual installation of the first updater-enabled build for Alpha testers; do not claim existing alpha.2 can update itself.
 
-Built: explicit Refresh Course Folders in Downloads, metadata-only `core_course_get_contents` indexing, account-scoped context/course mappings, course-folder routing for new downloads, course labels/filter and Unknown Course fallback. Schema v6 preserves old rows/files and adds nullable course metadata. Existing downloads are not moved. Permissions failures remain visible; unknown contexts never use guessed page/course names.
+**Dependencies:** existing universal packaging, GitHub release access decision and update keys. **Exit:** an installed beta discovers, verifies and installs a newer beta from GitHub Releases, with recoverable failures and no embedded repository credentials. Apple signing/notarization is not a prerequisite for implementing this feature; qualify Gatekeeper/Keychain behavior for the chosen beta identity.
 
-Downloaded PDF, DOCX, XLSX and PPTX files have a Preview action separate from default-app Open. Rust resolves a completed managed download by ID and creates a Tauri-owned native document window. PDFKit renders PDFs; Quick Look renders Office files. The AppKit toolbar has zoom/fit/readout, default-app Open, Finder and full screen; PDFs also have page navigation and page count. Office navigation stays in the native preview's scrolling surface. Native views have no webview/IPC grants, no document bytes cross IPC, and account session removal closes its previews. At most three previews are open at once.
+### B5 — baseline qualification and beta release gate
 
-Verification and remaining live checks are recorded in [native reader/download QA](native-reader-downloads-qa.md). AI chat is now A6, at the end of Alpha feature implementation.
+Run independent checks alongside B1–B4; qualification is a release gate, not a blanket prerequisite to starting beta features.
 
-### Tray unread items and activity search — 10 November 2026
+- [ ] Execute Q1–Q4, record results by revision/platform/site, and fix failures in the affected subsystem. Apply the recorded scope decision: B4 replaces the old Alpha updater sequence, and Apple signed distribution stays post-beta.
+- [ ] Decide the supported macOS/Moodle matrix using actual results, including legacy data cleanup and the private PDF Save adapter fallback.
+- [ ] Finish dependency-audit enforcement and rotating/redacted diagnostics; retain useful bug-report evidence without secrets.
+- [ ] Confirm full requirement gaps: partial A1–A6 coverage does not satisfy full OS/MAC/DL requirements. Keep exceptions explicit in the PRD/ADRs.
+- [ ] Run combined beta feature, update, clean-machine installation, account/security and accessibility qualification; update tester instructions for beta's ad-hoc distribution and automatic-update limitations.
 
-Implemented the next A1/A2 batch: latest unread subjects in per-organisation tray submenus; explicit activity metadata refresh in Courses; schema v7 account/course-scoped activity cache; Quick Open activity search with cache-age/connection copy; and a failed-download Return to Moodle fallback. No stale transfer URL is replayed. The tray opens the fixed notifications page without marking read. Removed courses and replaced accounts lose their cached activities; late writes from the previous account fail.
+**Exit:** implemented beta features meet their acceptance checks; repeatable baseline scripts/fixtures and measured D1–D5 decisions exist; no unresolved P0; all remaining Alpha obligations have an explicit disposition. Developer ID signing/notarization remains post-beta.
 
-Evidence: 73 frontend tests, 52 Rust tests, frontend lint/format/build, Rust formatting, workspace Clippy, IPC guards and local debug app packaging pass. Native/live-site acceptance remains open; no such gate was marked passed. Next independent implementation items are the PDF/image preference and optional global shortcut, followed by selected offline files, reminders and ICS in the amended delivery order. A6 remains last.
+## Post-beta — Apple signed distribution (toward M3)
 
-## 10 November 2026 — ordering, calendar snapshots and app icon
+Explicit sequencing decision: **defer Developer ID signing, hardened-runtime distribution qualification, notarization and stapling until after beta.** Beta uses the existing ad-hoc distribution approach and Gatekeeper guidance, with cryptographically signed update artifacts under B4.
 
-- Organisation ordering is transactional and persists across restart/reconnect/removal; Settings disables boundary moves. No new schema migration is needed because `sites.position` already existed.
-- A5 exports the filtered cached agenda on explicit request to a unique `MoodBuro-<UUID>.ics` file in Downloads, published atomically without replacement. Finder reveal failure reports that the file was saved. No automatic import or subscription is configured.
-- `assets/Newicon.png` supplies the bundle PNG/ICNS/ICO files and the onboarding/README mark through `assets/app-icon.png`. Tauri’s `--fit cover` centres the landscape source into a square, keeping the central icon intact; the original asset is retained.
-- Verification: 82 UI tests (also run in Europe/Paris), 59 Rust tests, independent `vobject` 0.9.9 fixture parsing, frontend build/lint/format, workspace Clippy/format and IPC boundary checks. Native Calendar import and installed-app interactions remain unchecked.
-- A3 offline file selection/refresh, A4 reminders and A6 AI remain unimplemented. A5 was independently deliverable on the existing agenda model; this does not close the earlier slices or Alpha release gates.
+- [ ] Configure Developer ID, hardened runtime, notarization/stapling and secure Apple CI credentials (MAC-9).
+- [ ] Qualify the ad-hoc beta→Developer ID transition, including installed upgrades, Keychain identity/prompts, data migrations and recovery.
+- [ ] Verify clean-machine signed installation and updates on both architectures; revise installer/release guidance.
 
-Local native output: `target/debug/bundle/macos/MoodBuro.app` built with the new icon, ad-hoc signed after bundling and verified with `codesign --verify --deep --strict`. No native account interaction or Calendar import was performed.
+**Exit:** verified Apple signed/notarized distribution and update continuity before claiming the full MAC-9/v1.0 release requirement. This work does not block beta feature implementation or the beta release gate.
 
-## 10 November 2026 — selected offline course files (A3)
+## Next implementation starting point
 
-- Courses → Files lists saved snapshots offline. Load File List explicitly fetches file metadata; the user chooses up to 50 resources, with known/unknown sizes stated, before a serial batch starts. Plain resource/folder files are supported; unsupported entries are counted.
-- Rust re-fetches source descriptors for each batch, restricts token delivery to the same installation’s web-service file endpoint, refuses redirects and HTML/JSON responses, checks free space, bounds bytes/time and emits throttled progress. No URL/token is persisted in the new index or sent to the shell.
-- Course/section folders, private staging, macOS quarantine and non-replacing publication preserve existing files. Manual refresh only reuses the latest indexed file when both remote and local SHA-256 hashes match; otherwise it keeps all earlier copies and saves alongside them. Server deletion produces a per-file error and leaves saved copies intact.
-- SQLite schema 8 adds a separate account-bound offline index. Removal/replacement clears private index metadata while keeping files; late old-account publication is rejected under the store lock. Offline Open/Finder resolves copy IDs and rechecks path components; unknown/risky types retain confirmation.
-- Automated checks: 87 UI tests, 66 Rust tests, frontend build/lint/format, workspace Clippy/format, and local-shell/popup IPC guard. The native/live acceptance matrix remains unchecked in [offline-files-qa.md](offline-files-qa.md).
-- Next implementation priority: A4 opt-in local reminders; A6 remains after the A1–A5 feature slices. Existing M0, native PDF/download, security and distribution gates remain open.
+1. Start B1 course sync/shared file identity; retain the delivered A3 file-safety guarantees.
+2. Spike B2 calendar-token feasibility and implement B3 download/macOS workflows in bounded slices.
+3. Implement B4 GitHub automatic updates, resolving private-release access and update-signing setup before end-to-end installation tests.
+4. Run independent Q1–Q4 checks alongside feature work, then close B5 for beta release. Estimate feature slices and map remaining v1.0 requirements to M2 or M3 before committing to a beta date.
+5. After beta, implement and qualify Apple signed distribution for M3.
 
-## 10 November 2026 — local deadline reminders (A4)
+Windows v1.1 and Linux v1.2 remain later platform work. Broad autonomous AI actions, assignment submissions through the assistant, grade changes and file-content search are not additions to this beta proposal.
 
-- Agenda now exposes independent 24-hour/1-hour reminder choices per organisation/account, default off, with stale-data, refresh-error and failed-attempt feedback in French/English. Scope is independent of visible agenda filters; completion remains unknown unless Moodle explicitly reports an unavailable/zero-item action.
-- Enabled calendars refresh in Rust. The scheduler only claims future deadlines whose offset trigger falls in the current bounded check window, using recently refreshed snapshots and a persisted account/event/due/offset ledger. Startup and gaps over 60 seconds skip missed reminders; wake requires a request started after the gap. Older responses cannot overwrite newer schedules.
-- Schema 9 adds account-bound preferences, event observation facts and claim history. Claim precedes delivery, so crashes/errors can lose an attempt but cannot replay it on restart. Five individual notifications plus a summary bound each check; reminder clicks open the local Agenda. Account removal/replacement clears scheduling metadata.
-- Automated evidence: 92 UI tests, 73 Rust tests, frontend build/lint/format, workspace Clippy/format and IPC capability checks. [Native/live reminder qualification](reminders-qa.md) remains unchecked. No claim is made about notification display, delivery while quit or complete Moodle submission status.
-- Next implementation phase: A6 Albert/Mistral BYOK assistant. A1–A5 still require the existing combined live/native/security qualification before release.
+## Evidence index
 
-
-## First tester prerelease — 10 November 2026
-
-At the product owner's request, package the implemented A1–A6 slices as `v0.1.0-alpha.1` for early testing in the existing private GitHub repository. Versions are aligned across Cargo, the shell and Tauri. The universal DMG is ad-hoc signed and has a SHA-256 download checksum; Developer ID/notarization, a stable Alpha identity, automatic updates and combined live/native qualification remain open. See [installation](alpha-install.md) and [release notes](releases/v0.1.0-alpha.1.md). The manual macOS packaging workflow saves verified universal installers as Actions artifacts. Publishing this tester prerelease does not mark the full Alpha acceptance matrix complete.
-
-
-## UI/macOS follow-up — alpha.2
-
-Fixed Settings horizontal expansion, moved reminder preferences to Settings, simplified secondary help across shell views, and added persistent in-app download feedback plus clear storage/Finder guidance. Updated provider defaults, packaged a native macOS 26+ icon asset with older-system fallback, and implemented main-window geometry persistence. The isolated native window save/relaunch smoke passes. See [implementation status](implementation-status.md) and [alpha.2 release notes](releases/v0.1.0-alpha.2.md). Full live/native/platform gates remain open.
+- [Implementation history and verification](implementation-status.md)
+- [Alpha baseline, exit criteria and D1–D5](alpha-plan.md)
+- [Expanded Alpha boundaries and acceptance criteria](alpha-feature-expansion.md)
+- [Authentication review](auth-review.md) and [architecture decisions](adr/0001-alpha-foundation.md)
+- [Background QA](background-qa.md), [links/downloads QA](links-downloads-qa.md), [native reader QA](native-reader-downloads-qa.md)
+- [Offline QA](offline-files-qa.md), [reminder QA](reminders-qa.md), [assistant QA](assistant-qa.md)
+- [alpha.1 release notes](releases/v0.1.0-alpha.1.md), [alpha.2 release notes](releases/v0.1.0-alpha.2.md) and [installation guide](alpha-install.md)

@@ -37,7 +37,116 @@ pub struct Saved {
 pub struct Outcome {
     key: String,
     reused: bool,
-    error: Option<String>,
+    pub(crate) error: Option<String>,
+}
+/// What the assistant may know about a course file: names and size, and the stable
+/// key that identifies it. The source URL never leaves this module.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Listed {
+    pub key: String,
+    pub module_id: i64,
+    pub section: String,
+    pub activity: String,
+    pub filename: String,
+    pub bytes: Option<u64>,
+    /// A copy saved earlier is still in the course folder.
+    pub saved: bool,
+}
+fn listed(items: &[Resource], saved: &std::collections::HashSet<String>) -> Vec<Listed> {
+    items
+        .iter()
+        .map(|item| Listed {
+            key: item.key.clone(),
+            module_id: item.module_id,
+            section: item.section_name.clone(),
+            activity: item.activity_name.clone(),
+            filename: item.filename.clone(),
+            bytes: item.bytes,
+            saved: saved.contains(&item.key),
+        })
+        .collect()
+}
+/// The course's files with their saved state, and how many entries were left out.
+pub async fn listing(
+    app: &AppHandle,
+    site: &str,
+    id: i64,
+    user: i64,
+) -> Result<(Vec<Listed>, usize), String> {
+    let catalog = resources(app, site, id, user).await?;
+    let saved = saved(app, site, id, user)?
+        .into_iter()
+        .filter(|copy| copy.available)
+        .map(|copy| copy.copy.resource_key)
+        .collect();
+    Ok((listed(&catalog.items, &saved), catalog.skipped))
+}
+/// Latest saved copy of a resource that is still inside the managed folder.
+fn latest_copy(
+    app: &AppHandle,
+    site: &str,
+    id: i64,
+    user: i64,
+    select: impl Fn(&md_store::OfflineCopy) -> bool,
+) -> Result<Option<(md_store::OfflineCopy, PathBuf)>, String> {
+    course(app, site, id, user)?;
+    let copies = app
+        .state::<AppState>()
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?
+        .offline_copies(site, id)
+        .map_err(|_| "Could not read offline files.")?;
+    let root = root(app)?;
+    // Newest first: the first one still on disk wins.
+    Ok(copies
+        .into_iter()
+        .filter(|copy| select(copy))
+        .find_map(|copy| {
+            let path = PathBuf::from(&copy.local_path);
+            disk::managed_path(&root, &path).ok()?;
+            Some((copy, path))
+        }))
+}
+/// Revalidated path of one saved copy, for the native document reader.
+pub fn copy_path(
+    app: &AppHandle,
+    site: &str,
+    id: i64,
+    user: i64,
+    copy_id: &str,
+) -> Result<PathBuf, String> {
+    latest_copy(app, site, id, user, |copy| copy.id == copy_id)?
+        .map(|(_, path)| path)
+        .ok_or_else(|| {
+            "This offline file is unavailable. Save a fresh copy from the course.".into()
+        })
+}
+/// Shows the saved copy of a resource: documents the native reader supports are
+/// previewed, anything else is only revealed in Finder (never launched). `false`
+/// when no copy is saved, so the caller can fall back to Moodle.
+pub async fn show(
+    app: &AppHandle,
+    site: &str,
+    id: i64,
+    user: i64,
+    key: &str,
+) -> Result<bool, String> {
+    if key.len() != 64 || !key.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return Err("This resource is no longer available. Reload the course file list.".into());
+    }
+    let Some((copy, path)) = latest_copy(app, site, id, user, |copy| copy.resource_key == key)?
+    else {
+        return Ok(false);
+    };
+    if crate::documents::supported(&copy.filename) && !policy::needs_confirmation(&path) {
+        crate::documents::preview_offline(app, site, id, user, &copy).await?;
+    } else {
+        app.opener()
+            .reveal_item_in_dir(&path)
+            .map_err(|_| "Could not open this offline file.")?;
+    }
+    Ok(true)
 }
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -456,6 +565,13 @@ mod tests {
         )
         .unwrap();
         assert!(unsafe_source.items.is_empty());
+        // What the assistant receives carries names and the key, never the source URL.
+        let shared = listed(&a.items, &std::iter::once(a.items[0].key.clone()).collect());
+        assert!(shared[0].saved);
+        assert_eq!(shared[0].filename, "_notes.pdf");
+        let debug = format!("{shared:?}");
+        assert!(!debug.contains("http") && !debug.contains("pluginfile"));
+        assert!(!listed(&a.items, &Default::default())[0].saved);
         assert_eq!(unsafe_source.skipped, 1);
         let mut unsupported = section(
             1,

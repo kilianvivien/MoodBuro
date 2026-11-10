@@ -18,7 +18,7 @@ const en = {
     },
     add: "Add organisation",
     settings: "Settings",
-    inbox: "Inbox",
+    inbox: "Notifications",
     courses: "Courses",
     agenda: "Agenda",
     views: "Views",
@@ -141,6 +141,12 @@ const en = {
   agenda: {
     help: "Calendar export and details",
     reminders: "Reminder Settings…",
+    remind: {
+      day: (name: string) => `Remind me 24 hours before: ${name}`,
+      hour: (name: string) => `Remind me 1 hour before: ${name}`,
+      onDay: (name: string) => `Reminder set 24 hours before: ${name}. Remove`,
+      onHour: (name: string) => `Reminder set 1 hour before: ${name}. Remove`,
+    },
     dates: "Filter Dates…",
     clearDates: "All Dates",
     title: "Upcoming",
@@ -192,7 +198,7 @@ const en = {
     hint: "↑ ↓ to choose · Return to open · Esc to close",
   },
   toolbar: {
-    inbox: "Inbox",
+    inbox: "Notifications",
     courses: "Courses",
     agenda: "Agenda",
     quickOpen: "Quick Open (⌘L)",
@@ -385,21 +391,32 @@ const en = {
       activities: "Searching saved activities…",
       agenda: "Checking your agenda…",
       notifications: "Checking your notifications…",
+      files: "Listing the course files…",
       open: "Opening in Moodle…",
+      save: "Saving the file…",
       confirm: "Waiting for your confirmation…",
     },
     contextLabel: "Moodle context",
     contextNone: "No Moodle context",
     contextSite: (name: string) => `Organisation: ${name}`,
     contextCourses: "Courses",
-    contextHint:
-      "With a context attached, the assistant can look up this account’s courses, saved activities, deadlines and notification subjects.",
     contextNeedsConsent:
       "Sharing Moodle context is off. Turn it on in Settings to attach an organisation or a course.",
     contextNeedsSite: "Open an organisation to attach its Moodle context.",
     attached: (name: string) => `Context: ${name}`,
     sources: "Sources",
+    moreSources: (count: number) => `${formatNumber("en", count)} more`,
+    fewerSources: "Show fewer",
     openSource: (label: string) => `Open in Moodle: ${label}`,
+    openFile: (label: string) =>
+      `Show the copy saved on this Mac, or open in Moodle: ${label}`,
+    suggestions: "Suggested questions",
+    suggest: {
+      due: "What is due this week?",
+      news: "What is new in my notifications?",
+      files: "Which files does this course have?",
+      courses: "What are my courses?",
+    },
     setupTitle: "Set up the assistant",
     setupHint:
       "Add your own Albert API or Mistral AI key in Settings to start a conversation.",
@@ -407,16 +424,47 @@ const en = {
     emptyTitle: "Ask a question",
     emptyHint: (provider: string) =>
       `Your messages are sent to ${provider}. The conversation stays in memory until you quit MoodBuro and is never saved to disk.`,
-    confirmTitle: "Mark this notification as read?",
-    confirmBody: (site: string) =>
-      `In ${site}. Nothing changes in Moodle unless you confirm.`,
-    confirmApprove: "Mark as Read",
-    confirmDecline: "Don’t Mark",
+    confirm: {
+      "mark-read": {
+        title: (): string => "Mark this notification as read?",
+        body: (site: string) =>
+          `In ${site}. Nothing changes in Moodle unless you confirm.`,
+        approve: "Mark as Read",
+        decline: "Don’t Mark",
+      },
+      "save-file": {
+        title: (): string => "Save this file to your Mac?",
+        body: (site: string, size: string | null) =>
+          `From ${site}, into the course folder in your Moodle folder${size ? ` (${size})` : ""}. Nothing changes in Moodle.`,
+        approve: "Save",
+        decline: "Don’t Save",
+      },
+      reminder: {
+        title: (when: string | null): string =>
+          when === "hour"
+            ? "Remind you 1 hour before this deadline?"
+            : "Remind you 24 hours before this deadline?",
+        body: (site: string) =>
+          `In ${site}. A notification on this Mac, delivered only while MoodBuro is running. You can remove it in the Agenda.`,
+        approve: "Add Reminder",
+        decline: "Don’t Add",
+      },
+    },
     notes: {
       courses: "Checked your course list",
       activities: "Searched activities saved on this Mac",
       agenda: "Checked your agenda",
       notifications: "Checked notification subjects saved on this Mac",
+      files: "Listed the course’s file names",
+      saved: (label: string) => `Saved to your Moodle folder: ${label}`,
+      saveFailed: (label: string) => `Could not save “${label}”.`,
+      saveDeclined: (label: string) => `Not saved: ${label}`,
+      reminderDay: (label: string) =>
+        `Reminder added 24 hours before: ${label}`,
+      reminderHour: (label: string) => `Reminder added 1 hour before: ${label}`,
+      reminderFailed: (label: string) =>
+        `Could not add a reminder for “${label}”.`,
+      reminderDeclined: (label: string) => `No reminder added: ${label}`,
       updated: (when: string) => `updated ${when}`,
       updatedNow: "updated just now",
       stale: "could not be refreshed, so saved data was used",
@@ -458,7 +506,7 @@ const en = {
         `Connected. ${formatNumber("en", count)} chat ${plural("en", count) === "one" ? "model is" : "models are"} available.`,
       consent: "Share Moodle context",
       consentHint: (provider: string) =>
-        `Turning this off stops the current answer and clears conversations. Off: the assistant only sees what you type. On: when you attach an organisation or a course to a message, MoodBuro also sends ${provider} the organisation name and the course names, saved activity names, upcoming deadlines and notification subjects the assistant looks up. Sign-in tokens, cookies, API keys, your name, site addresses and file contents are never sent.`,
+        `Turning this off stops the current answer and clears conversations. Off: the assistant only sees what you type. On: when you attach an organisation or a course to a message, MoodBuro also sends ${provider} the organisation name and the course names, saved activity names, course file names with their section and size, upcoming deadlines and notification subjects the assistant looks up. Sign-in tokens, cookies, API keys, your name, site addresses and file contents are never sent.`,
       history: "Conversations",
       historyHint:
         "Kept in memory only, separately for each organisation account, until you quit MoodBuro. Nothing is written to disk.",
@@ -469,7 +517,7 @@ const en = {
       clearAllConfirm: "Delete",
       cleared: "All conversations were deleted.",
       footnote:
-        "You use your own key, so usage is billed or limited by the provider. The assistant cannot submit work, change grades or read page and file contents, and it asks before changing anything in Moodle.",
+        "You use your own key, so usage is billed or limited by the provider. The assistant cannot submit work, change grades or read page and file contents. It asks before changing anything in Moodle, saving a file to your Mac or adding a reminder.",
     },
   },
   errors: {
@@ -501,7 +549,7 @@ const fr: Messages = {
     label: "Sites Moodle",
     add: "Ajouter une organisation",
     settings: "Réglages",
-    inbox: "Boîte de réception",
+    inbox: "Notifications",
     courses: "Cours",
     agenda: "Agenda",
     views: "Vues",
@@ -630,6 +678,14 @@ const fr: Messages = {
   agenda: {
     help: "Export et informations sur l’agenda",
     reminders: "Réglages des rappels…",
+    remind: {
+      day: (name: string) => `Me le rappeler 24 heures avant\u00a0: ${name}`,
+      hour: (name: string) => `Me le rappeler 1 heure avant\u00a0: ${name}`,
+      onDay: (name: string) =>
+        `Rappel prévu 24 heures avant\u00a0: ${name}. Retirer`,
+      onHour: (name: string) =>
+        `Rappel prévu 1 heure avant\u00a0: ${name}. Retirer`,
+    },
     dates: "Filtrer par dates…",
     clearDates: "Toutes les dates",
     title: "À venir",
@@ -683,7 +739,7 @@ const fr: Messages = {
     hint: "↑ ↓ pour choisir · Retour pour ouvrir · Échap pour fermer",
   },
   toolbar: {
-    inbox: "Boîte de réception",
+    inbox: "Notifications",
     courses: "Cours",
     agenda: "Agenda",
     quickOpen: "Ouverture rapide (⌘L)",
@@ -884,22 +940,33 @@ const fr: Messages = {
       activities: "Recherche dans les activités enregistrées…",
       agenda: "Consultation de votre agenda…",
       notifications: "Consultation de vos notifications…",
+      files: "Consultation des fichiers du cours…",
       open: "Ouverture dans Moodle…",
+      save: "Enregistrement du fichier…",
       confirm: "En attente de votre confirmation…",
     },
     contextLabel: "Contexte Moodle",
     contextNone: "Aucun contexte Moodle",
     contextSite: (name: string) => `Organisation\u00a0: ${name}`,
     contextCourses: "Cours",
-    contextHint:
-      "Avec un contexte joint, l’assistant peut consulter les cours, les activités enregistrées, les échéances et les objets des notifications de ce compte.",
     contextNeedsConsent:
       "Le partage du contexte Moodle est désactivé. Activez-le dans les Réglages pour joindre une organisation ou un cours.",
     contextNeedsSite:
       "Ouvrez une organisation pour joindre son contexte Moodle.",
     attached: (name: string) => `Contexte\u00a0: ${name}`,
     sources: "Sources",
+    moreSources: (count: number) => `${formatNumber("fr", count)} de plus`,
+    fewerSources: "Afficher moins",
     openSource: (label: string) => `Ouvrir dans Moodle\u00a0: ${label}`,
+    openFile: (label: string) =>
+      `Afficher la copie enregistrée sur ce Mac, ou ouvrir dans Moodle\u00a0: ${label}`,
+    suggestions: "Questions suggérées",
+    suggest: {
+      due: "Qu’ai-je à rendre cette semaine\u00a0?",
+      news: "Quoi de neuf dans mes notifications\u00a0?",
+      files: "Quels fichiers contient ce cours\u00a0?",
+      courses: "Quels sont mes cours\u00a0?",
+    },
     setupTitle: "Configurer l’assistant",
     setupHint:
       "Ajoutez votre propre clé Albert API ou Mistral AI dans les Réglages pour démarrer une conversation.",
@@ -907,17 +974,52 @@ const fr: Messages = {
     emptyTitle: "Posez une question",
     emptyHint: (provider: string) =>
       `Vos messages sont envoyés à ${provider}. La conversation reste en mémoire jusqu’à ce que vous quittiez MoodBuro et n’est jamais enregistrée sur le disque.`,
-    confirmTitle: "Marquer cette notification comme lue\u00a0?",
-    confirmBody: (site: string) =>
-      `Dans ${site}. Rien ne change dans Moodle sans votre confirmation.`,
-    confirmApprove: "Marquer comme lue",
-    confirmDecline: "Ne pas marquer",
+    confirm: {
+      "mark-read": {
+        title: () => "Marquer cette notification comme lue\u00a0?",
+        body: (site: string) =>
+          `Dans ${site}. Rien ne change dans Moodle sans votre confirmation.`,
+        approve: "Marquer comme lue",
+        decline: "Ne pas marquer",
+      },
+      "save-file": {
+        title: () => "Enregistrer ce fichier sur votre Mac\u00a0?",
+        body: (site: string, size: string | null) =>
+          `Depuis ${site}, dans le dossier du cours de votre dossier Moodle${size ? ` (${size})` : ""}. Rien ne change dans Moodle.`,
+        approve: "Enregistrer",
+        decline: "Ne pas enregistrer",
+      },
+      reminder: {
+        title: (when: string | null) =>
+          when === "hour"
+            ? "Vous rappeler cette échéance 1 heure avant\u00a0?"
+            : "Vous rappeler cette échéance 24 heures avant\u00a0?",
+        body: (site: string) =>
+          `Dans ${site}. Une notification sur ce Mac, envoyée uniquement si MoodBuro est en cours d’exécution. Vous pouvez la retirer dans l’agenda.`,
+        approve: "Ajouter le rappel",
+        decline: "Ne pas ajouter",
+      },
+    },
     notes: {
       courses: "Liste de vos cours consultée",
       activities: "Recherche dans les activités enregistrées sur ce Mac",
       agenda: "Agenda consulté",
       notifications:
         "Objets des notifications enregistrés sur ce Mac consultés",
+      files: "Noms des fichiers du cours consultés",
+      saved: (label: string) =>
+        `Enregistré dans votre dossier Moodle\u00a0: ${label}`,
+      saveFailed: (label: string) =>
+        `Impossible d’enregistrer «\u00a0${label}\u00a0».`,
+      saveDeclined: (label: string) => `Non enregistré\u00a0: ${label}`,
+      reminderDay: (label: string) =>
+        `Rappel ajouté 24 heures avant\u00a0: ${label}`,
+      reminderHour: (label: string) =>
+        `Rappel ajouté 1 heure avant\u00a0: ${label}`,
+      reminderFailed: (label: string) =>
+        `Impossible d’ajouter un rappel pour «\u00a0${label}\u00a0».`,
+      reminderDeclined: (label: string) =>
+        `Aucun rappel ajouté\u00a0: ${label}`,
       updated: (when: string) => `actualisé ${when}`,
       updatedNow: "actualisé à l’instant",
       stale:
@@ -961,7 +1063,7 @@ const fr: Messages = {
         `Connexion établie. ${formatNumber("fr", count)} ${plural("fr", count) === "one" ? "modèle de discussion disponible" : "modèles de discussion disponibles"}.`,
       consent: "Partager le contexte Moodle",
       consentHint: (provider: string) =>
-        `Désactiver le partage arrête la réponse en cours et efface les conversations. Désactivé\u00a0: l’assistant ne voit que ce que vous saisissez. Activé\u00a0: lorsque vous joignez une organisation ou un cours à un message, MoodBuro envoie aussi à ${provider} le nom de l’organisation ainsi que les noms de cours, les noms d’activités enregistrées, les échéances à venir et les objets de notifications que l’assistant consulte. Les jetons de connexion, les cookies, les clés d’API, votre nom, les adresses des sites et le contenu des fichiers ne sont jamais envoyés.`,
+        `Désactiver le partage arrête la réponse en cours et efface les conversations. Désactivé\u00a0: l’assistant ne voit que ce que vous saisissez. Activé\u00a0: lorsque vous joignez une organisation ou un cours à un message, MoodBuro envoie aussi à ${provider} le nom de l’organisation ainsi que les noms de cours, les noms d’activités enregistrées, les noms des fichiers de cours avec leur section et leur taille, les échéances à venir et les objets de notifications que l’assistant consulte. Les jetons de connexion, les cookies, les clés d’API, votre nom, les adresses des sites et le contenu des fichiers ne sont jamais envoyés.`,
       history: "Conversations",
       historyHint:
         "Conservées en mémoire uniquement, séparément pour chaque compte d’organisation, jusqu’à ce que vous quittiez MoodBuro. Rien n’est écrit sur le disque.",
@@ -972,7 +1074,7 @@ const fr: Messages = {
       clearAllConfirm: "Supprimer",
       cleared: "Toutes les conversations ont été supprimées.",
       footnote:
-        "Vous utilisez votre propre clé\u00a0: l’usage est facturé ou limité par le fournisseur. L’assistant ne peut ni rendre un devoir, ni modifier une note, ni lire le contenu des pages et des fichiers, et il demande votre accord avant toute modification dans Moodle.",
+        "Vous utilisez votre propre clé\u00a0: l’usage est facturé ou limité par le fournisseur. L’assistant ne peut ni rendre un devoir, ni modifier une note, ni lire le contenu des pages et des fichiers. Il demande votre accord avant toute modification dans Moodle, tout enregistrement de fichier sur votre Mac et tout ajout de rappel.",
     },
   },
   errors: {

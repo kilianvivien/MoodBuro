@@ -50,6 +50,9 @@ export default function App() {
   const assistant = useAssistant();
   // Bumped whenever the panel should take keyboard focus.
   const [assistantFocus, setAssistantFocus] = useState(0);
+  // The panel is playing its exit; Rust widens the Moodle view once it is done.
+  const [assistantClosing, setAssistantClosing] = useState(false);
+  const assistantLeaving = useRef(false);
   const [linkRequest, setLinkRequest] = useState(0);
   const [prefill, setPrefill] = useState({ url: "", revision: 0 });
   const consumingLink = useRef(false);
@@ -173,11 +176,34 @@ export default function App() {
     else void showLocal(target.view);
   }
 
-  /** Rust resizes the Moodle view first, so the panel never sits under it. */
+  /**
+   * Opening: Rust narrows the Moodle view first, so the panel never sits under
+   * it, then the panel enters. Closing is the reverse: the panel leaves, then
+   * `closeAssistant` gives the room back. Toggling mid-exit keeps it open.
+   */
   async function toggleAssistant() {
-    const open = !useAssistant.getState().panel.open;
-    await useAssistant.getState().setOpen(open);
-    if (open) setAssistantFocus((revision) => revision + 1);
+    if (assistantLeaving.current && useAssistant.getState().panel.open) {
+      assistantLeaving.current = false;
+      setAssistantClosing(false);
+      setAssistantFocus((revision) => revision + 1);
+      return;
+    }
+    // Something else already closed it mid-exit: start from a clean state.
+    assistantLeaving.current = false;
+    setAssistantClosing(false);
+    if (useAssistant.getState().panel.open) {
+      assistantLeaving.current = true;
+      setAssistantClosing(true);
+      return;
+    }
+    await useAssistant.getState().setOpen(true);
+    setAssistantFocus((revision) => revision + 1);
+  }
+  async function closeAssistant() {
+    if (!assistantLeaving.current) return;
+    assistantLeaving.current = false;
+    await useAssistant.getState().setOpen(false);
+    setAssistantClosing(false);
   }
 
   /** Done/Cancel/Escape: back to the last site, else the onboarding view. */
@@ -443,7 +469,7 @@ export default function App() {
             useAssistant.setState({ error: null });
           }}
           onAssistant={ready ? () => void toggleAssistant() : undefined}
-          assistantOpen={assistant.panel.open}
+          assistantOpen={assistant.panel.open && !assistantClosing}
           onLeave={leave}
           downloadFeedback={
             sites.some(
@@ -566,6 +592,8 @@ export default function App() {
           <AssistantPanel
             site={site}
             focus={assistantFocus}
+            closing={assistantClosing}
+            onClosed={() => void closeAssistant()}
             onOpenPage={(source, siteId) =>
               void openPage(siteId, source.page, source.value ?? undefined)
             }

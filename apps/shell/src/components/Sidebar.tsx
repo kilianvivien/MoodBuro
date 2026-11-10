@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from "react";
-import { BookOpen, CalendarDays, Inbox, Plus, Settings } from "lucide-react";
+import { Bell, BookOpen, CalendarDays, Plus, Settings } from "lucide-react";
 import type { Site, UnreadStatus } from "../ipc";
 import { displayHost, initials } from "../lib/site";
 import { useI18n } from "../i18n/context";
@@ -17,7 +17,7 @@ export const isLocal = (view: View) => view !== "site";
 /** Views reached from the sidebar's top group. */
 export type Destination = "inbox" | "courses" | "agenda";
 const destinations = [
-  { view: "inbox", icon: Inbox },
+  { view: "inbox", icon: Bell },
   { view: "courses", icon: BookOpen },
   { view: "agenda", icon: CalendarDays },
 ] as const;

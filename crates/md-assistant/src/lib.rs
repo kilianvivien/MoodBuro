@@ -510,7 +510,7 @@ mod tests {
         let request = &server.received_requests().await.unwrap()[0];
         let body: Value = serde_json::from_slice(&request.body).unwrap();
         assert_eq!(body["tool_choice"], "auto");
-        assert_eq!(body["tools"].as_array().unwrap().len(), 6);
+        assert_eq!(body["tools"].as_array().unwrap().len(), 9);
     }
 
     #[tokio::test]

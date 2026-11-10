@@ -4,7 +4,7 @@ import {
   CheckCheck,
   Check,
   CircleAlert,
-  Inbox as InboxIcon,
+  Bell as InboxIcon,
   MessagesSquare,
 } from "lucide-react";
 import {

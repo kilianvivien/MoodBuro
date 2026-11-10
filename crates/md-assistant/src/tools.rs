@@ -24,15 +24,46 @@ pub enum Call {
     ListNotifications {
         unread_only: bool,
     },
+    /// Names, sections and sizes of one course's files; never their contents.
+    ListCourseFiles {
+        course_id: i64,
+    },
     Open(Target),
-    /// The only write: always confirmed by the user before it runs.
+    // The actions below change something: each is confirmed by the user before it runs.
     MarkNotificationRead {
         id: i64,
     },
+    /// Saves one file listed by `ListCourseFiles` in this answer to the user's Mac.
+    SaveCourseFile {
+        file_id: i64,
+    },
+    /// A one-off local reminder before one deadline.
+    RemindDeadline {
+        id: i64,
+        before: Before,
+    },
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Before {
+    Hour,
+    Day,
+}
+impl Before {
+    pub fn seconds(self) -> i64 {
+        match self {
+            Self::Hour => 3600,
+            Self::Day => 86400,
+        }
+    }
 }
 impl Call {
     pub fn is_write(&self) -> bool {
-        matches!(self, Self::MarkNotificationRead { .. })
+        matches!(
+            self,
+            Self::MarkNotificationRead { .. }
+                | Self::SaveCourseFile { .. }
+                | Self::RemindDeadline { .. }
+        )
     }
 }
 
@@ -78,6 +109,24 @@ struct Open {
 #[serde(deny_unknown_fields)]
 struct Identifier {
     id: i64,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CourseFiles {
+    course_id: i64,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SaveFile {
+    file_id: i64,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Remind {
+    id: i64,
+    #[serde(default)]
+    before: Option<String>,
 }
 
 fn arguments<T: serde::de::DeserializeOwned>(raw: &str) -> Result<T, Error> {
@@ -137,6 +186,23 @@ pub fn parse(name: &str, raw: &str) -> Result<Call, Error> {
         "mark_notification_read" => Call::MarkNotificationRead {
             id: positive(Some(arguments::<Identifier>(raw)?.id))?,
         },
+        "list_course_files" => Call::ListCourseFiles {
+            course_id: positive(Some(arguments::<CourseFiles>(raw)?.course_id))?,
+        },
+        "save_course_file" => Call::SaveCourseFile {
+            file_id: positive(Some(arguments::<SaveFile>(raw)?.file_id))?,
+        },
+        "remind_before_deadline" => {
+            let remind: Remind = arguments(raw)?;
+            Call::RemindDeadline {
+                id: positive(Some(remind.id))?,
+                before: match remind.before.as_deref() {
+                    None | Some("day") => Before::Day,
+                    Some("hour") => Before::Hour,
+                    _ => return Err(Error::Arguments),
+                },
+            }
+        }
         _ => return Err(Error::Unknown),
     })
 }
@@ -182,6 +248,12 @@ pub fn definitions() -> Value {
             &[]
         ),
         tool(
+            "list_course_files",
+            "List the files of one course by section: names and sizes only, never contents. Each file gets a file id valid for this answer.",
+            json!({"course_id": {"type": "integer", "description": "Course id from list_courses or the attached course."}}),
+            &["course_id"]
+        ),
+        tool(
             "open_in_moodle",
             "Show an item in the app's Moodle view. Use only when the user asks to open or go to something.",
             json!({
@@ -194,6 +266,21 @@ pub fn definitions() -> Value {
             "mark_notification_read",
             "Ask the user to confirm marking one notification as read. Use only when the user asks for it.",
             json!({"id": {"type": "integer", "description": "Notification id from list_notifications."}}),
+            &["id"]
+        ),
+        tool(
+            "save_course_file",
+            "Ask the user to confirm saving one course file to their Mac. Use only when the user asks to save or download it.",
+            json!({"file_id": {"type": "integer", "description": "File id from list_course_files in this answer."}}),
+            &["file_id"]
+        ),
+        tool(
+            "remind_before_deadline",
+            "Ask the user to confirm a one-off local reminder before one deadline. Use only when the user asks to be reminded.",
+            json!({
+                "id": {"type": "integer", "description": "Deadline id from list_deadlines."},
+                "before": {"type": "string", "enum": ["day", "hour"], "description": "24 hours or 1 hour before. Default day."},
+            }),
             &["id"]
         ),
     ])
@@ -211,7 +298,7 @@ mod tests {
             .iter()
             .map(|t| t["function"]["name"].as_str().unwrap())
             .collect();
-        assert_eq!(names.len(), 6);
+        assert_eq!(names.len(), 9);
         for name in &names {
             assert_ne!(parse(name, "not json"), Err(Error::Unknown));
         }
@@ -219,6 +306,9 @@ mod tests {
             "submit_assignment",
             "set_grade",
             "run_script",
+            "read_file",
+            "open_file",
+            "delete_file",
             "mark_all_notifications_read",
             "",
         ] {
@@ -253,6 +343,24 @@ mod tests {
         );
         let write = parse("mark_notification_read", r#"{"id":3}"#).unwrap();
         assert!(write.is_write());
+        assert_eq!(
+            parse("list_course_files", r#"{"course_id":4}"#),
+            Ok(Call::ListCourseFiles { course_id: 4 })
+        );
+        assert!(!Call::ListCourseFiles { course_id: 4 }.is_write());
+        let save = parse("save_course_file", r#"{"file_id":2}"#).unwrap();
+        assert_eq!(save, Call::SaveCourseFile { file_id: 2 });
+        assert!(save.is_write());
+        assert_eq!(
+            parse("remind_before_deadline", r#"{"id":9}"#),
+            Ok(Call::RemindDeadline {
+                id: 9,
+                before: Before::Day
+            })
+        );
+        let remind = parse("remind_before_deadline", r#"{"id":9,"before":"hour"}"#).unwrap();
+        assert!(remind.is_write());
+        assert_eq!(Before::Hour.seconds(), 3600);
         assert!(!Call::ListCourses.is_write());
     }
     #[test]
@@ -273,6 +381,19 @@ mod tests {
             ("open_in_moodle", r#"{"kind":"https://evil.example"}"#),
             ("open_in_moodle", r#"{"kind":"messages"}"#),
             ("open_in_moodle", r#"{"kind":"course","id":1,"url":"x"}"#),
+            ("list_course_files", "{}"),
+            ("list_course_files", r#"{"course_id":0}"#),
+            ("list_course_files", r#"{"course_id":1,"path":"/etc"}"#),
+            ("save_course_file", r#"{"file_id":0}"#),
+            ("save_course_file", r#"{"file_id":"notes.pdf"}"#),
+            (
+                "save_course_file",
+                r#"{"file_id":1,"url":"https://evil.example/x"}"#,
+            ),
+            ("save_course_file", r#"{"file_id":1,"path":"~/x"}"#),
+            ("remind_before_deadline", r#"{"before":"day"}"#),
+            ("remind_before_deadline", r#"{"id":1,"before":"week"}"#),
+            ("remind_before_deadline", r#"{"id":1,"minutes":5}"#),
             ("mark_notification_read", "{}"),
             ("mark_notification_read", r#"{"id":null}"#),
             ("mark_notification_read", r#"{"id":1,"all":true}"#),

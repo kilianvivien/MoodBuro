@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-assistant-current-course"
+description = "Enables the assistant_current_course command without any pre-configured scope."
+commands.allow = ["assistant_current_course"]
+
+[[permission]]
+identifier = "deny-assistant-current-course"
+description = "Denies the assistant_current_course command without any pre-configured scope."
+commands.deny = ["assistant_current_course"]

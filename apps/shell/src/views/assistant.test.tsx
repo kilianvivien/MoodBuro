@@ -47,6 +47,39 @@ const render = (
   );
 
 describe("assistant panel states", () => {
+  it("renders an answer's Markdown as elements, never as HTML", () => {
+    const html = render({
+      entries: [
+        {
+          role: "assistant",
+          text: "Only **one** item:\n\n- the *guide* <b>x</b>\n  - `nested`\n\nUnclosed **marker",
+          context: null,
+          sources: [],
+          notes: [],
+        },
+      ],
+    });
+    expect(html).toContain("<strong>one</strong>");
+    expect(html).toContain("<em>guide</em> &lt;b&gt;x&lt;/b&gt;");
+    expect(html).toContain('<li data-depth="1"><code>nested</code></li>');
+    expect(html).toContain("Unclosed **marker");
+  });
+  it("keeps the numbers of a list split by blank lines or nested bullets", () => {
+    const html = render({
+      entries: [
+        {
+          role: "assistant",
+          text: "1. First\n  - detail\n2. Second\n\n3. Third",
+          context: null,
+          sources: [],
+          notes: [],
+        },
+      ],
+    });
+    expect(html).toContain('<li value="2">Second</li>');
+    expect(html).toContain('<li value="3">Third</li>');
+    expect(html).toContain('<li data-depth="1">detail</li>');
+  });
   it("requires setup without a key and exposes no composer", () => {
     const html = render({ hasKey: false });
     expect(html).not.toContain("<textarea");
@@ -77,14 +110,88 @@ describe("assistant panel states", () => {
       confirmation: {
         request: "r",
         id: "c",
+        kind: "mark-read",
         site: "Campus",
         subject: "A specific notification",
+        detail: null,
       },
     });
+    expect(html).toContain("Mark this notification as read?");
     expect(html).toContain('role="alertdialog"');
     expect(html).toContain("A specific notification");
     expect(html).toContain("Campus");
     expect(html).toContain('aria-describedby="assistant-confirm-body"');
+  });
+  it("words each confirmation for what it will actually do", () => {
+    const ask = (
+      kind: "save-file" | "reminder",
+      detail: string | null,
+      locale: "en" | "fr" = "en",
+    ) =>
+      render(
+        {
+          confirmation: {
+            request: "r",
+            id: "c",
+            kind,
+            site: "Campus",
+            subject: "notes.pdf",
+            detail,
+          },
+        },
+        locale,
+      );
+    const save = ask("save-file", "1400000");
+    expect(save).toContain("Save this file to your Mac?");
+    expect(save).toContain("notes.pdf");
+    expect(save).toContain("(1.4 MB)");
+    expect(save).toContain(">Don’t Save<");
+    // An unknown size is left out rather than shown as zero.
+    expect(ask("save-file", null)).not.toContain("(");
+    expect(ask("save-file", "1400000", "fr")).toMatch(/\(1,4\sMo\)/u);
+    expect(ask("reminder", "hour")).toContain("1 hour before this deadline?");
+    expect(ask("reminder", "day")).toContain("24 hours before this deadline?");
+    expect(ask("reminder", "day", "fr")).toContain("24 heures avant");
+  });
+  it("offers suggestions only in an empty conversation, and file chips say what they do", () => {
+    const empty = render({ suggestions: ["What is due this week?"] });
+    expect(empty).toContain('aria-label="Suggested questions"');
+    expect(empty).toContain(">What is due this week?<");
+    expect(render()).not.toContain("assistant-suggestion");
+    const answered = render({
+      suggestions: ["What is due this week?"],
+      entries: [
+        {
+          role: "assistant",
+          text: "Here.",
+          context: null,
+          sources: [
+            {
+              kind: "file",
+              id: 1,
+              page: "activity",
+              value: 42,
+              label: "notes.pdf",
+              course: 7,
+              key: "a".repeat(64),
+            },
+          ],
+          notes: [
+            { code: "saved", label: "notes.pdf", age: null, stale: false },
+          ],
+        },
+      ],
+    });
+    expect(answered).not.toContain("assistant-suggestion");
+    expect(answered).toContain("Show the copy saved on this Mac");
+    expect(answered).toContain("Saved to your Moodle folder: notes.pdf");
+    // The key identifies the file to Rust; it is never shown.
+    expect(answered).not.toContain("a".repeat(64));
+  });
+  it("hides a file marker while the answer streams", () => {
+    expect(withoutMarkers("See the notes [file:3]. And [fi")).toBe(
+      "See the notes. And",
+    );
   });
   it("keeps clear-history confirmation separate from the chat log", () => {
     expect(render({ clearing: true })).toContain(

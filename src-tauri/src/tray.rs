@@ -13,21 +13,13 @@ pub fn show(app: &AppHandle) {
     }
 }
 pub fn install(app: &AppHandle) -> tauri::Result<()> {
-    // Small monochrome template glyph, generated locally without another image asset.
-    let mut rgba = vec![0_u8; 18 * 18 * 4];
-    for y in 3..15 {
-        for x in 3..15 {
-            if !(5..13).contains(&x) || y == 3 || y == 14 || (y < 9 && (x == y || x + y == 17)) {
-                rgba[(y * 18 + x) * 4 + 3] = 255;
-            }
-        }
-    }
+    // Monochrome template glyph: the app icon's mortarboard, 18 pt @2x.
+    // Drawn by scripts/make-tray-icon.py.
     TrayIconBuilder::with_id("unread")
-        .icon(tauri::image::Image::new_owned(rgba, 18, 18))
+        .icon(tauri::include_image!("icons/tray.png"))
         .icon_as_template(true)
         .tooltip("MoodBuro")
         .on_menu_event(|app, event| match event.id().as_ref() {
-            "tray-open" => show(app),
             "tray-check" => crate::notifications::check_now(app),
             "tray-downloads" => {
                 show(app);
@@ -44,12 +36,11 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
                 let _ = app.emit_to("shell", "shell://navigate", "settings");
             }
             "tray-quit" => app.exit(0),
-            id if id.starts_with("tray-site:") || id.starts_with("tray-home:") => {
-                let home = id.starts_with("tray-home:");
+            id if id.starts_with("tray-site:") => {
                 let id = id.split_once(':').expect("site menu id").1.to_owned();
                 let app = app.clone();
                 tauri::async_runtime::spawn(async move {
-                    let result = open_site(&app, &id, home).await;
+                    let result = open_site(&app, &id).await;
                     show(&app);
                     if let Err(error) = result {
                         let _ = crate::windows::hide_sites(&app);
@@ -113,28 +104,8 @@ fn compact(value: &str, max: usize) -> String {
         format!("{}…", value.chars().take(max - 1).collect::<String>())
     }
 }
-async fn open_site(app: &AppHandle, id: &str, home: bool) -> Result<(), String> {
-    let destination = if home {
-        let site = app
-            .state::<crate::AppState>()
-            .store
-            .lock()
-            .map_err(|_| "Site storage unavailable.")?
-            .sites()
-            .map_err(|_| "Could not read sites.")?
-            .into_iter()
-            .find(|s| s.id == id)
-            .ok_or("Unknown site.")?;
-        Some(
-            md_moodle::normalize_site(&site.wwwroot)
-                .map_err(|e| e.to_string())?
-                .join("my/")
-                .map_err(|_| "Invalid site URL.")?,
-        )
-    } else {
-        None
-    };
-    crate::commands::restore_site_at(app, id, destination).await?;
+async fn open_site(app: &AppHandle, id: &str) -> Result<(), String> {
+    crate::commands::restore_site_at(app, id, None).await?;
     let _ = app.emit_to("shell", "navigation://site-opened", id);
     Ok(())
 }
@@ -166,6 +137,7 @@ pub fn refresh(app: &AppHandle, statuses: &[Status]) -> tauri::Result<()> {
         .sites()
         .unwrap_or_default();
     let mut menu = MenuBuilder::new(app);
+    let sites_empty = sites.is_empty();
     let notifications = crate::library::inbox(app).unwrap_or_default();
     for site in sites {
         let status = statuses.iter().find(|s| s.site_id == site.id);
@@ -185,27 +157,31 @@ pub fn refresh(app: &AppHandle, statuses: &[Status]) -> tauri::Result<()> {
             .ok()
             .flatten();
         let name = compact(short.as_deref().unwrap_or(&site.name), 32);
+        let unread = latest_unread(&notifications, &site.id);
+        // Nothing to report: the row opens the organisation directly.
+        if count == 0 && unread.is_empty() && status_text.is_none() {
+            menu = menu.item(
+                &MenuItemBuilder::with_id(format!("tray-site:{}", site.id), name).build(app)?,
+            );
+            continue;
+        }
         let label = if count == 0 {
             name
         } else {
             format!("{name} · {count}")
         };
-        let open = MenuItemBuilder::with_id(
-            format!("tray-site:{}", site.id),
-            text("Open Moodle", "Ouvrir Moodle"),
-        )
-        .build(app)?;
-        let home = MenuItemBuilder::with_id(
-            format!("tray-home:{}", site.id),
-            text("Moodle Home", "Accueil Moodle"),
-        )
-        .build(app)?;
-        let mut site_menu = SubmenuBuilder::new(app, label).items(&[&open, &home]);
-        let unread = latest_unread(&notifications, &site.id);
+        let open =
+            MenuItemBuilder::with_id(format!("tray-site:{}", site.id), text("Open", "Ouvrir"))
+                .build(app)?;
+        let mut site_menu = SubmenuBuilder::new(app, label).item(&open);
         if !unread.is_empty() {
-            let mut latest = SubmenuBuilder::new(app, text("Latest Unread", "Dernières non lues"));
+            site_menu = site_menu.separator().item(
+                &MenuItemBuilder::new(text("Unread", "Non lues"))
+                    .enabled(false)
+                    .build(app)?,
+            );
             for item in unread {
-                latest = latest.item(
+                site_menu = site_menu.item(
                     &MenuItemBuilder::with_id(
                         format!("tray-notification:{}:{}", site.id, item.id),
                         compact(&item.subject, 48),
@@ -213,7 +189,6 @@ pub fn refresh(app: &AppHandle, statuses: &[Status]) -> tauri::Result<()> {
                     .build(app)?,
                 );
             }
-            site_menu = site_menu.separator().item(&latest.build()?);
         }
         if let Some(status) = status_text {
             site_menu = site_menu
@@ -222,25 +197,25 @@ pub fn refresh(app: &AppHandle, statuses: &[Status]) -> tauri::Result<()> {
         }
         menu = menu.item(&site_menu.build()?);
     }
-    let open = MenuItemBuilder::with_id("tray-open", text("Open MoodBuro", "Ouvrir MoodBuro"))
-        .build(app)?;
+    if !sites_empty {
+        menu = menu.separator();
+    }
     let inbox_label = if count_all(statuses) == 0 {
-        text("Inbox…", "Boîte de réception…").to_owned()
+        "Notifications".to_owned()
     } else {
-        format!(
-            "{} · {}",
-            text("Inbox…", "Boîte de réception…"),
-            count_all(statuses)
-        )
+        format!("Notifications · {}", count_all(statuses))
     };
     let inbox = MenuItemBuilder::with_id("tray-inbox", inbox_label).build(app)?;
-    let check = MenuItemBuilder::with_id("tray-check", text("Check Now", "Vérifier maintenant"))
-        .build(app)?;
+    let check = MenuItemBuilder::with_id(
+        "tray-check",
+        text("Check for Notifications", "Relever les notifications"),
+    )
+    .build(app)?;
     let settings =
         MenuItemBuilder::with_id("tray-settings", text("Settings…", "Réglages…")).build(app)?;
     let downloads_open = MenuItemBuilder::with_id(
         "tray-downloads",
-        text("Open Downloads…", "Ouvrir les téléchargements…"),
+        text("Show All Downloads", "Afficher tous les téléchargements"),
     )
     .build(app)?;
     let mut downloads =
@@ -282,8 +257,7 @@ pub fn refresh(app: &AppHandle, statuses: &[Status]) -> tauri::Result<()> {
     let quit = MenuItemBuilder::with_id("tray-quit", text("Quit MoodBuro", "Quitter MoodBuro"))
         .build(app)?;
     tray.set_menu(Some(
-        menu.separator()
-            .items(&[&open, &inbox, &check, &downloads, &settings])
+        menu.items(&[&inbox, &check, &downloads, &settings])
             .separator()
             .item(&quit)
             .build()?,

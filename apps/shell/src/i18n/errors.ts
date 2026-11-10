@@ -271,6 +271,12 @@ const french: Record<string, string> = {
     "Impossible d’enregistrer la liste des cours.",
   "Could not update this pin.": "Impossible de modifier cette épingle.",
   "Could not read notifications.": "Impossible de lire les notifications.",
+  "It is too late to be reminded of this deadline at that time.":
+    "Il est trop tard pour recevoir un rappel de cette échéance à ce moment-là.",
+  "This deadline is not available for reminders. Refresh the agenda.":
+    "Cette échéance n’est pas disponible pour les rappels. Actualisez l’agenda.",
+  "Could not save the reminder. Reopen the agenda for the current account.":
+    "Impossible d’enregistrer le rappel. Rouvrez l’agenda pour le compte actuel.",
   "Could not update notifications.":
     "Impossible de mettre à jour les notifications.",
   "This notification is no longer available.":

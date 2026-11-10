@@ -1,10 +1,18 @@
-import { Bell, CalendarDays, CircleAlert } from "lucide-react";
-import { ipc, message, type AgendaEvent, type Site } from "../ipc";
+import { Bell, BellRing, CalendarDays, CircleAlert } from "lucide-react";
+import { listen } from "@tauri-apps/api/event";
+import {
+  desktop,
+  ipc,
+  message,
+  type AgendaEvent,
+  type ReminderPick,
+  type Site,
+} from "../ipc";
 import { useI18n } from "../i18n/context";
 import { ErrorText } from "../i18n/ErrorText";
 import { dayLabel, groupByDay, timeLabel, timeZone } from "../lib/time";
 import { useListing } from "../lib/useListing";
-import { useRef, useState } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   EmptyState,
   PageHeader,
@@ -17,11 +25,20 @@ export function AgendaList({
   events,
   sites,
   now = new Date(),
+  picks = [],
+  onRemind,
   onOpen,
 }: {
   events: readonly AgendaEvent[];
   sites: readonly Site[];
   now?: Date;
+  /** One-off reminders already set on single deadlines. */
+  picks?: readonly ReminderPick[];
+  onRemind?: (
+    event: AgendaEvent,
+    offset: ReminderPick["offset"],
+    on: boolean,
+  ) => void;
   onOpen: (event: AgendaEvent) => void;
 }) {
   const { t, locale } = useI18n();
@@ -47,6 +64,26 @@ export function AgendaList({
           ]
             .filter(Boolean)
             .join(" · ");
+          const pick = picks.find(
+            (p) => p.siteId === event.siteId && p.eventId === event.id,
+          );
+          // The latest reminder still ahead: a day before, else an hour before.
+          const ahead = ([86400, 3600] as const).find(
+            (offset) => event.timeStart - offset > now.getTime() / 1000 + 60,
+          );
+          const offset = pick?.offset ?? ahead;
+          const remind =
+            onRemind && event.kind === "due" && offset
+              ? t.agenda.remind[
+                  pick
+                    ? offset === 3600
+                      ? "onHour"
+                      : "onDay"
+                    : offset === 3600
+                      ? "hour"
+                      : "day"
+                ](event.name)
+              : null;
           return (
             <li className="list-row" key={`${event.siteId}:${event.id}`}>
               <time className="event-time" dateTime={start.toISOString()}>
@@ -64,6 +101,21 @@ export function AgendaList({
               <span className="tag" data-kind={event.kind}>
                 {t.agenda.kinds[event.kind] ?? t.agenda.kinds.other}
               </span>
+              {remind && offset && (
+                <button
+                  className="button icon small remind-toggle"
+                  title={remind}
+                  aria-label={remind}
+                  aria-pressed={Boolean(pick)}
+                  onClick={() => onRemind?.(event, offset, !pick)}
+                >
+                  {pick ? (
+                    <BellRing size={13} strokeWidth={2} aria-hidden="true" />
+                  ) : (
+                    <Bell size={13} strokeWidth={2} aria-hidden="true" />
+                  )}
+                </button>
+              )}
               <button
                 className="button small"
                 aria-label={t.agenda.openLabel(event.name)}
@@ -132,6 +184,44 @@ export function Agenda({
     revealed: boolean;
   } | null>(null);
   const exportPending = useRef(false);
+  const [picks, setPicks] = useState<ReminderPick[]>([]);
+  const [remindError, setRemindError] = useState<string | null>(null);
+  const reloadPicks = useEffectEvent(() => {
+    void ipc
+      .reminderPicks()
+      .then(setPicks)
+      .catch(() => {});
+  });
+  useEffect(() => {
+    reloadPicks();
+    if (!desktop) return;
+    let wanted = true;
+    let stop: (() => void) | undefined;
+    // Also changes when the assistant adds one, or when one is delivered.
+    void listen("reminders://changed", reloadPicks).then((unlisten) => {
+      if (wanted) stop = unlisten;
+      else unlisten();
+    });
+    return () => {
+      wanted = false;
+      stop?.();
+    };
+  }, []);
+  async function remind(
+    event: AgendaEvent,
+    offset: ReminderPick["offset"],
+    on: boolean,
+  ) {
+    const site = sites.find((s) => s.id === event.siteId);
+    if (!site) return;
+    setRemindError(null);
+    try {
+      await ipc.setReminderPick(event, site.userId, offset, on);
+    } catch (error) {
+      setRemindError(message(error));
+    }
+    reloadPicks();
+  }
   const range = agendaRange(from, through);
   async function exportCalendar() {
     if (exportPending.current || !range.valid) return;
@@ -236,6 +326,12 @@ export function Agenda({
           {t.agenda.invalidRange}
         </p>
       )}
+      {remindError && (
+        <p className="section-message error" role="alert">
+          <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
+          <ErrorText error={remindError} context="settings" />
+        </p>
+      )}
       {exportError && (
         <p className="section-message error" role="alert">
           <ErrorText error={exportError} context="navigation" />
@@ -271,6 +367,8 @@ export function Agenda({
         <AgendaList
           events={events}
           sites={sites}
+          picks={picks}
+          onRemind={(event, offset, on) => void remind(event, offset, on)}
           onOpen={(event) => onOpenDay(event.siteId, event.timeStart)}
         />
       )}

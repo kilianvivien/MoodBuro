@@ -5,7 +5,7 @@ import {
   CalendarDays,
   CornerDownLeft,
   Download,
-  Inbox,
+  Bell,
   Pin,
   Settings,
 } from "lucide-react";
@@ -120,8 +120,8 @@ export function quickOpenResults(
   );
 }
 
-const viewIcons: Record<QuickView, typeof Inbox> = {
-  inbox: Inbox,
+const viewIcons: Record<QuickView, typeof Bell> = {
+  inbox: Bell,
   courses: BookOpen,
   agenda: CalendarDays,
   downloads: Download,

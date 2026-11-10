@@ -80,7 +80,7 @@ pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<(
     let downloads = MenuItemBuilder::with_id("downloads", text("Downloads", "Téléchargements"))
         .accelerator("CmdOrCtrl+Alt+L")
         .build(app)?;
-    let inbox = MenuItemBuilder::with_id("inbox", text("Inbox", "Boîte de réception"))
+    let inbox = MenuItemBuilder::with_id("inbox", text("Notifications", "Notifications"))
         .accelerator("CmdOrCtrl+1")
         .build(app)?;
     let courses = MenuItemBuilder::with_id("courses", text("Courses", "Cours"))

@@ -2,11 +2,13 @@
 
 Use [the working plan](plan.md) to track completed tasks and next priorities.
 
-## Expanded Alpha features — first pass built, not validated
+## Current assessment — 10 November 2026
 
-At the product owner's request, the [Alpha scope amendment](alpha-feature-expansion.md) brings forward: A1 notification inbox and richer download controls; A2 course browser/pins and quick-open; A3 selected files saved offline with manual refresh; A4 upcoming agenda and opt-in local reminders; A5 manual ICS snapshot export. The original full background-sync/live-calendar/upload features are not implied by these smaller slices. The original six-week estimate requires re-estimation; existing release/security gates remain open.
+Reconciled through `c2361d1`. All bounded A1–A6 feature slices are implemented with fixture coverage. Universal alpha.1/alpha.2 packaging and alpha.2 UI/window fixes have recorded verification. Live Moodle/provider, installed-app, security and platform acceptance remain open; tester packaging does not close the Alpha gate.
 
-A first pass over A1, A2 and the read-only A4 agenda is implemented (see the last section). A3 selected offline files and A5 export are now implemented against fixtures (see below); local reminders and the A6 assistant are implemented against fixtures (see the later sections). [plan.md](plan.md) lists what is checked and what is still open.
+The latest recorded full-suite result is 101 frontend / 97 Rust tests at alpha.2. The later `c2361d1` session-recovery change adds regression coverage but has not been qualified in an installed real-account session. These are recorded results, not a fresh stocktake test run.
+
+[The working plan](plan.md) owns the reconciled delivered scope, Q1–Q4 carry-over and feature-first M2 beta work packages, including GitHub auto-update and post-beta Apple signed distribution. Sections below are chronological implementation records: counts and “next/unimplemented” statements describe their checkpoint and are superseded by later entries and the current plan.
 
 ## Delivered
 
@@ -17,7 +19,7 @@ The first two implementation slices cover the workspace/CI foundation, organisat
 - Dedicated login window, one-use signed callbacks, server-side token verification, credential rollback on failed persistence, reconnect, and cancellation guards against late callbacks.
 - Per-site persistent WebKit profiles on macOS 14+, shared by auth and Moodle views. Older macOS retains the shared-store fallback.
 - Cold-view restoration through the token/private-token autologin API; warm switches reuse the existing view. Missing/expired credentials ask for reconnect. A rate-limited/unavailable autologin key falls back to the existing browser session.
-- HTTP client with sanitized typed errors, 15-second timeout, four in-flight calls per client, bounded read retries and jitter. Key minting is never retried automatically. Typed site-info, autologin and unread-count wrappers.
+- HTTP client with sanitized typed errors, 15-second timeout, four in-flight calls per client, bounded read retries and jitter. Key minting was not retried automatically at this checkpoint; the later one-shot rate-limit recovery is described below. Typed site-info, autologin and unread-count wrappers.
 - Native macOS traffic lights/menus, opaque unified 52 pt toolbar with centred traffic lights, inactive-window dimming, system typography, focused icons, keyboard navigation and light/dark/automatic appearance. French/English UI, automatic language selection and explicit language preferences are supported from onboarding, including native menus. Settings persist in SQLite and apply to the native windows.
 - Account removal asks for confirmation, requests dedicated-profile data deletion, and removes Keychain credentials and metadata. WebKit deletion is asynchronous. Shared legacy cookies remain if another saved site uses them; legacy local storage/shared IdP sessions may remain on the fallback. Full SEC-8 deletion on macOS 12–13 is still open.
 
@@ -33,16 +35,11 @@ The first two implementation slices cover the workspace/CI foundation, organisat
 - Reviewed the available development log output: rebuilds and two earlier native window-move warnings; no credentials/callback URLs observed. Added fixed, development-only auth milestones that cannot accept credential/URL payloads. The live metadata database has only `sites`/`settings` tables and no credential-named columns; credential values were not read.
 - Added bounded callback input, cold-restore account identity matching, and editable four-character per-site labels.
 
-## Remaining M0 checks and next work
+## Remaining acceptance and next work
 
-1. Extend the observed INSP sign-in success into repeatable callback, cookie and session-restoration tests. No credentials have been requested or used by the agent.
-2. Provision Moodle 4.5/5.3 + Keycloak fixtures and test SAML/OIDC. Verify version-specific public roots, rate-limit behaviour and missing-private-token fallback.
-3. D1/D2: three simultaneous sites, warm-switch timing, resize, focus, cookies/profile separation on macOS 12, 15 and current macOS.
-4. Inject a remote-webview IPC probe; configuration checks do not prove runtime isolation. Verify Keychain prompts, deletion and app identity across installed updates.
-5. Qualify the current PDF/popup/notification/download lifecycle, then implement A1–A5 in the amended order (inbox/download controls → courses/quick-open → selected offline files → agenda/reminders → ICS export), alongside independent M0 checks. Finish reorder/menu-bar-only controls, course routing and universal packaging/distribution before release. Same-origin HTTPS downloads are now captured. Closing the window hides it while polling continues; Quit exits.
-6. Record D1–D5 results before claiming M0. Full legacy browser-data deletion remains an explicit privacy/platform gate.
+Use [Alpha carry-over](plan.md#alpha-carry-over--qualification-and-missing-implementation) for the current M0/native/security/release checklist and [proposed beta sequence](plan.md#proposed-beta-implementation-sequence-m2) for subsequent implementation. Courses, organisation ordering, course routing, A3 files, reminders, ICS, A6, universal packaging and window persistence are implemented; they must not be treated as unstarted work.
 
-See [authentication check](auth-review.md), [UI decisions](ui-design.md) and [architecture decisions](adr/0001-alpha-foundation.md).
+See [authentication review](auth-review.md), [UI decisions](ui-design.md) and [architecture decisions](adr/0001-alpha-foundation.md) for evidence and limitations.
 
 ## Background notification implementation
 
@@ -124,7 +121,7 @@ Evidence: 79 frontend tests, 55 Rust tests, frontend lint/format/build, Rust for
 
 **Not viewed:** unlike earlier slices, the new Settings rows were not looked at in the browser preview; their layout was only checked against the CSS (single-line hints, 640 pt column).
 
-**Not verified natively:** none of this was run in the app. Open points: that WebKit keeps the current page when a top-level response becomes a download; that Moodle's direct file links arrive as top-level responses with the expected MIME type (4.5 and 5.3 rigs); a `target=_blank` file leaving an empty popup window after it is saved; open-after-save timing; and whether ⌘⇧M registration fails or silently loses to an app that already holds it. These are listed in [plan.md](plan.md) §4.
+**Not verified natively:** none of this was run in the app. Open points: that WebKit keeps the current page when a top-level response becomes a download; that Moodle's direct file links arrive as top-level responses with the expected MIME type (4.5 and 5.3 rigs); a `target=_blank` file leaving an empty popup window after it is saved; open-after-save timing; and whether ⌘⇧M registration fails or silently loses to an app that already holds it. These remain in the [native core qualification checklist](plan.md#q2--native-core-shell-and-file-handling-m1).
 
 ## Organisation ordering, calendar export and new icon — 10 November 2026
 
@@ -184,3 +181,9 @@ Native Icon Composer source and its compiled `Assets.car` are packaged with `CFB
 Checks: 101 frontend tests and 97 Rust tests pass, as do lint, formatting, production frontend build, workspace Clippy and shell-only IPC guards. WebKit review covered Settings, Agenda, Downloads, Inbox, Courses, offline files, onboarding, Quick Open and the assistant; FR/EN, narrow windows, dark/Increase Contrast and Reduce Motion were checked. Main-view and Settings scroll widths matched client widths, including 348px of remaining content beside the open panel. Download feedback rendering is covered in all three states and localization; real authenticated transfer/notification and full VoiceOver qualification remain open. The macOS Actions jobs now use the supported `macos-26` image in place of retired `macos-14`.
 
 The alpha.2 universal DMG passes `hdiutil verify`; the app mounted from it passes strict deep codesign verification, has x86_64/arm64 slices, and includes the exact native icon asset with `CFBundleIconName=MoodBuro`. macOS system icon rendering was inspected without launching the user account. Installer SHA-256: `2cec2bbcfd506b4476be4a46c459e66ae2c9bda3ca7646c850917c047b0256b1`.
+
+## Rate-limited cold-session recovery — after alpha.2 packaging
+
+Commit `c2361d1` adds a single delayed recovery for a cold view that falls back to its own login page after autologin rate limiting. A non-secret saved mint timestamp supplies a conservative delay; the retry validates the account again and preserves the requested destination without selecting a background site. Logout, browsing away, successful login, reconnect and removal supersede it. There is no periodic login watcher and browser cookie lifetimes are unchanged.
+
+Regression coverage is present for one-shot/generation cancellation, bounded delay, installation-root login matching and stored mint-timestamp lifecycle. Installed-app timing, cancellation races and real Moodle behavior remain open in [background QA](background-qa.md#rate-limited-startup-restoration). Current package metadata remains alpha.2; a subsequent installer containing this change is not recorded.

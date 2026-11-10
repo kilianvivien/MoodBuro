@@ -2,6 +2,8 @@
 
 Nov 9, 2026 · @Kilian
 
+**Historical baseline and acceptance specification.** The week-by-week tasks, code sketches, proposed CI/release pipeline and dates below describe the original design, not the current implementation. The reconciled [working tracker](plan.md) owns delivery status and beta preparation; chronological evidence is in [implementation status](implementation-status.md). Current packaging uses manual `package-macos.yml` on `macos-26`, ad-hoc signing and manual upgrades; the signed updater pipeline below has not shipped. The current beta plan prioritizes features and GitHub automatic updates; Apple Developer ID signing/notarization is deferred until after beta.
+
 Implementation progress: use [the working checklist](plan.md) and see [current status](implementation-status.md) for delivered slices and remaining gates. **Scope amendment (9 November 2026):** the [expanded Alpha feature plan](alpha-feature-expansion.md) is part of this plan and promotes bounded later-milestone features; its limits override older exclusions below.
 
 ## 1. Scope, team and exit criteria
@@ -29,7 +31,7 @@ The baseline Alpha was scoped as an unsigned (ad-hoc or self-signed) macOS build
 
 Basic download capture is pulled forward from M2 because, without it, files downloaded in the Moodle view land in WebKit's default location and the alpha would teach testers the wrong habit.
 
-**Expanded user-feature gates (planned, not delivered)**
+**Expanded user-feature acceptance gates (implementations landed; qualification open)**
 
 - [ ] A1: read/open a notification and reconcile unread counts; find an older download, copy its path, clear history without deleting files, and handle missing/expired sources honestly.
 - [ ] A2: browse/pin courses and quick-open the correct course/cached activity across sites; cached/offline state and global-shortcut conflicts are explicit.
@@ -61,7 +63,7 @@ In the original baseline, weeks 1–2 covered the M0 spike and three-site SSO; w
 
 &#91;embedded content: alpha timeline · 6 weeks, 2 lanes, 2 gates\]
 
-The week-by-week task checklist in §7 is the working copy of this picture; tick items there as they land.
+The week-by-week checklist in §7 is retained as historical scope. Track implementation and qualification separately in [plan.md](plan.md).
 
 ## 3. Repository layout, tooling and CI
 
@@ -352,7 +354,7 @@ Week 1 answers five questions that could change the design; each has a default, 
 
 **Original core-shell task checklist by week**
 
-A1–A5 are tracked separately in [plan.md](plan.md); these historical week labels do not imply those feature slices have landed.
+A1–A6 and the core-shell implementation are reconciled in [plan.md](plan.md). The unchecked bundles below are historical: each mixes implementation with still-open qualification/setup tasks and must not be read as wholly unstarted.
 
 - [ ] W1 R: workspace, CI, child webview + capability isolation, nav guard, auth window + token parsing, Keychain wrapper
 - [ ] W1 F: shell skeleton (sidebar, toolbar, Add Site), test rig compose, self-signed certificate, updater key and download host with product owner

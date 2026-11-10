@@ -9,9 +9,15 @@ import {
 import { listen } from "@tauri-apps/api/event";
 import {
   ArrowUp,
+  Bell,
+  BookOpen,
+  CalendarClock,
   ChevronsUpDown,
   CircleAlert,
+  File,
+  FileText,
   LoaderCircle,
+  Paperclip,
   Sparkles,
   Square,
   Trash2,
@@ -33,6 +39,7 @@ import {
 import { useAssistant } from "../stores/assistant";
 import {
   contextFrom,
+  fileSize,
   noteText,
   providerNames,
   withoutMarkers,
@@ -40,8 +47,19 @@ import {
 } from "../lib/assistant";
 import { useI18n } from "../i18n/context";
 import { ErrorText } from "../i18n/ErrorText";
+import { AssistantText } from "./AssistantText";
 
 const icon = { size: 14, strokeWidth: 2, "aria-hidden": true } as const;
+/** Sources shown under an answer before "Show more". */
+const SOURCES_SHOWN = 3;
+const tool = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
+const sourceIcons = {
+  course: BookOpen,
+  activity: FileText,
+  deadline: CalendarClock,
+  notification: Bell,
+  file: File,
+} as const;
 /** Arrow keys move the separator by this many points. */
 const STEP = 16;
 
@@ -54,14 +72,28 @@ function Message({
 }) {
   const { t, locale } = useI18n();
   const user = entry.role === "user";
+  // A long list of sources stays out of the way until asked for.
+  const [all, setAll] = useState(false);
+  const more = entry.sources.length - SOURCES_SHOWN;
+  // One hidden chip is not worth a control of the same size.
+  const sources =
+    all || more < 2 ? entry.sources : entry.sources.slice(0, SOURCES_SHOWN);
   return (
     <li className="assistant-message" data-role={entry.role}>
       <span className="visually-hidden">
         {user ? t.assistant.you : t.assistant.answer}
       </span>
-      {entry.text && <p className="assistant-text">{entry.text}</p>}
+      {entry.text &&
+        (user ? (
+          <p className="assistant-text">{entry.text}</p>
+        ) : (
+          <AssistantText text={entry.text} />
+        ))}
       {entry.context && (
-        <p className="assistant-meta">{t.assistant.attached(entry.context)}</p>
+        <p className="assistant-attached">
+          <Paperclip size={12} strokeWidth={2} aria-hidden="true" />
+          <span>{t.assistant.attached(entry.context)}</span>
+        </p>
       )}
       {entry.notes.length > 0 && (
         <ul className="assistant-notes" role="list">
@@ -76,18 +108,39 @@ function Message({
         <div className="assistant-sources">
           <span className="assistant-meta">{t.assistant.sources}</span>
           <ul role="list">
-            {entry.sources.map((source) => (
-              <li key={`${source.kind}:${source.id}`}>
+            {sources.map((source) => {
+              const Icon = sourceIcons[source.kind];
+              const action =
+                source.kind === "file"
+                  ? t.assistant.openFile(source.label)
+                  : t.assistant.openSource(source.label);
+              return (
+                <li key={`${source.kind}:${source.id}`}>
+                  <button
+                    className="assistant-source"
+                    title={action}
+                    aria-label={action}
+                    onClick={() => onSource(source)}
+                  >
+                    <Icon size={12} strokeWidth={2} aria-hidden="true" />
+                    <span>{source.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+            {more >= 2 && (
+              <li>
                 <button
-                  className="button small"
-                  title={t.assistant.openSource(source.label)}
-                  aria-label={t.assistant.openSource(source.label)}
-                  onClick={() => onSource(source)}
+                  className="assistant-source more"
+                  aria-expanded={all}
+                  onClick={() => setAll(!all)}
                 >
-                  <span>{source.label}</span>
+                  {all
+                    ? t.assistant.fewerSources
+                    : t.assistant.moreSources(more)}
                 </button>
               </li>
-            ))}
+            )}
           </ul>
         </div>
       )}
@@ -95,7 +148,7 @@ function Message({
   );
 }
 
-/** A write the model asked for: the exact target, and nothing happens without Yes. */
+/** An action the model asked for: the exact target, and nothing happens without Yes. */
 function WriteConfirmation({
   confirmation,
   onAnswer,
@@ -103,9 +156,15 @@ function WriteConfirmation({
   confirmation: AssistantConfirmation;
   onAnswer: (approve: boolean) => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const decline = useRef<HTMLButtonElement>(null);
   useEffect(() => decline.current?.focus(), [confirmation.id]);
+  const words = t.assistant.confirm[confirmation.kind];
+  const bytes = Number(confirmation.detail);
+  const size =
+    confirmation.kind === "save-file" && confirmation.detail && bytes > 0
+      ? fileSize(locale, bytes)
+      : null;
   return (
     <div
       className="confirm standalone"
@@ -114,13 +173,11 @@ function WriteConfirmation({
       aria-describedby="assistant-confirm-body"
     >
       <p id="assistant-confirm-title" className="confirm-title">
-        {t.assistant.confirmTitle}
+        {words.title(confirmation.detail)}
       </p>
       <div id="assistant-confirm-body">
         <p className="assistant-target">{confirmation.subject}</p>
-        <p className="confirm-body">
-          {t.assistant.confirmBody(confirmation.site)}
-        </p>
+        <p className="confirm-body">{words.body(confirmation.site, size)}</p>
       </div>
       <div className="confirm-actions">
         <button
@@ -128,10 +185,10 @@ function WriteConfirmation({
           className="button"
           onClick={() => onAnswer(false)}
         >
-          {t.assistant.confirmDecline}
+          {words.decline}
         </button>
         <button className="button" onClick={() => onAnswer(true)}>
-          {t.assistant.confirmApprove}
+          {words.approve}
         </button>
       </div>
     </div>
@@ -156,6 +213,11 @@ export interface AssistantViewProps {
   clearing: boolean;
   context: ContextChoice;
   text: string;
+  /** Ready-made questions for an empty conversation; sent with a context attached. */
+  suggestions?: readonly string[];
+  onSuggest?: (text: string) => void;
+  /** The composer took focus: a good moment to look at what is on screen. */
+  onActivate?: () => void;
   onText: (text: string) => void;
   onContext: (context: ContextChoice) => void;
   onSend: () => void;
@@ -180,6 +242,23 @@ export function AssistantView(props: AssistantViewProps) {
     if (props.clearing) cancelClear.current?.focus();
   }, [props.clearing]);
   const draft = withoutMarkers(props.draft);
+  const contextDisabled = busy || !site || !props.consent;
+  // Why nothing can be attached, or how to send. Nothing once a context is attached:
+  // what it shares is explained where sharing is turned on, in Settings.
+  const hint = !site
+    ? t.assistant.contextNeedsSite
+    : !props.consent
+      ? t.assistant.contextNeedsConsent
+      : props.context === "none"
+        ? t.assistant.inputHint
+        : null;
+  const contextName =
+    props.context === "none" || !site
+      ? t.assistant.contextNone
+      : props.context === "site"
+        ? t.assistant.contextSite(site.name)
+        : (props.courses.find((c) => `course:${c.id}` === props.context)
+            ?.name ?? t.assistant.contextNone);
   function keys(event: KeyboardEvent<HTMLElement>) {
     if (event.key !== "Escape") return;
     // Escape belongs to the panel: it never leaves the view behind it.
@@ -200,21 +279,21 @@ export function AssistantView(props: AssistantViewProps) {
           </span>
         </div>
         <button
-          className="button icon small"
+          className="tool"
           title={t.assistant.clear}
           aria-label={t.assistant.clear}
           disabled={entries.length === 0 || props.clearing}
           onClick={() => props.onAskClear(true)}
         >
-          <Trash2 {...icon} />
+          <Trash2 {...tool} />
         </button>
         <button
-          className="button icon small"
+          className="tool"
           title={t.assistant.close}
           aria-label={t.assistant.close}
           onClick={props.onClose}
         >
-          <X {...icon} />
+          <X {...tool} />
         </button>
       </header>
       {props.clearing && (
@@ -274,6 +353,24 @@ export function AssistantView(props: AssistantViewProps) {
                 <p className="empty-hint">
                   {t.assistant.emptyHint(providerNames[props.provider])}
                 </p>
+                {props.suggestions && props.suggestions.length > 0 && (
+                  <ul
+                    className="assistant-suggestions"
+                    role="list"
+                    aria-label={t.assistant.suggestions}
+                  >
+                    {props.suggestions.map((suggestion) => (
+                      <li key={suggestion}>
+                        <button
+                          className="assistant-suggestion"
+                          onClick={() => props.onSuggest?.(suggestion)}
+                        >
+                          {suggestion}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             )}
             {entries.map((entry, index) => (
@@ -285,7 +382,7 @@ export function AssistantView(props: AssistantViewProps) {
                 data-role="assistant"
                 aria-busy="true"
               >
-                {draft && <p className="assistant-text">{draft}</p>}
+                {draft && <AssistantText text={draft} />}
                 <p className="assistant-status" role="status">
                   <LoaderCircle className="spin" {...icon} />
                   {props.step
@@ -321,55 +418,15 @@ export function AssistantView(props: AssistantViewProps) {
               props.onSend();
             }}
           >
-            <label className="popup-button">
-              <span className="visually-hidden">
-                {t.assistant.contextLabel}
-              </span>
-              <select
-                value={props.context}
-                disabled={busy || !site || !props.consent}
-                aria-describedby="assistant-context-hint"
-                onChange={(event) =>
-                  props.onContext(event.target.value as ContextChoice)
-                }
-              >
-                <option value="none">{t.assistant.contextNone}</option>
-                {site && props.consent && (
-                  <>
-                    <option value="site">
-                      {t.assistant.contextSite(site.name)}
-                    </option>
-                    {props.courses.length > 0 && (
-                      <optgroup label={t.assistant.contextCourses}>
-                        {props.courses.map((course) => (
-                          <option key={course.id} value={`course:${course.id}`}>
-                            {course.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )}
-                  </>
-                )}
-              </select>
-              <ChevronsUpDown size={12} strokeWidth={2} aria-hidden="true" />
-            </label>
-            <p className="assistant-meta" id="assistant-context-hint">
-              {!site
-                ? t.assistant.contextNeedsSite
-                : !props.consent
-                  ? t.assistant.contextNeedsConsent
-                  : props.context === "none"
-                    ? t.assistant.inputHint
-                    : t.assistant.contextHint}
-            </p>
             <div className="assistant-field">
               <textarea
                 ref={props.input}
-                rows={2}
+                rows={1}
                 maxLength={8000}
                 value={props.text}
                 placeholder={t.assistant.placeholder}
                 aria-label={t.assistant.inputLabel}
+                onFocus={props.onActivate}
                 onChange={(event) => props.onText(event.target.value)}
                 onKeyDown={(event) => {
                   // Return sends; Shift-Return and IME composition do not.
@@ -383,28 +440,83 @@ export function AssistantView(props: AssistantViewProps) {
                   }
                 }}
               />
-              {busy ? (
-                <button
-                  type="button"
-                  className="button icon"
-                  title={t.assistant.stop}
-                  aria-label={t.assistant.stop}
-                  onClick={props.onStop}
+              <div className="assistant-field-bar">
+                {/* The native select lies over its own label, so the control is
+                    as wide as the current choice, not the longest course name. */}
+                <label
+                  className="assistant-context"
+                  data-attached={props.context !== "none" || undefined}
+                  data-disabled={contextDisabled || undefined}
+                  title={contextName}
                 >
-                  <Square size={11} strokeWidth={2} aria-hidden="true" />
-                </button>
-              ) : (
-                <button
-                  type="submit"
-                  className="button icon primary"
-                  title={t.assistant.send}
-                  aria-label={t.assistant.send}
-                  disabled={props.text.trim() === ""}
-                >
-                  <ArrowUp {...icon} />
-                </button>
-              )}
+                  <Paperclip size={13} strokeWidth={2} aria-hidden="true" />
+                  <span aria-hidden="true">{contextName}</span>
+                  <ChevronsUpDown
+                    size={11}
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
+                  <select
+                    value={props.context}
+                    disabled={contextDisabled}
+                    aria-label={t.assistant.contextLabel}
+                    aria-describedby={
+                      hint ? "assistant-context-hint" : undefined
+                    }
+                    onChange={(event) =>
+                      props.onContext(event.target.value as ContextChoice)
+                    }
+                  >
+                    <option value="none">{t.assistant.contextNone}</option>
+                    {site && props.consent && (
+                      <>
+                        <option value="site">
+                          {t.assistant.contextSite(site.name)}
+                        </option>
+                        {props.courses.length > 0 && (
+                          <optgroup label={t.assistant.contextCourses}>
+                            {props.courses.map((course) => (
+                              <option
+                                key={course.id}
+                                value={`course:${course.id}`}
+                              >
+                                {course.name}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </>
+                    )}
+                  </select>
+                </label>
+                {busy ? (
+                  <button
+                    type="button"
+                    className="button icon"
+                    title={t.assistant.stop}
+                    aria-label={t.assistant.stop}
+                    onClick={props.onStop}
+                  >
+                    <Square size={11} strokeWidth={2} aria-hidden="true" />
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="button icon primary"
+                    title={t.assistant.send}
+                    aria-label={t.assistant.send}
+                    disabled={props.text.trim() === ""}
+                  >
+                    <ArrowUp {...icon} />
+                  </button>
+                )}
+              </div>
             </div>
+            {hint && (
+              <p className="assistant-meta" id="assistant-context-hint">
+                {hint}
+              </p>
+            )}
           </form>
         </>
       )}
@@ -426,6 +538,7 @@ function Conversation({
   onSettings: () => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const { provider, hasKey, consent } = useAssistant();
   const siteId = site?.id ?? null;
   const userId = site?.userId ?? null;
@@ -441,6 +554,9 @@ function Conversation({
   const [context, setContext] = useState<ContextChoice>("none");
   const [text, setText] = useState("");
   const current = useRef<string | null>(null);
+  // The user chose a context (even "none") in this conversation: it is never
+  // replaced by the course on screen after that.
+  const chosen = useRef(false);
   const alive = useRef(true);
   const input = useRef<HTMLTextAreaElement>(null);
   const log = useRef<HTMLOListElement>(null);
@@ -486,6 +602,7 @@ function Conversation({
       // The account behind this panel changed, or every conversation was deleted.
       on("assistant://reset", () => {
         setConfirmation(null);
+        chosen.current = false;
         setContext("none");
         void reload();
       });
@@ -512,6 +629,24 @@ function Conversation({
     };
   }, [siteId, consent]);
   useEffect(() => input.current?.focus(), [focus, hasKey]);
+  /** Pre-selects the course shown in the Moodle view, until the user chooses. */
+  const follow = useEffectEvent(async () => {
+    if (!siteId || !consent || chosen.current || current.current) return;
+    try {
+      const id = await ipc.assistantCurrentCourse(siteId);
+      if (!alive.current || chosen.current || current.current) return;
+      setContext(
+        id !== null && courses.some((course) => course.id === id)
+          ? `course:${id}`
+          : "none",
+      );
+    } catch {
+      // Only a convenience: the pop-up still works.
+    }
+  });
+  useEffect(() => {
+    void follow();
+  }, [focus, siteId, consent, courses]);
   useEffect(() => {
     const list = log.current;
     if (list) list.scrollTop = list.scrollHeight;
@@ -519,8 +654,12 @@ function Conversation({
   // Consent withdrawn in Settings: nothing stays attached.
   const attached = consent && site ? context : "none";
 
-  async function run(retry: boolean) {
-    const prompt = text.trim();
+  async function run(
+    retry: boolean,
+    // A suggestion: its own text and context, not what the composer holds.
+    preset?: { text: string; context: ContextChoice },
+  ) {
+    const prompt = (preset?.text ?? text).trim();
     if (current.current || (!retry && !prompt)) return;
     const id = crypto.randomUUID();
     current.current = id;
@@ -529,7 +668,7 @@ function Conversation({
     setDraft("");
     setStep(null);
     if (!retry) {
-      setText("");
+      if (!preset) setText("");
       setEntries((entries) => [
         ...entries,
         { role: "user", text: prompt, context: null, sources: [], notes: [] },
@@ -541,7 +680,7 @@ function Conversation({
         siteId,
         userId,
         text: retry ? null : prompt,
-        context: contextFrom(attached),
+        context: contextFrom(preset?.context ?? attached),
         utcOffset: -new Date().getTimezoneOffset(),
         retry,
       });
@@ -605,10 +744,32 @@ function Conversation({
       clearing={clearing}
       context={attached}
       text={text}
+      suggestions={
+        site && consent
+          ? [
+              t.assistant.suggest.due,
+              t.assistant.suggest.news,
+              attached.startsWith("course:")
+                ? t.assistant.suggest.files
+                : t.assistant.suggest.courses,
+            ]
+          : []
+      }
+      onSuggest={(suggestion) => {
+        // Moodle questions need a context: the course on screen, else the organisation.
+        const context = attached === "none" ? "site" : attached;
+        chosen.current = true;
+        setContext(context);
+        void run(false, { text: suggestion, context });
+      }}
+      onActivate={() => void follow()}
       input={input}
       log={log}
       onText={setText}
-      onContext={setContext}
+      onContext={(context) => {
+        chosen.current = true;
+        setContext(context);
+      }}
       onSend={() => void run(false)}
       onStop={() => void ipc.assistantCancel().catch(() => {})}
       onRetry={() => void run(true)}
@@ -616,7 +777,24 @@ function Conversation({
       onAskClear={setClearing}
       onClear={() => void clear()}
       onSource={(source) => {
-        if (siteId) onOpenPage(source, siteId);
+        if (!siteId) return;
+        if (
+          source.kind !== "file" ||
+          source.course === undefined ||
+          !source.key ||
+          userId === null
+        )
+          return onOpenPage(source, siteId);
+        // A saved copy is shown on this Mac; otherwise the activity opens in Moodle.
+        void ipc
+          .assistantOpenFile(
+            { siteId, courseId: source.course, userId },
+            source.key,
+          )
+          .then((shown) => {
+            if (!shown) onOpenPage(source, siteId);
+          })
+          .catch((cause: unknown) => setError(message(cause)));
       }}
       onSettings={onSettings}
       onClose={onClose}
@@ -628,6 +806,8 @@ function Conversation({
 export function AssistantPanel({
   site,
   focus,
+  closing = false,
+  onClosed,
   onOpenPage,
   onSettings,
   onClose,
@@ -635,6 +815,9 @@ export function AssistantPanel({
   site: Site | undefined;
   /** Bumped each time the panel is asked to take keyboard focus. */
   focus: number;
+  /** The panel is leaving: it plays its exit, then calls `onClosed` once. */
+  closing?: boolean;
+  onClosed?: () => void;
   onOpenPage: (source: AssistantSource, siteId: string) => void;
   onSettings: () => void;
   onClose: () => void;
@@ -644,6 +827,15 @@ export function AssistantPanel({
   const setWidth = useAssistant((state) => state.setWidth);
   const drag = useRef<{ x: number; width: number; frame: number } | null>(null);
   const latest = useRef(width);
+  const closed = useEffectEvent(() => onClosed?.());
+  useEffect(() => {
+    if (!closing) return;
+    // With Reduce Motion there is no exit to wait for; otherwise the timer only
+    // covers an animation that never reports its end.
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const timer = setTimeout(closed, still ? 0 : 400);
+    return () => clearTimeout(timer);
+  }, [closing]);
   function move(event: PointerEvent<HTMLDivElement>) {
     const start = drag.current;
     if (!start) return;
@@ -678,7 +870,16 @@ export function AssistantPanel({
     void setWidth(next, true);
   }
   return (
-    <aside className="assistant" aria-label={t.assistant.title}>
+    <aside
+      className="assistant"
+      aria-label={t.assistant.title}
+      data-closing={closing || undefined}
+      inert={closing}
+      onAnimationEnd={(event) => {
+        // Messages inside animate too; only the panel's own exit counts.
+        if (closing && event.target === event.currentTarget) onClosed?.();
+      }}
+    >
       <div
         className="assistant-resizer"
         role="separator"

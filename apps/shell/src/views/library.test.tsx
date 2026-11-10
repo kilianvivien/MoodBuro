@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 import type {
   AgendaEvent,
+  ReminderPick,
   Course,
   InboxItem,
   Site,
@@ -218,6 +219,42 @@ describe("Agenda", () => {
     );
   });
 
+  it("offers a one-off reminder only for a deadline with a reminder time ahead", () => {
+    const remind = (picks: ReminderPick[] = []) =>
+      inLocale(
+        "en",
+        <AgendaList
+          events={events}
+          sites={sites}
+          now={now}
+          picks={picks}
+          onRemind={vi.fn()}
+          onOpen={vi.fn()}
+        />,
+      );
+    // Due in 2 hours: 24 hours before has passed, 1 hour before has not.
+    const html = remind();
+    expect(html).toContain(
+      'aria-label="Remind me 1 hour before: Policy brief due"',
+    );
+    expect(html).toContain('aria-pressed="false"');
+    // The seminar is not a deadline: one control only.
+    expect(html.match(/remind-toggle/g)).toHaveLength(1);
+    const set = remind([
+      {
+        siteId: "a",
+        eventId: 1,
+        offset: 3600,
+        due: events[0].timeStart,
+        name: "Policy brief due",
+      },
+    ]);
+    expect(set).toContain('aria-pressed="true"');
+    expect(set).toContain("Reminder set 1 hour before: Policy brief due");
+    // Without a handler (read-only uses) the control is absent.
+    expect(list("en")).not.toContain("remind-toggle");
+  });
+
   it("is translated and has an empty state", () => {
     const html = list("fr");
     expect(html).toContain("Demain");
@@ -373,25 +410,25 @@ describe("navigation chrome", () => {
 
   it("adds Inbox, Courses and Agenda with the total unread count", () => {
     const html = sidebar();
-    expect(html).toContain('aria-label="Inbox — 5 unread"');
+    expect(html).toContain('aria-label="Notifications — 5 unread"');
     expect(html).toContain('aria-label="Courses"');
     expect(html).toContain('aria-label="Agenda"');
     // Inbox is current; the active organisation is not while a local view shows.
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(sidebar({}, "fr")).toContain(
-      'aria-label="Boîte de réception — 5 non lus"',
+      'aria-label="Notifications — 5 non lus"',
     );
   });
 
   it("hides app-wide views until an organisation is connected", () => {
     const html = sidebar({ sites: [], unread: [], view: "onboarding" });
-    expect(html).not.toContain('aria-label="Inbox');
+    expect(html).not.toContain('aria-label="Notifications');
     expect(html).toContain('aria-label="Add organisation"');
   });
 
   it("titles each local view and offers Quick Open", () => {
     for (const [view, title] of [
-      ["inbox", "Boîte de réception"],
+      ["inbox", "Notifications"],
       ["courses", "Cours"],
       ["agenda", "Agenda"],
       ["downloads", "Téléchargements"],

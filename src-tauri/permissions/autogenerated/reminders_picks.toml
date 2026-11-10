@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-reminders-picks"
+description = "Enables the reminders_picks command without any pre-configured scope."
+commands.allow = ["reminders_picks"]
+
+[[permission]]
+identifier = "deny-reminders-picks"
+description = "Denies the reminders_picks command without any pre-configured scope."
+commands.deny = ["reminders_picks"]

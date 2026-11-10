@@ -976,6 +976,56 @@ pub fn offline_open(
     )
 }
 
+/// A file source chip in an answer: shows the saved copy if there is one. `false`
+/// means nothing is saved and the shell opens the activity in Moodle instead.
+#[tauri::command]
+pub async fn assistant_open_file(
+    webview: tauri::Webview,
+    app: AppHandle,
+    target: OfflineTarget,
+    key: String,
+) -> Result<bool, String> {
+    shell(&webview)?;
+    crate::offline::show(
+        &app,
+        &target.site_id,
+        target.course_id,
+        target.user_id,
+        &key,
+    )
+    .await
+}
+/// The course on screen in an organisation's Moodle view, to pre-select as context.
+#[tauri::command]
+pub fn assistant_current_course(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+) -> Result<Option<i64>, String> {
+    shell(&webview)?;
+    crate::library::current_course(&app, &site_id)
+}
+#[tauri::command]
+pub fn reminders_picks(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Vec<md_store::ReminderPick>, String> {
+    shell(&webview)?;
+    crate::reminders::picks(&app)
+}
+#[tauri::command]
+pub fn reminders_pick(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+    event_id: i64,
+    offset: i64,
+    on: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::reminders::pick(&app, &site_id, user_id, event_id, offset, on)
+}
 #[tauri::command]
 pub fn reminders_list(
     webview: tauri::Webview,

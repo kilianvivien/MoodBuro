@@ -35,6 +35,36 @@ pub async fn preview(app: &AppHandle, id: &str) -> Result<(), String> {
     }
 }
 
+/// Previews a saved offline copy. The copy is resolved by the caller from identifiers;
+/// its path is revalidated here and again whenever the reader opens or reveals it.
+pub async fn preview_offline(
+    app: &AppHandle,
+    site: &str,
+    course: i64,
+    user: i64,
+    copy: &md_store::OfflineCopy,
+) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        let (send, receive) = tokio::sync::oneshot::channel();
+        let handle = app.clone();
+        let site = site.to_owned();
+        let copy = copy.clone();
+        app.run_on_main_thread(move || {
+            let _ = send.send(native::open_offline(&handle, &site, course, user, &copy));
+        })
+        .map_err(|_| "Could not preview this document.")?;
+        receive
+            .await
+            .map_err(|_| "Could not preview this document.")?
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (app, site, course, user, copy);
+        Err("Document preview is currently available on macOS. Use Open in Default App.".into())
+    }
+}
+
 /// Closing an account's native windows releases Quick Look's access to those files.
 pub fn close_site(app: &AppHandle, site: &str) {
     use tauri::Manager;
@@ -68,9 +98,54 @@ mod native {
             .download(id)
             .map_err(|_| "Could not read download history.")?
             .ok_or("This download is unavailable.")?;
-        let appearance = store.settings().unwrap_or_default().appearance;
         drop(store);
-        let label = format!("document-{}-{}", item.site_id, item.id);
+        let handle = app.clone();
+        let download = id.to_owned();
+        window(
+            app,
+            format!("document-{}-{}", item.site_id, item.id),
+            &item.filename,
+            &path,
+            Box::new(move || crate::downloads::path(&handle, &download, false, true)),
+        )
+    }
+    pub fn open_offline(
+        app: &AppHandle,
+        site: &str,
+        course: i64,
+        user: i64,
+        copy: &md_store::OfflineCopy,
+    ) -> Result<(), String> {
+        let path = crate::offline::copy_path(app, site, course, user, &copy.id)?;
+        if !supported(&path.to_string_lossy()) {
+            return Err("This document type cannot be previewed.".into());
+        }
+        let handle = app.clone();
+        let (site_id, copy_id) = (site.to_owned(), copy.id.clone());
+        window(
+            app,
+            // Same prefix as downloads: `close_site` and the three-window limit apply.
+            format!("document-{site}-{}", copy.id),
+            &copy.filename,
+            &path,
+            Box::new(move || crate::offline::copy_path(&handle, &site_id, course, user, &copy_id)),
+        )
+    }
+    fn window(
+        app: &AppHandle,
+        label: String,
+        title: &str,
+        path: &std::path::Path,
+        resolve: crate::native_preview::ResolvePath,
+    ) -> Result<(), String> {
+        let appearance = app
+            .state::<AppState>()
+            .store
+            .lock()
+            .map_err(|_| "Site storage unavailable.")?
+            .settings()
+            .unwrap_or_default()
+            .appearance;
         if let Some(window) = app.get_window(&label) {
             let _ = window.show();
             return window
@@ -92,29 +167,23 @@ mod native {
             md_store::Appearance::System => None,
         };
         let window = tauri::WindowBuilder::new(app, &label)
-            .title(&item.filename)
+            .title(title)
             .inner_size(900., 720.)
             .min_inner_size(480., 360.)
             .theme(theme)
             .visible(false)
             .build()
             .map_err(|_| "Could not preview this document.")?;
-        let handle = app.clone();
-        let download = id.to_owned();
-        let result = crate::native_preview::mount(
-            &window,
-            &path,
-            crate::menus::french(app),
-            Box::new(move || crate::downloads::path(&handle, &download, false, true)),
-        )
-        .and_then(|()| {
-            window
-                .show()
-                .map_err(|_| "Could not preview this document.")?;
-            window
-                .set_focus()
-                .map_err(|_| "Could not preview this document.".into())
-        });
+        let result =
+            crate::native_preview::mount(&window, path, crate::menus::french(app), resolve)
+                .and_then(|()| {
+                    window
+                        .show()
+                        .map_err(|_| "Could not preview this document.")?;
+                    window
+                        .set_focus()
+                        .map_err(|_| "Could not preview this document.".into())
+                });
         if result.is_err() {
             let _ = window.close();
         }
