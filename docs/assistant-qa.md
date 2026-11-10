@@ -16,7 +16,7 @@ Sources are buttons built from known metadata identifiers, never model-provided 
 
 ## Protocol references
 
-Reviewed against the official [Albert API reference](https://albert.api.etalab.gouv.fr/reference) and [Mistral chat documentation](https://docs.mistral.ai/inference/conversations/chat-completion) on 10 November 2026. Both use bearer-authenticated `/v1/models` and streaming `/v1/chat/completions`, with function tools. Endpoints are fixed HTTPS origins and redirects are refused. Model availability and tool support depend on the key/model and require live checks. Defaults are `openweight-medium` and `mistral-small-latest`.
+Reviewed against the official [Albert API reference](https://albert.api.etalab.gouv.fr/reference) and [Mistral chat documentation](https://docs.mistral.ai/inference/conversations/chat-completion) on 10 November 2026. Both use bearer-authenticated `/v1/models` and streaming `/v1/chat/completions`, with function tools. Endpoints are fixed HTTPS origins and redirects are refused. Model availability and tool support depend on the key/model and require live checks. Defaults are `DeepSeek-V4-Flash-0731` (Albert, requested model identifier) and `mistral-large-4` ([Mistral Large 4](https://docs.mistral.ai/models/mistral-large-4-0)). Explicitly saved model choices take precedence.
 
 ## Automated evidence
 

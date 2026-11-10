@@ -25,6 +25,7 @@ const en = {
     organisations: "Organisations",
   },
   common: {
+    details: "Details",
     refresh: "Refresh",
     refreshing: "Refreshing…",
     updatedNow: "Updated just now",
@@ -119,6 +120,9 @@ const en = {
       "Pins are saved on this Mac only and do not change your Moodle favourites. This list stays available offline; opening a course needs a connection.",
   },
   reminders: {
+    summary:
+      "Choose when to be notified before deadlines for each organisation.",
+    help: "How reminders work",
     title: "Local deadline reminders",
     day: "24 hours before",
     hour: "1 hour before",
@@ -135,6 +139,10 @@ const en = {
     saving: "Saving reminder preferences…",
   },
   agenda: {
+    help: "Calendar export and details",
+    reminders: "Reminder Settings…",
+    dates: "Filter Dates…",
+    clearDates: "All Dates",
     title: "Upcoming",
     export: "Export Calendar…",
     exporting: "Exporting…",
@@ -163,8 +171,7 @@ const en = {
     until: (time: string) => `until ${time}`,
     open: "Open",
     openLabel: (name: string) => `Open ${name} in the Moodle calendar`,
-    timeZone: (zone: string) =>
-      `Times are shown in your Mac’s time zone (${zone}).`,
+    timeZone: (zone: string) => `Time zone: ${zone}`,
     footnote:
       "This agenda is read-only and shows what Moodle reported at the last refresh. Moodle remains the reference for submissions and completion.",
   },
@@ -206,6 +213,15 @@ const en = {
     cancel: "Cancel",
   },
   downloads: {
+    destination:
+      "Saved in ~/Moodle, in an organisation folder, then a course folder. Use Show in Finder to see the exact location.",
+    folders:
+      "Folder names include internal IDs to keep organisations and courses separate. Files without an identified course go into the organisation’s Downloads folder.",
+    feedback: {
+      downloading: (name: string) => `Downloading ${name}…`,
+      complete: (name: string) => `Downloaded: ${name}`,
+      failed: (name: string) => `Download failed: ${name}`,
+    },
     preview: "Preview",
     previewLabel: (name: string) => `Preview ${name}`,
     previewHint:
@@ -492,6 +508,7 @@ const fr: Messages = {
     organisations: "Organisations",
   },
   common: {
+    details: "En savoir plus",
     refresh: "Actualiser",
     refreshing: "Actualisation…",
     updatedNow: "Actualisé à l’instant",
@@ -591,6 +608,9 @@ const fr: Messages = {
       "Les épingles sont enregistrées sur ce Mac uniquement et ne modifient pas vos favoris Moodle. Cette liste reste disponible hors ligne\u00a0; ouvrir un cours nécessite une connexion.",
   },
   reminders: {
+    summary:
+      "Choisissez quand recevoir un rappel avant les échéances de chaque organisation.",
+    help: "Fonctionnement des rappels",
     title: "Rappels locaux des échéances",
     day: "24 heures avant",
     hour: "1 heure avant",
@@ -608,6 +628,10 @@ const fr: Messages = {
     saving: "Enregistrement des préférences de rappel…",
   },
   agenda: {
+    help: "Export et informations sur l’agenda",
+    reminders: "Réglages des rappels…",
+    dates: "Filtrer par dates…",
+    clearDates: "Toutes les dates",
     title: "À venir",
     export: "Exporter le calendrier…",
     exporting: "Exportation…",
@@ -637,8 +661,7 @@ const fr: Messages = {
     until: (time: string) => `jusqu’à ${time}`,
     open: "Ouvrir",
     openLabel: (name: string) => `Ouvrir ${name} dans le calendrier Moodle`,
-    timeZone: (zone: string) =>
-      `Les heures sont affichées dans le fuseau horaire de votre Mac (${zone}).`,
+    timeZone: (zone: string) => `Fuseau horaire\u00a0: ${zone}`,
     footnote:
       "Cet agenda est en lecture seule et reflète ce que Moodle a indiqué lors de la dernière actualisation. Moodle reste la référence pour les dépôts et l’achèvement.",
   },
@@ -681,6 +704,15 @@ const fr: Messages = {
     cancel: "Annuler",
   },
   downloads: {
+    destination:
+      "Enregistrés dans ~/Moodle, par organisation puis par cours. Afficher dans le Finder permet de retrouver l’emplacement exact.",
+    folders:
+      "Les noms de dossiers contiennent des identifiants internes pour distinguer les organisations et les cours. Sans cours identifié, le fichier va dans le dossier Downloads de l’organisation.",
+    feedback: {
+      downloading: (name: string) => `Téléchargement de ${name}…`,
+      complete: (name: string) => `Téléchargé\u00a0: ${name}`,
+      failed: (name: string) => `Échec du téléchargement\u00a0: ${name}`,
+    },
     preview: "Aperçu",
     previewLabel: (name: string) => `Afficher un aperçu de ${name}`,
     previewHint:

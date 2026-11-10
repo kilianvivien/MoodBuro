@@ -18,6 +18,7 @@ mod pdf_save;
 mod reminders;
 mod shortcut;
 mod tray;
+mod window_state;
 mod windows;
 use std::sync::Mutex;
 use tauri::{Emitter, Manager};
@@ -75,6 +76,7 @@ pub fn run() {
                 .expect("store")
                 .downloads_interrupt()?;
             assistant::install(app.handle());
+            window_state::install(app.handle());
             windows::create_shell(app.handle())?;
             menus::install(app.handle())?;
             tray::install(app.handle())?;
@@ -114,9 +116,11 @@ pub fn run() {
                 }
             }
             if window.label() == "main" {
+                window_state::update(window);
                 match event {
                     tauri::WindowEvent::CloseRequested { api, .. } => {
                         api.prevent_close();
+                        window_state::save(window.app_handle());
                         let _ = window.hide();
                     }
                     // Inactive windows dim selection and toolbar text, as AppKit does.
@@ -209,6 +213,7 @@ pub fn run() {
         .expect("Could not build MoodBuro")
         .run(|app, event| {
             if let tauri::RunEvent::Exit = event {
+                window_state::save(app);
                 shortcut::release(app);
             }
             #[cfg(target_os = "macos")]

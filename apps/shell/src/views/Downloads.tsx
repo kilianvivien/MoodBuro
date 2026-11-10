@@ -5,7 +5,6 @@ import {
   CircleCheck,
   Copy,
   Download as DownloadIcon,
-  FileText,
   Eye,
   RefreshCw,
   FolderOpen,
@@ -87,7 +86,7 @@ export function Confirmation({
 
 const stateIcons = {
   downloading: LoaderCircle,
-  complete: FileText,
+  complete: CircleCheck,
   failed: TriangleAlert,
 } as const;
 
@@ -559,9 +558,13 @@ export function Downloads({
           </button>
         </div>
       )}
-      <p className="section-footnote">{t.downloads.location}</p>
-      <p className="section-footnote">{t.downloads.previewHint}</p>
-      <p className="section-footnote">{t.downloads.returnHint}</p>
+      <p className="section-footnote">{t.downloads.destination}</p>
+      <details className="help-disclosure section-footnote">
+        <summary>{t.common.details}</summary>
+        <p>{t.downloads.folders}</p>
+        <p>{t.downloads.previewHint}</p>
+        <p>{t.downloads.returnHint}</p>
+      </details>
     </div>
   );
 }

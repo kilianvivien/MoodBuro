@@ -66,6 +66,7 @@ pub fn create_shell(app: &AppHandle) -> tauri::Result<()> {
         config.traffic_light_position = Some(TRAFFIC_LIGHTS);
     }
     let window = tauri::WindowBuilder::from_config(app, &config)?.build()?;
+    crate::window_state::restore(&window);
     let appearance = app
         .state::<AppState>()
         .store
@@ -82,7 +83,9 @@ pub fn create_shell(app: &AppHandle) -> tauri::Result<()> {
             .background_color(backing)
             .auto_resize(),
         LogicalPosition::new(0., 0.),
-        LogicalSize::new(1120., 760.),
+        window
+            .inner_size()?
+            .to_logical::<f64>(window.scale_factor()?),
     )?;
     Ok(())
 }

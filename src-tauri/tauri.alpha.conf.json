@@ -1,7 +1,11 @@
 {
   "bundle": {
     "macOS": {
-      "signingIdentity": "-"
+      "signingIdentity": "-",
+      "infoPlist": "Info.alpha.plist"
+    },
+    "resources": {
+      "icons/Assets.car": "Assets.car"
     }
   }
 }

@@ -484,7 +484,9 @@ export function Settings({
             {t.settings.shortcutUnavailable}
           </p>
         )}
-        <p className="section-footnote">{t.settings.shortcutFootnote}</p>
+        {globalShortcut && (
+          <p className="section-footnote">{t.settings.shortcutFootnote}</p>
+        )}
       </section>
 
       <section aria-labelledby="files-heading">
@@ -520,7 +522,10 @@ export function Settings({
             <ErrorText error={settingsError} context="settings" />
           </p>
         )}
-        <p className="section-footnote">{t.settings.filesFootnote}</p>
+        <details className="help-disclosure section-footnote">
+          <summary>{t.common.details}</summary>
+          <p>{t.settings.filesFootnote}</p>
+        </details>
       </section>
 
       {children}
@@ -534,7 +539,6 @@ export function Settings({
             {t.settings.siteCount(sites.length)}
           </span>
         </div>
-        <p className="section-footnote">{t.settings.orderHint}</p>
         {orderError && (
           <p className="section-message error" role="alert">
             <ErrorText error={orderError} context="settings" />
@@ -591,7 +595,11 @@ export function Settings({
             )}
           </p>
         )}
-        <p className="section-footnote">{t.settings.footnote}</p>
+        <details className="help-disclosure section-footnote">
+          <summary>{t.common.details}</summary>
+          <p>{t.settings.orderHint}</p>
+          <p>{t.settings.footnote}</p>
+        </details>
       </section>
     </div>
   );

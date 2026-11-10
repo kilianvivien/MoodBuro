@@ -264,7 +264,10 @@ export function CourseFiles({
           {t.offline.openCourse}
         </button>
       </PageHeader>
-      <p className="section-footnote">{t.offline.hint}</p>
+      <details className="help-disclosure">
+        <summary>{t.common.details}</summary>
+        <p>{t.offline.hint}</p>
+      </details>
       {error && (
         <p className="section-message error" role="alert">
           <ErrorText error={error} context="navigation" />

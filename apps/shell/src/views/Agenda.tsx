@@ -1,5 +1,4 @@
-import { Reminders } from "./Reminders";
-import { CalendarDays, CircleAlert } from "lucide-react";
+import { Bell, CalendarDays, CircleAlert } from "lucide-react";
 import { ipc, message, type AgendaEvent, type Site } from "../ipc";
 import { useI18n } from "../i18n/context";
 import { ErrorText } from "../i18n/ErrorText";
@@ -113,13 +112,16 @@ export function agendaRange(
 export function Agenda({
   sites,
   onOpenDay,
+  onSettings,
 }: {
   sites: Site[];
   onOpenDay: (siteId: string, time: number) => void;
+  onSettings: () => void;
 }) {
   const { t } = useI18n();
   const listing = useListing(sites, ipc.agenda, ipc.refreshAgenda);
   const [siteId, setSiteId] = useState<string | null>(null);
+  const [showDates, setShowDates] = useState(false);
   const [from, setFrom] = useState("");
   const [through, setThrough] = useState("");
   const [exporting, setExporting] = useState(false);
@@ -161,7 +163,14 @@ export function Agenda({
         title={t.agenda.title}
         detail={events.length > 0 ? t.agenda.count(events.length) : undefined}
       >
-        <SiteSelect sites={sites} value={siteId} onChange={setSiteId} />
+        <button
+          className="button icon"
+          title={t.agenda.reminders}
+          aria-label={t.agenda.reminders}
+          onClick={onSettings}
+        >
+          <Bell size={14} strokeWidth={2} aria-hidden="true" />
+        </button>
         <button
           className="button"
           disabled={
@@ -182,33 +191,51 @@ export function Agenda({
         />
       </PageHeader>
       <div className="filter-bar">
-        <label className="date-filter">
-          {t.agenda.from}
-          <span className="text-field compact">
-            <input
-              type="date"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-          </span>
-        </label>
-        <label className="date-filter">
-          {t.agenda.through}
-          <span className="text-field compact">
-            <input
-              type="date"
-              value={through}
-              onChange={(e) => setThrough(e.target.value)}
-            />
-          </span>
-        </label>
+        <SiteSelect sites={sites} value={siteId} onChange={setSiteId} />
+        <button
+          className="button small"
+          aria-expanded={showDates}
+          aria-controls="agenda-date-filters"
+          onClick={() => {
+            if (showDates) {
+              setFrom("");
+              setThrough("");
+            }
+            setShowDates(!showDates);
+          }}
+        >
+          {showDates ? t.agenda.clearDates : t.agenda.dates}
+        </button>
       </div>
+      {showDates && (
+        <div className="filter-bar" id="agenda-date-filters">
+          <label className="date-filter">
+            {t.agenda.from}
+            <span className="text-field compact">
+              <input
+                type="date"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+              />
+            </span>
+          </label>
+          <label className="date-filter">
+            {t.agenda.through}
+            <span className="text-field compact">
+              <input
+                type="date"
+                value={through}
+                onChange={(e) => setThrough(e.target.value)}
+              />
+            </span>
+          </label>
+        </div>
+      )}
       {!range.valid && (
         <p className="section-message error" role="alert">
           {t.agenda.invalidRange}
         </p>
       )}
-      <p className="section-footnote">{t.agenda.exportHint}</p>
       {exportError && (
         <p className="section-message error" role="alert">
           <ErrorText error={exportError} context="navigation" />
@@ -247,10 +274,14 @@ export function Agenda({
           onOpen={(event) => onOpenDay(event.siteId, event.timeStart)}
         />
       )}
-      <Reminders sites={sites} />
-      <p className="section-footnote">
-        {t.agenda.timeZone(timeZone())} {t.agenda.footnote}
-      </p>
+      <footer className="agenda-footer">
+        <span>{t.agenda.timeZone(timeZone())}</span>
+        <details className="help-disclosure">
+          <summary>{t.agenda.help}</summary>
+          <p>{t.agenda.exportHint}</p>
+          <p>{t.agenda.footnote}</p>
+        </details>
+      </footer>
     </div>
   );
 }

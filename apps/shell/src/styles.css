@@ -978,7 +978,42 @@ ol {
   margin: 0 auto;
   padding: 24px 0 48px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 28px;
+}
+/* Grid tracks must stay inside the form, even with long translated help text. */
+.settings > section {
+  min-width: 0;
+}
+.settings .group-row {
+  flex-wrap: wrap;
+}
+.settings .group-row > .row-text {
+  flex-basis: 200px;
+}
+.settings .group-row .row-title,
+.settings .group-row .row-subtitle {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.settings .row-actions {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+.settings .site-row-main {
+  flex-wrap: wrap;
+}
+.settings .site-row-main > .row-text {
+  flex-basis: 200px;
+}
+.settings .site-label-editor {
+  flex-wrap: wrap;
+}
+.settings .site-label-editor > .row-text {
+  flex-basis: 180px;
+}
+.settings .section-footnote {
+  overflow-wrap: anywhere;
 }
 .preview-banner {
   padding: 9px 12px;
@@ -1220,6 +1255,7 @@ ol {
   align-items: center;
   gap: 12px;
   min-height: 28px;
+  flex-wrap: wrap;
 }
 .page-heading {
   flex: 1;
@@ -1250,9 +1286,16 @@ ol {
   gap: 8px;
   min-width: 0;
 }
+.filter-bar {
+  flex-wrap: wrap;
+}
+.page-actions {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
 .filter-bar .search-field {
-  flex: 1;
-  min-width: 120px;
+  flex: 1 1 240px;
+  min-width: min(240px, 100%);
 }
 .page .section-footnote {
   margin: 0 2px;
@@ -1954,4 +1997,67 @@ ol {
   accent-color: var(--accent);
   width: 20px;
   height: 20px;
+}
+
+/* Supporting explanations stay available without crowding the event list. */
+.section-description {
+  margin: 0 2px 10px;
+  color: var(--label-2);
+  font-size: var(--text-small);
+  line-height: 1.45;
+}
+.help-disclosure {
+  color: var(--label-2);
+  font-size: var(--text-caption);
+  line-height: 1.45;
+}
+.help-disclosure > summary {
+  cursor: default;
+  width: fit-content;
+  color: var(--label);
+}
+.help-disclosure > p {
+  margin-top: 8px;
+}
+.agenda-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  color: var(--label-2);
+  font-size: var(--text-caption);
+}
+
+/* Transfer feedback belongs above the remote Moodle view and stays until acknowledged. */
+.download-feedback {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 36%;
+  padding: 2px 4px 2px 8px;
+  border-radius: var(--radius-m);
+  background: var(--fill);
+  color: var(--label-2);
+}
+.download-feedback > svg {
+  flex-shrink: 0;
+}
+.download-feedback[data-state="complete"] > svg,
+.list-row[data-state="complete"] .row-icon {
+  color: var(--green-text);
+}
+.download-feedback[data-state="failed"] {
+  color: var(--red-text);
+}
+.download-feedback-link {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  text-align: left;
+  font-size: var(--text-small);
 }

@@ -182,6 +182,14 @@ export type ShellView =
 export type NavAction =
   "back" | "forward" | "reload" | "home" | "open_in_browser";
 
+/** Live transfer feedback contains only display metadata, never a path or URL. */
+export interface DownloadFeedback {
+  siteId: string;
+  userId: number;
+  filename: string;
+  state: DownloadState;
+}
+
 export type AssistantProvider = "albert" | "mistral";
 /** Panel width in points; Rust clamps it and positions the Moodle view beside it. */
 export interface AssistantPanelState {
@@ -479,14 +487,14 @@ let previewSettings: SavedSettings = settingsFrom(null);
 // Dev-only assistant: canned answers so the panel can be tried in the browser preview.
 let demoAssistant: AssistantStatus = {
   provider: "albert",
-  model: "openweight-medium",
+  model: "DeepSeek-V4-Flash-0731",
   hasKey: demo,
   consent: false,
   panel: { open: false, width: ASSISTANT_WIDTH.initial },
 };
 const demoModels: Record<AssistantProvider, string[]> = {
-  albert: ["openweight-large", "openweight-medium", "openweight-small"],
-  mistral: ["mistral-large-latest", "mistral-small-latest"],
+  albert: ["openweight-large", "DeepSeek-V4-Flash-0731", "openweight-small"],
+  mistral: ["mistral-small-latest", "mistral-large-4"],
 };
 const demoChats = new Map<string, AssistantEntry[]>();
 const demoChat = (siteId: string | null) => {

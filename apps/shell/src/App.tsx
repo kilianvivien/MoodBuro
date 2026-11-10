@@ -11,6 +11,7 @@ import {
   desktop,
   ipc,
   message,
+  type DownloadFeedback,
   type MoodlePage,
   type NavAction,
   type UnreadStatus,
@@ -19,6 +20,7 @@ import { useSites } from "./stores/sites";
 import { useSettings } from "./stores/settings";
 import { useAssistant } from "./stores/assistant";
 import { AssistantPanel } from "./components/AssistantPanel";
+import { Reminders } from "./views/Reminders";
 import { AssistantSettings } from "./views/AssistantSettings";
 import { connection as reduce, idle } from "./lib/connection";
 import {
@@ -53,6 +55,8 @@ export default function App() {
   const consumingLink = useRef(false);
   const linkAgain = useRef(false);
   const [view, setView] = useState<View>("onboarding");
+  const [downloadFeedback, setDownloadFeedback] =
+    useState<DownloadFeedback | null>(null);
   const [unread, setUnread] = useState<UnreadStatus[]>([]);
   const [ready, setReady] = useState(false);
   // ⌘L palette, shown over whatever view is current.
@@ -125,7 +129,10 @@ export default function App() {
       failed(cause);
     }
   }
-  const showDownloads = () => showLocal("downloads");
+  const showDownloads = () => {
+    setDownloadFeedback(null);
+    return showLocal("downloads");
+  };
 
   /** Opens one of the fixed Moodle pages in the organisation's own view. */
   async function openPage(id: string, page: MoodlePage, value?: number) {
@@ -361,6 +368,9 @@ export default function App() {
       listen<string>("sites://removed", () => onSiteRemoved()),
       listen<string>("shell://navigate", (e) => onNavigate(e.payload)),
       listen<string>("shell://error", (e) => setError(e.payload)),
+      listen<DownloadFeedback>("downloads://feedback", (e) =>
+        setDownloadFeedback(e.payload),
+      ),
       // View › AI Assistant (⇧⌘A).
       listen("assistant://toggle", () => void toggleAssistant()),
       listen<string | null>("auth://finished", (e) =>
@@ -435,6 +445,16 @@ export default function App() {
           onAssistant={ready ? () => void toggleAssistant() : undefined}
           assistantOpen={assistant.panel.open}
           onLeave={leave}
+          downloadFeedback={
+            sites.some(
+              (s) =>
+                s.id === downloadFeedback?.siteId &&
+                s.userId === downloadFeedback?.userId,
+            )
+              ? downloadFeedback
+              : null
+          }
+          onDismissDownload={() => setDownloadFeedback(null)}
           onDownloads={() => void showDownloads()}
           paused={palette}
           onQuickOpen={
@@ -464,6 +484,7 @@ export default function App() {
           {ready && view === "agenda" && (
             <Agenda
               sites={sites}
+              onSettings={() => void showSettings()}
               onOpenDay={(id, time) => void openPage(id, "calendar-day", time)}
             />
           )}
@@ -536,6 +557,7 @@ export default function App() {
               onRemove={removeSite}
               onAdd={() => void showOnboarding()}
             >
+              <Reminders sites={sites} />
               <AssistantSettings />
             </Settings>
           )}

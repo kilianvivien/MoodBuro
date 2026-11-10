@@ -2,6 +2,8 @@ import {
   ArrowLeft,
   ArrowRight,
   CircleAlert,
+  CircleCheck,
+  LoaderCircle,
   ExternalLink,
   Download,
   House,
@@ -10,7 +12,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import type { NavAction, Site } from "../ipc";
+import type { DownloadFeedback, NavAction, Site } from "../ipc";
 import { displayHost } from "../lib/site";
 import type { View } from "./Sidebar";
 import { useI18n } from "../i18n/context";
@@ -27,6 +29,8 @@ export function Toolbar({
   onLeave,
   onDownloads,
   onQuickOpen,
+  downloadFeedback = null,
+  onDismissDownload,
   onAssistant,
   assistantOpen = false,
   paused = false,
@@ -47,6 +51,8 @@ export function Toolbar({
   onDismissError: () => void;
   onLeave: () => void;
   onDownloads?: () => void;
+  downloadFeedback?: DownloadFeedback | null;
+  onDismissDownload?: () => void;
   onQuickOpen?: () => void;
   /** Quick Open covers the Moodle view: page commands have nothing to act on. */
   paused?: boolean;
@@ -75,6 +81,40 @@ export function Toolbar({
         onClick={onDismissError}
       >
         <X size={13} strokeWidth={2} aria-hidden="true" />
+      </button>
+    </div>
+  );
+  const feedback = !alert && downloadFeedback && (
+    <div
+      className="download-feedback"
+      data-state={downloadFeedback.state}
+      role="status"
+    >
+      {downloadFeedback.state === "downloading" ? (
+        <LoaderCircle className="spin" {...icon} />
+      ) : downloadFeedback.state === "complete" ? (
+        <CircleCheck {...icon} />
+      ) : (
+        <CircleAlert {...icon} />
+      )}
+      <button
+        className="download-feedback-link"
+        onClick={onDownloads}
+        title={t.downloads.feedback[downloadFeedback.state](
+          downloadFeedback.filename,
+        )}
+      >
+        {t.downloads.feedback[downloadFeedback.state](
+          downloadFeedback.filename,
+        )}
+      </button>
+      <button
+        className="tool small"
+        aria-label={t.toolbar.dismissLabel}
+        title={t.toolbar.dismiss}
+        onClick={onDismissDownload}
+      >
+        <X size={13} aria-hidden="true" />
       </button>
     </div>
   );
@@ -155,6 +195,7 @@ export function Toolbar({
             <span>{displayHost(site.wwwroot)}</span>
           </div>
           {alert}
+          {feedback}
           {quickOpen}
           {onDownloads && (
             <button
@@ -183,6 +224,7 @@ export function Toolbar({
             <h1>{local}</h1>
           </div>
           {alert}
+          {feedback}
           {view !== "onboarding" && quickOpen}
           {view !== "onboarding" && view !== "downloads" && onDownloads && (
             <button

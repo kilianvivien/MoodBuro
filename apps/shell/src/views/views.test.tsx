@@ -469,3 +469,49 @@ it("offers failed downloads a return route without enabling file opening", () =>
     ),
   ).not.toContain("Return to Moodle");
 });
+
+it("keeps transfer feedback visible over Moodle and translates its outcome", () => {
+  const base = {
+    view: "site" as const,
+    site,
+    error: null,
+    canLeave: true,
+    onNav: vi.fn(),
+    onDismissError: vi.fn(),
+    onLeave: vi.fn(),
+    onDownloads: vi.fn(),
+    onDismissDownload: vi.fn(),
+  };
+  for (const state of ["downloading", "complete", "failed"] as const) {
+    const html = inLocale(
+      "fr",
+      <Toolbar
+        {...base}
+        downloadFeedback={{
+          siteId: site.id,
+          userId: site.userId,
+          filename: "lesson.pdf",
+          state,
+        }}
+      />,
+    );
+    expect(html).toContain('role="status"');
+    expect(html).toContain(`data-state="${state}"`);
+    expect(html).toContain("lesson.pdf");
+    expect(html).toContain('class="download-feedback-link"');
+    expect(html).not.toContain("/Users/");
+  }
+  const complete = inLocale(
+    "fr",
+    <Toolbar
+      {...base}
+      downloadFeedback={{
+        siteId: site.id,
+        userId: site.userId,
+        filename: "lesson.pdf",
+        state: "complete",
+      }}
+    />,
+  );
+  expect(complete).toContain("Téléchargé");
+});

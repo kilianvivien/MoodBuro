@@ -43,8 +43,8 @@ impl Provider {
     /// Used until the user picks one of the models the provider lists.
     pub fn default_model(self) -> &'static str {
         match self {
-            Self::Albert => "openweight-medium",
-            Self::Mistral => "mistral-small-latest",
+            Self::Albert => "DeepSeek-V4-Flash-0731",
+            Self::Mistral => "mistral-large-4",
         }
     }
 }

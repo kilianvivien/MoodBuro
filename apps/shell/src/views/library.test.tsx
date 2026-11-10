@@ -455,9 +455,13 @@ describe("calendar export date selection", () => {
     for (const locale of ["en", "fr"] as const) {
       const html = inLocale(
         locale,
-        <Agenda sites={sites} onOpenDay={vi.fn()} />,
+        <Agenda sites={sites} onOpenDay={vi.fn()} onSettings={vi.fn()} />,
       );
-      expect(html).toContain('type="date"');
+      expect(html).not.toContain('type="date"');
+      expect(html).toContain('aria-expanded="false"');
+      expect(html).toContain(catalogues[locale].agenda.dates);
+      expect(html).toContain('<details class="help-disclosure">');
+      expect(html).not.toContain('id="reminders-title"');
       expect(html).toContain(catalogues[locale].agenda.export);
       expect(html).toContain(catalogues[locale].agenda.exportHint);
       expect(html).toContain('disabled=""');

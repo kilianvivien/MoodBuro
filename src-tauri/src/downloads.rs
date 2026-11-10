@@ -9,6 +9,16 @@ use std::{
 use tauri::{webview::DownloadEvent, AppHandle, Emitter, Manager};
 use tauri_plugin_notification::NotificationExt;
 
+/// Shell-only transfer status: no source URL, destination path or credentials.
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct Feedback {
+    site_id: String,
+    user_id: i64,
+    filename: String,
+    state: &'static str,
+}
+
 pub type Transfers = HashMap<(String, String), Transfer>;
 #[derive(Clone)]
 pub struct Transfer {
@@ -84,7 +94,7 @@ pub fn handle_for_user(
 ) -> bool {
     match event {
         DownloadEvent::Requested { url, destination } => {
-            let result = (|| -> Result<(), String> {
+            let result = (|| -> Result<Feedback, String> {
                 let state = app.state::<AppState>();
                 let mut transfers = state
                     .downloads
@@ -182,18 +192,28 @@ pub fn handle_for_user(
                         id,
                         staged,
                         folder,
-                        filename,
+                        filename: filename.clone(),
                         ambiguous: false,
                         finished: false,
                         user_id: site.user_id,
                         open_after,
                     },
                 );
-                Ok(())
+                Ok(Feedback {
+                    site_id: site_id.into(),
+                    user_id: site.user_id,
+                    filename,
+                    state: "downloading",
+                })
             })();
-            if let Err(error) = result {
-                let _ = app.emit_to("shell", "shell://error", error);
-                return false;
+            match result {
+                Ok(feedback) => {
+                    let _ = app.emit_to("shell", "downloads://feedback", feedback);
+                }
+                Err(error) => {
+                    let _ = app.emit_to("shell", "shell://error", error);
+                    return false;
+                }
             }
             changed(app);
             true
@@ -261,6 +281,26 @@ pub fn handle_for_user(
                     }
                 }
                 if saved {
+                    let filename = completed
+                        .as_deref()
+                        .and_then(|p| p.file_name())
+                        .and_then(|n| n.to_str())
+                        .unwrap_or(&transfer.filename)
+                        .to_owned();
+                    let _ = app.emit_to(
+                        "shell",
+                        "downloads://feedback",
+                        Feedback {
+                            site_id: site_id.into(),
+                            user_id: transfer.user_id,
+                            filename,
+                            state: if completed.is_some() {
+                                "complete"
+                            } else {
+                                "failed"
+                            },
+                        },
+                    );
                     let fr = crate::menus::french(app);
                     let body = match (completed.is_some(), fr) {
                         (true, false) => "Download complete. Open Downloads in MoodBuro to view it.",

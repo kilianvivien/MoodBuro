@@ -315,7 +315,10 @@ export function Inbox({
           onMarkRead={(item) => void markRead(item)}
         />
       )}
-      <p className="section-footnote">{t.inbox.footnote}</p>
+      <details className="help-disclosure section-footnote">
+        <summary>{t.common.details}</summary>
+        <p>{t.inbox.footnote}</p>
+      </details>
     </div>
   );
 }

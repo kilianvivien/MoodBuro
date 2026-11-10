@@ -14,7 +14,7 @@ This is the working checklist for project advancement. The [PRD](prd.md) defines
 | M1 — Alpha core shell | Partially implemented | Notification platform qualification, remaining multi-site controls, course download routing and installed-app validation |
 | Expanded Alpha features — A1–A5 | A1–A5 feature slices, including opt-in A4 reminders, implemented against fixtures | Live/native validation of the built parts; offline-file/reminder qualification and native Calendar import qualification |
 | A6 — AI assistant | Implemented against provider/Moodle fixtures | Live BYOK/model qualification, native geometry, keyboard/VoiceOver and adversarial account/tool checks |
-| First tester Alpha | v0.1.0-alpha.1 tester prerelease; universal DMG packaging | Combined live/native qualification, stable signing identity and automatic updater remain open |
+| First tester Alpha | v0.1.0-alpha.2 tester prerelease; universal DMG packaging | Combined live/native qualification, stable signing identity and automatic updater remain open |
 
 The INSP dashboard has been observed authenticated in the app. This is a successful real-site observation; it does not close the complete SSO, session-restoration or security test matrix.
 
@@ -275,3 +275,8 @@ Local native output: `target/debug/bundle/macos/MoodBuro.app` built with the new
 ## First tester prerelease — 10 November 2026
 
 At the product owner's request, package the implemented A1–A6 slices as `v0.1.0-alpha.1` for early testing in the existing private GitHub repository. Versions are aligned across Cargo, the shell and Tauri. The universal DMG is ad-hoc signed and has a SHA-256 download checksum; Developer ID/notarization, a stable Alpha identity, automatic updates and combined live/native qualification remain open. See [installation](alpha-install.md) and [release notes](releases/v0.1.0-alpha.1.md). The manual macOS packaging workflow saves verified universal installers as Actions artifacts. Publishing this tester prerelease does not mark the full Alpha acceptance matrix complete.
+
+
+## UI/macOS follow-up — alpha.2
+
+Fixed Settings horizontal expansion, moved reminder preferences to Settings, simplified secondary help across shell views, and added persistent in-app download feedback plus clear storage/Finder guidance. Updated provider defaults, packaged a native macOS 26+ icon asset with older-system fallback, and implemented main-window geometry persistence. The isolated native window save/relaunch smoke passes. See [implementation status](implementation-status.md) and [alpha.2 release notes](releases/v0.1.0-alpha.2.md). Full live/native/platform gates remain open.

@@ -301,7 +301,10 @@ export function Courses({
           onFiles={setSelectedCourse}
         />
       )}
-      <p className="section-footnote">{t.courses.footnote}</p>
+      <details className="help-disclosure section-footnote">
+        <summary>{t.common.details}</summary>
+        <p>{t.courses.footnote}</p>
+      </details>
     </div>
   );
 }

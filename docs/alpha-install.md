@@ -2,7 +2,7 @@
 
 ## Download and install
 
-1. Download `MoodBuro_0.1.0-alpha.1_universal.dmg` and `SHA256SUMS.txt` from the private [GitHub prerelease](https://github.com/kilianvivien/MoodBuro/releases/tag/v0.1.0-alpha.1). You need repository access. The universal installer contains both Apple Silicon and Intel binaries. The configured minimum is macOS 12; compatibility across supported OS versions still needs qualification.
+1. Download `MoodBuro_0.1.0-alpha.2_universal.dmg` and `SHA256SUMS.txt` from the private [GitHub prerelease](https://github.com/kilianvivien/MoodBuro/releases/tag/v0.1.0-alpha.2). You need repository access. The universal installer contains both Apple Silicon and Intel binaries. The configured minimum is macOS 12; compatibility across supported OS versions still needs qualification.
 2. In Terminal, change to the directory containing both downloads and run `shasum -a 256 -c SHA256SUMS.txt`. The DMG must report `OK` before you open it.
 3. Open the DMG and drag MoodBuro into Applications. Eject the DMG and launch MoodBuro from Applications.
 4. This alpha is ad-hoc signed, **not Developer ID signed or notarized**. If macOS blocks it, follow [Apple's instructions](https://support.apple.com/en-us/102445): after attempting to open the app, go to System Settings → Privacy & Security → Open Anyway, then confirm. Older macOS versions use System Preferences → Security & Privacy. Managed Macs may require administrator approval. Do not disable Gatekeeper globally.
@@ -33,6 +33,8 @@ rustup target add aarch64-apple-darwin x86_64-apple-darwin
 pnpm install --frozen-lockfile
 pnpm tauri build --ci --target universal-apple-darwin --bundles app,dmg --config src-tauri/tauri.alpha.conf.json
 ```
+
+Native icon packaging requires Xcode 26 or later.
 
 The output is under `target/universal-apple-darwin/release/bundle/`. Check both architectures with `lipo -archs` and verify the app using `codesign --verify --deep --strict`. Verify the DMG with `hdiutil verify` and generate checksums with `shasum -a 256`. The manual GitHub Actions packaging workflow builds the selected ref and saves verified installers as run artifacts; publishing is a separate explicit step.
 

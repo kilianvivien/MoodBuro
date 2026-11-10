@@ -151,10 +151,10 @@ export function Reminders({ sites }: { sites: Site[] }) {
   if (sites.length === 0) return null;
   return (
     <section aria-labelledby="reminders-title">
-      <h3 className="section-title" id="reminders-title">
+      <h2 className="section-title" id="reminders-title">
         {t.reminders.title}
-      </h3>
-      <p className="section-footnote">{t.reminders.hint}</p>
+      </h2>
+      <p className="section-description">{t.reminders.summary}</p>
       <ReminderRows
         sites={sites}
         settings={settings}
@@ -171,7 +171,11 @@ export function Reminders({ sites }: { sites: Site[] }) {
           <ErrorText error={error} context="settings" />
         </p>
       )}
-      <p className="section-footnote">{t.reminders.limits}</p>
+      <details className="help-disclosure section-footnote">
+        <summary>{t.reminders.help}</summary>
+        <p>{t.reminders.hint}</p>
+        <p>{t.reminders.limits}</p>
+      </details>
     </section>
   );
 }

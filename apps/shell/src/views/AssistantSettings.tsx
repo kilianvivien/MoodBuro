@@ -295,9 +295,11 @@ export function AssistantSettingsView(props: AssistantSettingsViewProps) {
             {props.outcome.success}
           </p>
         ))}
-      <p className="section-footnote">
-        {s.intro} {s.footnote}
-      </p>
+      <details className="help-disclosure section-footnote">
+        <summary>{t.common.details}</summary>
+        <p>{s.intro}</p>
+        <p>{s.footnote}</p>
+      </details>
     </section>
   );
 }
