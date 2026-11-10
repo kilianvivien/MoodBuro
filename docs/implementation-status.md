@@ -4,9 +4,9 @@ Use [the working plan](plan.md) to track completed tasks and next priorities.
 
 ## Current assessment — 10 November 2026
 
-Reconciled through `c2361d1`. All bounded A1–A6 feature slices are implemented with fixture coverage. Universal alpha.1/alpha.2 packaging and alpha.2 UI/window fixes have recorded verification. Live Moodle/provider, installed-app, security and platform acceptance remain open; tester packaging does not close the Alpha gate.
+Reconciled through `4164d18` and alpha.3 packaging. All bounded A1–A6 feature slices are implemented with fixture coverage. Universal alpha.1/alpha.2 packaging and alpha.2 UI/window fixes have recorded verification. Live Moodle/provider, installed-app, security and platform acceptance remain open; tester packaging does not close the Alpha gate.
 
-The latest recorded full-suite result is 101 frontend / 97 Rust tests at alpha.2. The later `c2361d1` session-recovery change adds regression coverage but has not been qualified in an installed real-account session. These are recorded results, not a fresh stocktake test run.
+The alpha.3 release checks pass: 107 frontend / 104 Rust tests, lint, formatting, production frontend build, workspace Clippy and shell IPC guards. Real-account session recovery and the newer assistant/reminder workflows still need installed-app qualification.
 
 [The working plan](plan.md) owns the reconciled delivered scope, Q1–Q4 carry-over and feature-first M2 beta work packages, including GitHub auto-update and post-beta Apple signed distribution. Sections below are chronological implementation records: counts and “next/unimplemented” statements describe their checkpoint and are superseded by later entries and the current plan.
 
@@ -186,4 +186,9 @@ The alpha.2 universal DMG passes `hdiutil verify`; the app mounted from it passe
 
 Commit `c2361d1` adds a single delayed recovery for a cold view that falls back to its own login page after autologin rate limiting. A non-secret saved mint timestamp supplies a conservative delay; the retry validates the account again and preserves the requested destination without selecting a background site. Logout, browsing away, successful login, reconnect and removal supersede it. There is no periodic login watcher and browser cookie lifetimes are unchanged.
 
-Regression coverage is present for one-shot/generation cancellation, bounded delay, installation-root login matching and stored mint-timestamp lifecycle. Installed-app timing, cancellation races and real Moodle behavior remain open in [background QA](background-qa.md#rate-limited-startup-restoration). Current package metadata remains alpha.2; a subsequent installer containing this change is not recorded.
+Regression coverage is present for one-shot/generation cancellation, bounded delay, installation-root login matching and stored mint-timestamp lifecycle. Installed-app timing, cancellation races and real Moodle behavior remain open in [background QA](background-qa.md#rate-limited-startup-restoration). Included in the subsequent alpha.3 tester package; installed-app qualification remains open.
+
+
+## Assistant, reminders and session recovery — alpha.3, 10 November 2026
+
+Packages `c2361d1` session recovery and `4164d18` assistant, notification/reminder and tray improvements. Versions are aligned at `0.1.0-alpha.3`; release notes and the installation guide identify the new universal macOS DMG. Automated release checks pass (107 frontend / 104 Rust tests, lint/format/build, workspace Clippy and IPC guards). The installer remains ad-hoc signed, with manual upgrades; live/native acceptance remains open.

@@ -13,7 +13,7 @@ This is the current planning checklist. The [PRD](prd.md) defines requirements; 
 | M0 — architecture and sign-in spike | Secure auth, session bridge and isolated webviews built; an authenticated INSP dashboard was observed | Open: repeatable three-site manual/SAML/OIDC matrix, D1–D5 results, runtime security and installed Keychain checks |
 | M1 — core shell | Multi-site shell, background polling, tray/badge, links and managed downloads built | Open: native/platform qualification, menu-bar-only mode and resource measurements |
 | Expanded Alpha — A1–A6 | All six bounded feature slices built with automated fixture coverage | Open: combined real-account, native, accessibility and provider qualification |
-| Tester distribution | alpha.1/alpha.2 universal DMG packaging recorded; current package version is `0.1.0-alpha.2` | Ad-hoc signing and manual upgrades; clean-machine/Intel execution and full Alpha exit gate remain open |
+| Tester distribution | alpha.1/alpha.2 universal DMG packaging recorded; current package version is `0.1.0-alpha.3` | Ad-hoc signing and manual upgrades; clean-machine/Intel execution and full Alpha exit gate remain open |
 | Post-alpha.2 follow-up | One-shot rate-limited cold-session recovery landed in `c2361d1` | Installed-app recovery checks open; inclusion in a subsequent installer not yet recorded |
 | M2 — beta preparation | Proposed work sequence below; expanded Alpha already supplies parts of later requirements | Implement remaining sync/calendar, download/macOS features and GitHub auto-update first; qualify for beta release |
 | M3 — macOS v1.0 | Later release gate in the PRD | Full requirements review, release metrics and outstanding v1.0 requirements; not implied by beta completion |
