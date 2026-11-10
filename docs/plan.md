@@ -87,13 +87,15 @@ The PRD retains M3 as the macOS v1.0 gate, but its embedded roadmap does not sup
 
 ### B1 — course sync and shared file identity
 
+- [ ] Add a “Make available offline” workflow for selected Moodle resources, building on A3 saved files. Define supported resource types (downloadable documents first; assess Moodle pages/books separately) and let users consult saved copies without a connection or during poor connectivity.
+- [ ] Show offline availability, last successful refresh and stale/missing-copy states; offer saved copies when the network is unreliable, retain the last usable copy after a failed refresh and allow users to remove offline copies explicitly.
 - [ ] Spike the existing A3 index/downloader against OS-6/OS-7 and DL-2/DL-3; define stable file identity, shared sync/download lookup and schema migration before adding another transfer path.
 - [ ] Add explicit per-course sync selection, scheduled refresh, bounded concurrency/backoff and visible status/cancellation.
 - [ ] Define and implement restart/resume, server rename/deletion, local-edit conflicts and `.trash/` retention semantics. Preview destructive effects and protect local edits; A3 currently saves alongside existing files.
 - [ ] Reuse unchanged local files for browsing downloads and refresh changed versions under the agreed policy; retain safe endpoint, quarantine and account-isolation boundaries.
-- [ ] Verify offline restart, interrupted transfers, permission loss, disk pressure, account replacement and Spotlight discovery on installed builds.
+- [ ] Verify offline restart and resource consultation with no connection, slow/intermittent connectivity and failed refreshes, alongside interrupted transfers, permission loss, disk pressure, account replacement and Spotlight discovery on installed builds.
 
-**Dependencies:** existing course/offline caches; qualify file contracts while building. **Exit:** selected courses refresh predictably without duplicate transfers or local data loss, including recovery across restart. Full sync must not be marked done based on manual A3 refresh.
+**Dependencies:** existing course/offline caches; qualify file contracts while building. **Exit:** selected resources remain readable offline or on a poor connection, with clear freshness information; selected courses refresh predictably without duplicate transfers or local data loss, including recovery across restart. Full sync must not be marked done based on manual A3 refresh.
 
 ### B2 — live calendar integration
 
