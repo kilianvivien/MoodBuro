@@ -7,11 +7,17 @@ MoodBuro hosts the **real Moodle site** in a macOS application, keeping your org
 
 ## Download and install
 
-**[Download MoodBuro 0.2.0 for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
+**[Download MoodBuro 0.3.0 for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
 
 The universal DMG includes **Apple Silicon and Intel** binaries, with macOS 12 as the configured minimum. Download the DMG and `SHA256SUMS.txt`, verify the checksum, then drag MoodBuro into Applications. Quit the app before replacing it during an upgrade.
 
-Version 0.2.0 is **ad-hoc signed and not notarized**. macOS may require first-launch approval in System Settings → Privacy & Security. Install 0.2.0 manually; future normal releases can be installed through Settings → General.
+Version 0.3.0 is **ad-hoc signed and not notarized**. macOS may require first-launch approval in System Settings → Privacy & Security. From version 0.2.0, check for the update in Settings → General. For a first installation or an earlier version, install the DMG manually.
+
+## What’s new in 0.3.0
+
+- **InspCal timetables for INSP’s Moodle**: open a supported PDF from the Moodle context menu or Downloads, then find saved weeks in Agenda, even offline.
+- **Week and list views**, with rooms, speakers, links and group or attendance choices. Review changes before saving a corrected week.
+- **Calendar sync** to a dedicated “Emploi du temps” calendar, plus ICS export. InspCal settings let you choose the cohort, event prefix and exported reminders.
 
 ## Your courses, at home on the Mac
 
@@ -82,11 +88,11 @@ Version 0.1.0 passed **109 frontend and 112 Rust tests**, plus formatting, build
 
 ## Architecture
 
-`apps/shell` contains React, TypeScript, Vite and Zustand. `src-tauri` owns native windows, menus and IPC. The Rust crates cover Moodle protocol/HTTP (`md-moodle`), OS credentials (`md-secrets`), SQLite metadata (`md-store`), AI providers and controlled tools (`md-assistant`), polling decisions (`md-notifier`) and system/file operations (`md-os`).
+`apps/shell` contains React, TypeScript, Vite and Zustand. `src-tauri` owns native windows, menus and IPC. The Rust crates cover Moodle protocol/HTTP (`md-moodle`), OS credentials (`md-secrets`), SQLite metadata (`md-store`), AI providers and controlled tools (`md-assistant`), native InspCal/PDFium timetable reading (`md-inspcal`), polling decisions (`md-notifier`) and system/file operations (`md-os`).
 
 ## Compatibility and next steps
 
-The current distribution targets macOS. Full macOS-version, Intel runtime, SSO, native notification and accessibility qualification remains open, alongside Developer ID signing, notarization and automatic updates. Windows and Linux remain later targets.
+The current distribution targets macOS. Full macOS-version, Intel runtime, SSO, native notification and accessibility qualification remains open, alongside Developer ID signing, notarization and installed update qualification. Windows and Linux remain later targets.
 
 The native PDF Save adapter uses a private WebKit callback and requires macOS compatibility qualification. MoodBuro is generic: no organisation is preconfigured. This project is independent of Moodle HQ.
 

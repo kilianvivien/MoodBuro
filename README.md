@@ -5,7 +5,7 @@
 <p align="center"><strong>Votre Moodle, à sa place sur votre Mac.</strong><br/>Une application de bureau légère pour retrouver le Moodle de votre organisation.</p>
 <p align="center">
   <a href="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml"><img src="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
-  <img src="https://img.shields.io/badge/version-0.2.0-blue" alt="Version 0.2.0" />
+  <img src="https://img.shields.io/badge/version-0.3.0-blue" alt="Version 0.3.0" />
   <img src="https://img.shields.io/badge/Tauri-2-24c8db" alt="Tauri 2" />
   <img src="https://img.shields.io/badge/interface-FR%20%2F%20EN-007aff" alt="Interface français et anglais" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-green" alt="Licence MIT" /></a>
@@ -16,11 +16,17 @@ MoodBuro affiche **le vrai site Moodle** dans une application macOS, avec vos or
 
 ## Télécharger et installer
 
-**[Télécharger MoodBuro 0.2.0 pour macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
+**[Télécharger MoodBuro 0.3.0 pour macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
 
 Le DMG universel contient les versions **Apple Silicon et Intel**, avec macOS 12 comme version minimale configurée. Téléchargez le DMG et `SHA256SUMS.txt`, vérifiez la somme de contrôle, puis glissez MoodBuro dans Applications. Pour une mise à jour, quittez d’abord l’application.
 
-La version 0.2.0 utilise une **signature ad hoc et n’est pas notariée**. macOS peut demander d’autoriser sa première ouverture dans Réglages Système → Confidentialité et sécurité. Installez la version 0.2.0 manuellement ; les prochaines versions normales pourront être installées dans Réglages → Général.
+La version 0.3.0 utilise une **signature ad hoc et n’est pas notariée**. macOS peut demander d’autoriser sa première ouverture dans Réglages Système → Confidentialité et sécurité. Depuis la version 0.2.0, recherchez la mise à jour dans Réglages → Général. Pour une première installation ou depuis une version antérieure, installez le DMG manuellement.
+
+## Nouveautés de la version 0.3.0
+
+- **Emplois du temps InspCal pour le Moodle de l’INSP** : ouvrez un PDF compatible depuis le menu contextuel Moodle ou les téléchargements, puis retrouvez les semaines enregistrées dans l’agenda, même hors connexion.
+- **Vue hebdomadaire et liste des séances**, avec salles, intervenants, liens et choix de groupes ou de participation. Vérifiez les changements avant d’enregistrer une semaine corrigée.
+- **Synchronisation avec Calendrier**, dans un calendrier « Emploi du temps » dédié, et export au format ICS. Les réglages InspCal permettent de choisir la cohorte, le préfixe des événements et les rappels exportés.
 
 ## Vos cours, dans une interface pensée pour le Mac
 
@@ -98,6 +104,7 @@ crates/md-moodle/    Protocole Moodle, HTTP et politiques de navigation
 crates/md-secrets/   Trousseau du système
 crates/md-store/     Métadonnées SQLite et préférences
 crates/md-assistant/ Fournisseurs IA, conversations et outils contrôlés
+crates/md-inspcal/   Lecture native des emplois du temps PDF avec InspCal et PDFium
 crates/md-notifier/  Décisions de suivi des notifications
 crates/md-os/        Adaptateurs système et opérations sur les fichiers
 docs/               Plans, décisions, guides et état d’implémentation
@@ -105,7 +112,7 @@ docs/               Plans, décisions, guides et état d’implémentation
 
 ## Compatibilité et suite du projet
 
-La distribution actuelle cible macOS. La qualification complète des versions de macOS, de l’exécution sur Intel, des fournisseurs SSO, des notifications natives et de l’accessibilité reste ouverte, de même que la signature Developer ID, la notarisation et les mises à jour automatiques. Windows et Linux sont des cibles ultérieures.
+La distribution actuelle cible macOS. La qualification complète des versions de macOS, de l’exécution sur Intel, des fournisseurs SSO, des notifications natives et de l’accessibilité reste ouverte, de même que la signature Developer ID, la notarisation et la qualification des mises à jour installées. Windows et Linux sont des cibles ultérieures.
 
 Le lecteur PDF utilise un rappel privé de WebKit pour l’enregistrement ; sa compatibilité doit être vérifiée sur les versions de macOS prises en charge. MoodBuro est générique : aucune organisation n’est préconfigurée. Le projet est indépendant de Moodle HQ.
 
