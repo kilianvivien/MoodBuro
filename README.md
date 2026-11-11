@@ -5,7 +5,7 @@
 <p align="center"><strong>Votre Moodle, à sa place sur votre Mac.</strong><br/>Une application de bureau légère pour retrouver le Moodle de votre organisation.</p>
 <p align="center">
   <a href="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml"><img src="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
-  <img src="https://img.shields.io/badge/version-0.1.0-blue" alt="Version 0.1.0" />
+  <img src="https://img.shields.io/badge/version-0.2.0-blue" alt="Version 0.2.0" />
   <img src="https://img.shields.io/badge/Tauri-2-24c8db" alt="Tauri 2" />
   <img src="https://img.shields.io/badge/interface-FR%20%2F%20EN-007aff" alt="Interface français et anglais" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-green" alt="Licence MIT" /></a>

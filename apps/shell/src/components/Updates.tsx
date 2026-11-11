@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { version as appVersion } from "../../package.json";
 import { updates, type UpdateStatus } from "../ipc";
 import { useI18n } from "../i18n/context";
 import { Switch } from "./ui";
@@ -49,6 +50,10 @@ export function Updates() {
         {t.updates.title}
       </h2>
       <div className="group">
+        <div className="group-row">
+          <span className="row-title">{t.updates.installedVersion}</span>
+          <span className="row-subtitle">{appVersion}</span>
+        </div>
         <div className="group-row">
           <label htmlFor="automatic-updates" className="row-text">
             <span className="row-title">{t.updates.automatic}</span>

@@ -196,6 +196,7 @@ const en = {
   },
   updates: {
     title: "Software updates",
+    installedVersion: "Installed version",
     automatic: "Check Automatically",
     cadence:
       "Checks at launch and every six hours. Installation and relaunch require your approval.",
@@ -979,6 +980,7 @@ const fr: Messages = {
   },
   updates: {
     title: "Mises à jour",
+    installedVersion: "Version installée",
     automatic: "Rechercher automatiquement",
     cadence:
       "Recherche au lancement puis toutes les six heures. Installation et relancement avec votre accord.",
