@@ -7,11 +7,19 @@ MoodBuro hosts the **real Moodle site** in a macOS application, keeping your org
 
 ## Download and install
 
-**[Download MoodBuro 0.3.0 for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
+**[Download MoodBuro 0.3.1 for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
 
 The universal DMG includes **Apple Silicon and Intel** binaries, with macOS 12 as the configured minimum. Download the DMG and `SHA256SUMS.txt`, verify the checksum, then drag MoodBuro into Applications. Quit the app before replacing it during an upgrade.
 
-Version 0.3.0 is **ad-hoc signed and not notarized**. macOS may require first-launch approval in System Settings → Privacy & Security. From version 0.2.0, check for the update in Settings → General. For a first installation or an earlier version, install the DMG manually.
+Version 0.3.1 is **ad-hoc signed and not notarized**. macOS may require first-launch approval in System Settings → Privacy & Security. From version 0.2.0, check for the update in Settings → General. For a first installation or an earlier version, install the DMG manually.
+
+## Fixes in 0.3.1
+
+- Participation choices remain readable in narrow panels, including French labels.
+- Returning to Agenda no longer replays an already handled timetable request, avoiding a misleading “page changed” error.
+- Sessions keep their identities after a group choice, preventing disappearing events when saving and incorrect “outside your week” entries. ICS exports preserve those identities too; saves now reject duplicate IDs instead of overwriting a session.
+
+If a session disappeared from a week saved with 0.3.0, reopen its choices and save them again after updating to restore it.
 
 ## What’s new in 0.3.0
 

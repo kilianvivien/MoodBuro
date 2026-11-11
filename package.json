@@ -1,5 +1,5 @@
 {
-  "name": "moodburo", "version": "0.3.0", "private": true,
+  "name": "moodburo", "version": "0.3.1", "private": true,
   "packageManager": "pnpm@9.15.9", "engines": {"node": ">=22"},
   "scripts": {
     "dev": "pnpm --filter @moodburo/shell dev",

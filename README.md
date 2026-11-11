@@ -5,7 +5,7 @@
 <p align="center"><strong>Votre Moodle, à sa place sur votre Mac.</strong><br/>Une application de bureau légère pour retrouver le Moodle de votre organisation.</p>
 <p align="center">
   <a href="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml"><img src="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
-  <img src="https://img.shields.io/badge/version-0.3.0-blue" alt="Version 0.3.0" />
+  <img src="https://img.shields.io/badge/version-0.3.1-blue" alt="Version 0.3.1" />
   <img src="https://img.shields.io/badge/Tauri-2-24c8db" alt="Tauri 2" />
   <img src="https://img.shields.io/badge/interface-FR%20%2F%20EN-007aff" alt="Interface français et anglais" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-green" alt="Licence MIT" /></a>
@@ -16,11 +16,19 @@ MoodBuro affiche **le vrai site Moodle** dans une application macOS, avec vos or
 
 ## Télécharger et installer
 
-**[Télécharger MoodBuro 0.3.0 pour macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
+**[Télécharger MoodBuro 0.3.1 pour macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
 
 Le DMG universel contient les versions **Apple Silicon et Intel**, avec macOS 12 comme version minimale configurée. Téléchargez le DMG et `SHA256SUMS.txt`, vérifiez la somme de contrôle, puis glissez MoodBuro dans Applications. Pour une mise à jour, quittez d’abord l’application.
 
-La version 0.3.0 utilise une **signature ad hoc et n’est pas notariée**. macOS peut demander d’autoriser sa première ouverture dans Réglages Système → Confidentialité et sécurité. Depuis la version 0.2.0, recherchez la mise à jour dans Réglages → Général. Pour une première installation ou depuis une version antérieure, installez le DMG manuellement.
+La version 0.3.1 utilise une **signature ad hoc et n’est pas notariée**. macOS peut demander d’autoriser sa première ouverture dans Réglages Système → Confidentialité et sécurité. Depuis la version 0.2.0, recherchez la mise à jour dans Réglages → Général. Pour une première installation ou depuis une version antérieure, installez le DMG manuellement.
+
+## Correctifs de la version 0.3.1
+
+- Les choix de participation restent lisibles dans les panneaux étroits, y compris en français.
+- Le retour à l’agenda ne réutilise plus une demande de lecture déjà traitée, ce qui évite un message erroné indiquant que la page a changé.
+- Les séances conservent leur identité après le choix d’un groupe : elles ne disparaissent plus à l’enregistrement et ne sont plus signalées à tort comme hors de votre semaine. Les exports ICS conservent aussi ces identités ; un enregistrement refuse désormais les identifiants en double au lieu d’écraser une séance.
+
+Si une séance a disparu d’une semaine enregistrée avec la version 0.3.0, rouvrez ses choix et enregistrez-les à nouveau après la mise à jour pour la restaurer.
 
 ## Nouveautés de la version 0.3.0
 
