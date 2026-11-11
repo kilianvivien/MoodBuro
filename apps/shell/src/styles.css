@@ -2414,3 +2414,14 @@ div.assistant-text {
   max-width: 100%;
   flex-wrap: wrap;
 }
+
+.calendar-subscriptions .list-row {
+  flex-wrap: wrap;
+}
+.calendar-subscriptions .row-text {
+  flex-basis: 180px;
+}
+.calendar-subscriptions .row-actions {
+  max-width: 100%;
+  flex-wrap: wrap;
+}

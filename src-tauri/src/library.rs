@@ -56,6 +56,7 @@ pub fn page(name: &str, value: Option<i64>) -> Result<Page, String> {
     Ok(match (name, value) {
         ("notifications", None) => Page::Notifications,
         ("messages", None) => Page::Messages,
+        ("calendar-export", None) => Page::CalendarExport,
         ("calendar", None) => Page::Calendar,
         ("calendar-day", Some(time)) => Page::CalendarDay(time),
         ("course", Some(id)) => Page::Course(id),

@@ -94,6 +94,12 @@ export interface OfflineOutcome {
   reused: boolean;
   error: string | null;
 }
+export interface CalendarHandoff {
+  siteId: string;
+  userId: number;
+  openedAt: number;
+  provider: string;
+}
 export interface CourseSync {
   siteId: string;
   userId: number;
@@ -162,6 +168,7 @@ export type MoodlePage =
   | "notifications"
   | "messages"
   | "calendar"
+  | "calendar-export"
   | "calendar-day"
   | "course"
   | "activity";
@@ -566,6 +573,7 @@ const demoReminders = new Map<string, ReminderSettings>();
 let demoPicks: ReminderPick[] = [];
 const demoOfflineCopies: OfflineCopy[] = [];
 const demoCourseSyncs: CourseSync[] = [];
+const demoCalendarHandoffs: CalendarHandoff[] = [];
 const demoResources: OfflineResource[] = [
   {
     key: "a".repeat(64),
@@ -1152,6 +1160,41 @@ export const ipc = {
       if (course.siteId === siteId && course.id === courseId)
         course.pinned = pinned;
     return Promise.resolve();
+  },
+  calendarHandoffs: () =>
+    desktop
+      ? invoke<CalendarHandoff[]>("calendar_handoffs")
+      : Promise.resolve(demoCalendarHandoffs.map((h) => ({ ...h }))),
+  subscribeCalendar: async (
+    siteId: string,
+    userId: number,
+    confirmed: boolean,
+    repeat: boolean,
+  ): Promise<void> => {
+    if (desktop)
+      return invoke("calendar_subscribe", {
+        siteId,
+        userId,
+        confirmed,
+        repeat,
+      });
+    if (!demo) return desktopFeature();
+    if (!confirmed)
+      throw new Error(
+        "Confirm sharing the private calendar link with Calendar first.",
+      );
+    const index = demoCalendarHandoffs.findIndex((h) => h.siteId === siteId);
+    if (index >= 0 && !repeat)
+      throw new Error(
+        "Calendar setup was already opened. Confirm reopening it to avoid duplicates.",
+      );
+    if (index >= 0) demoCalendarHandoffs.splice(index, 1);
+    demoCalendarHandoffs.push({
+      siteId,
+      userId,
+      openedAt: Math.floor(Date.now() / 1000),
+      provider: "moodle",
+    });
   },
   exportAgenda: (
     siteId: string | null,

@@ -189,6 +189,25 @@ const en = {
       "A notification attempt failed. Check macOS notification settings. Failed or interrupted attempts are not replayed.",
     saving: "Saving reminder preferences…",
   },
+  calendar: {
+    title: "Calendar Subscription",
+    scope: "Read-only · past 5 days and next 60 days",
+    setup: "Set Up…",
+    again: "Set Up Again…",
+    confirm: "Open Calendar",
+    connecting: "Checking…",
+    moodle: "Moodle Export…",
+    consentTitle: (name: string) => `Subscribe to ${name}?`,
+    consent:
+      "Calendar will store a private feed link. Removing this account from MoodBuro will not revoke it.",
+    duplicate: "Check Calendar first to avoid a duplicate subscription.",
+    requested: (date: string) => `Setup requested ${date}`,
+    sent: "Finish setup and choose a refresh interval in Calendar.",
+    details:
+      "Remove subscriptions in Calendar; ask your Moodle administrator to revoke access. MoodBuro reminders require the app to stay open.",
+    demo: "Preview only; no calendar will be added.",
+    demoSent: "Setup preview recorded.",
+  },
   agenda: {
     help: "Calendar export and details",
     reminders: "Reminder Settings…",
@@ -230,7 +249,7 @@ const en = {
     openLabel: (name: string) => `Open ${name} in the Moodle calendar`,
     timeZone: (zone: string) => `Time zone: ${zone}`,
     footnote:
-      "This agenda is read-only and shows what Moodle reported at the last refresh. Moodle remains the reference for submissions and completion.",
+      "Moodle controls which upcoming events appear here. Completion information and reminder eligibility may be incomplete.",
   },
   bookmarks: {
     title: "Bookmarks",
@@ -443,7 +462,7 @@ const en = {
     continueInWindow: "Continue in the sign-in window. Close it to cancel.",
     removeTitle: (name: string) => `Remove ${name}?`,
     removeBody:
-      "This organisation’s saved account and Keychain credentials will be removed from this Mac. Its private browser profile will be cleared where supported. On older macOS versions, shared sign-in sessions may remain. Your Moodle account and courses are not affected.",
+      "This organisation’s saved account and Keychain credentials will be removed from this Mac. Its private browser profile will be cleared where supported. On older macOS versions, shared sign-in sessions may remain. Your Moodle account and courses are not affected. Remove calendar subscriptions separately in Calendar.",
     cancel: "Cancel",
     confirmRemove: "Remove",
     removed: (name: string) => `${name} was removed from this Mac.`,
@@ -817,6 +836,26 @@ const fr: Messages = {
       "Une tentative de notification a échoué. Vérifiez les réglages de notifications macOS. Les tentatives échouées ou interrompues ne sont pas rejouées.",
     saving: "Enregistrement des préférences de rappel…",
   },
+  calendar: {
+    title: "Abonnement au calendrier",
+    scope: "Lecture seule · 5 jours passés, 60 à venir",
+    setup: "Configurer…",
+    again: "Configurer à nouveau…",
+    confirm: "Ouvrir Calendrier",
+    connecting: "Vérification…",
+    moodle: "Export Moodle…",
+    consentTitle: (name: string) => `S’abonner à ${name}\u00a0?`,
+    consent:
+      "Calendrier conservera un lien privé. Retirer ce compte de MoodBuro ne révoquera pas ce lien.",
+    duplicate:
+      "Vérifiez d’abord Calendrier pour éviter un abonnement en double.",
+    requested: (date: string) => `Configuration demandée le ${date}`,
+    sent: "Terminez la configuration et choisissez la fréquence dans Calendrier.",
+    details:
+      "Retirez les abonnements dans Calendrier. Pour révoquer l’accès, contactez l’administrateur Moodle. Les rappels MoodBuro nécessitent que l’app reste ouverte.",
+    demo: "Aperçu uniquement, aucun calendrier ajouté.",
+    demoSent: "Aperçu de configuration enregistré.",
+  },
   agenda: {
     help: "Export et informations sur l’agenda",
     reminders: "Réglages des rappels…",
@@ -861,7 +900,7 @@ const fr: Messages = {
     openLabel: (name: string) => `Ouvrir ${name} dans le calendrier Moodle`,
     timeZone: (zone: string) => `Fuseau horaire\u00a0: ${zone}`,
     footnote:
-      "Cet agenda est en lecture seule et reflète ce que Moodle a indiqué lors de la dernière actualisation. Moodle reste la référence pour les dépôts et l’achèvement.",
+      "Moodle détermine les évènements à venir affichés ici. L’achèvement et l’éligibilité aux rappels peuvent être incomplets.",
   },
   bookmarks: {
     title: "Signets",
@@ -1084,7 +1123,7 @@ const fr: Messages = {
       "Poursuivez dans la fenêtre de connexion. Fermez-la pour annuler.",
     removeTitle: (name: string) => `Retirer ${name}\u00a0?`,
     removeBody:
-      "Le compte enregistré de cette organisation et ses identifiants du trousseau seront supprimés de ce Mac. Son profil de navigation privé sera effacé lorsque c’est possible. Sur les versions plus anciennes de macOS, des sessions de connexion partagées peuvent subsister. Votre compte Moodle et vos cours ne sont pas affectés.",
+      "Le compte enregistré de cette organisation et ses identifiants du trousseau seront supprimés de ce Mac. Son profil de navigation privé sera effacé lorsque c’est possible. Sur les versions plus anciennes de macOS, des sessions de connexion partagées peuvent subsister. Votre compte Moodle et vos cours ne sont pas affectés. Retirez les abonnements séparément dans Calendrier.",
     cancel: "Annuler",
     confirmRemove: "Retirer",
     removed: (name: string) => `${name} a été retiré de ce Mac.`,

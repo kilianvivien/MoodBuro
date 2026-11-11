@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-calendar-handoffs"
+description = "Enables the calendar_handoffs command without any pre-configured scope."
+commands.allow = ["calendar_handoffs"]
+
+[[permission]]
+identifier = "deny-calendar-handoffs"
+description = "Denies the calendar_handoffs command without any pre-configured scope."
+commands.deny = ["calendar_handoffs"]

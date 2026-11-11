@@ -2,6 +2,7 @@ mod assistant;
 mod auth_log;
 mod bookmarks;
 mod calendar;
+mod calendar_subscription;
 mod commands;
 mod course_sync;
 mod documents;
@@ -49,6 +50,7 @@ pub struct AppState {
 pub fn run() {
     tauri::Builder::default()
         .manage(Mutex::new(links::Inbox::default()))
+        .manage(calendar_subscription::Operations::default())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             tray::show(app);
             for arg in args
@@ -205,6 +207,8 @@ pub fn run() {
             commands::sites_list,
             commands::site_move,
             commands::agenda_export,
+            commands::calendar_handoffs,
+            commands::calendar_subscribe,
             commands::popup_context,
             commands::popup_nav,
             commands::deep_link_open,

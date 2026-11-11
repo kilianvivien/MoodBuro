@@ -1282,3 +1282,24 @@ pub fn course_sync_control(
         cancel,
     )
 }
+
+#[tauri::command]
+pub fn calendar_handoffs(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Vec<md_store::CalendarHandoff>, String> {
+    shell(&webview)?;
+    crate::calendar_subscription::list(&app)
+}
+#[tauri::command]
+pub async fn calendar_subscribe(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+    confirmed: bool,
+    repeat: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::calendar_subscription::subscribe(&app, &site_id, user_id, confirmed, repeat).await
+}

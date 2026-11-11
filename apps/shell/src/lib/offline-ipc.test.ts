@@ -70,3 +70,17 @@ it("sends opaque selections and an explicit schedule/cancel choice to sync comma
   expect(await ipc.courseSyncList()).toEqual([]);
   expect(invoke).toHaveBeenLastCalledWith("course_sync_list");
 });
+
+it("passes account identity and explicit calendar consent without a feed URL", async () => {
+  vi.mocked(invoke).mockResolvedValue(undefined);
+  await ipc.subscribeCalendar("site", 42, true, false);
+  expect(invoke).toHaveBeenLastCalledWith("calendar_subscribe", {
+    siteId: "site",
+    userId: 42,
+    confirmed: true,
+    repeat: false,
+  });
+  vi.mocked(invoke).mockResolvedValue([]);
+  expect(await ipc.calendarHandoffs()).toEqual([]);
+  expect(invoke).toHaveBeenLastCalledWith("calendar_handoffs");
+});

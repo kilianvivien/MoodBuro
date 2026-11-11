@@ -320,6 +320,33 @@ const french: Record<string, string> = {
     "Impossible d’enregistrer les préférences d’actualisation. Rouvrez les fichiers du cours.",
   "Could not change course sync. Reopen the course files.":
     "Impossible de modifier l’actualisation. Rouvrez les fichiers du cours.",
+  "Could not read calendar setup history.":
+    "Impossible de lire l’historique de configuration du calendrier.",
+  "Could not save calendar setup history.":
+    "Impossible d’enregistrer la demande de configuration du calendrier.",
+  "This calendar belongs to another account. Reopen the agenda.":
+    "Ce calendrier appartient à un autre compte. Rouvrez l’agenda.",
+  "Confirm sharing the private calendar link with Calendar first.":
+    "Confirmez d’abord le partage du lien privé avec Calendrier.",
+  "Calendar subscription setup is available on macOS. Use ICS export instead.":
+    "L’abonnement est disponible sur macOS. Utilisez l’export ICS.",
+  "Calendar setup is unavailable.":
+    "La configuration du calendrier est indisponible.",
+  "Calendar setup is already running.":
+    "La configuration du calendrier est déjà en cours.",
+  "Calendar setup was already opened. Confirm reopening it to avoid duplicates.":
+    "La configuration a déjà été demandée. Confirmez sa réouverture pour éviter les doublons.",
+  "Moodle calendar subscription is unavailable. Open calendar export in Moodle or use ICS export.":
+    "L’abonnement Moodle est indisponible. Ouvrez l’export Moodle ou utilisez l’export ICS.",
+  "The calendar feed could not be verified. Try again or use ICS export.":
+    "Le flux n’a pas pu être vérifié. Réessayez ou utilisez l’export ICS.",
+  "Could not open Calendar setup.":
+    "Impossible d’ouvrir la configuration de Calendrier.",
+  "Calendar did not respond. Check Calendar before trying again.":
+    "Calendrier n’a pas répondu. Vérifiez-le avant de réessayer.",
+  "Apple Calendar is not available. Use ICS export instead.":
+    "Calendrier Apple est indisponible. Utilisez l’export ICS.",
+
   // Browser preview (ipc.ts)
   "Open the desktop app with pnpm tauri dev to manage sign-in.":
     "Ouvrez l’app de bureau avec pnpm tauri dev pour gérer les connexions.",

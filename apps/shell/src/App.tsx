@@ -60,6 +60,7 @@ export default function App() {
   const [prefill, setPrefill] = useState({ url: "", revision: 0 });
   const consumingLink = useRef(false);
   const linkAgain = useRef(false);
+  const [calendarRequest, setCalendarRequest] = useState(0);
   const [view, setView] = useState<View>("onboarding");
   const [downloadFeedback, setDownloadFeedback] =
     useState<DownloadFeedback | null>(null);
@@ -351,7 +352,10 @@ export default function App() {
   });
   /** App-menu commands (Settings…, Add Organisation…); Rust already hid sites. */
   const onNavigate = useEffectEvent((target: string) => {
-    if (target === "settings") void showSettings();
+    if (target === "calendar-subscribe") {
+      setCalendarRequest((request) => request + 1);
+      void showLocal("agenda");
+    } else if (target === "settings") void showSettings();
     else if (target === "onboarding") void showOnboarding();
     else if (target === "bookmarks") {
       setBookmarkDraft(null);
@@ -592,6 +596,7 @@ export default function App() {
           )}
           {ready && view === "agenda" && (
             <Agenda
+              calendarRequest={calendarRequest}
               sites={sites}
               onSettings={() => void showSettings()}
               onOpenDay={(id, time) => void openPage(id, "calendar-day", time)}

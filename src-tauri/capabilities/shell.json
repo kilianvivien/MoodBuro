@@ -35,6 +35,8 @@
     "allow-sites-list",
     "allow-site-move",
     "allow-agenda-export",
+    "allow-calendar-handoffs",
+    "allow-calendar-subscribe",
     "allow-site-add",
     "allow-site-switch",
     "allow-show-onboarding",

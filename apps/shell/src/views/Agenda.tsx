@@ -1,3 +1,4 @@
+import { CalendarSubscription } from "../components/CalendarSubscription";
 import { Bell, BellRing, CalendarDays, CircleAlert } from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
 import {
@@ -163,10 +164,12 @@ export function agendaRange(
 
 export function Agenda({
   sites,
+  calendarRequest = 0,
   onOpenDay,
   onSettings,
 }: {
   sites: Site[];
+  calendarRequest?: number;
   onOpenDay: (siteId: string, time: number) => void;
   onSettings: () => void;
 }) {
@@ -297,6 +300,7 @@ export function Agenda({
           {showDates ? t.agenda.clearDates : t.agenda.dates}
         </button>
       </div>
+      <CalendarSubscription sites={shownSites} request={calendarRequest} />
       {showDates && (
         <div className="filter-bar" id="agenda-date-filters">
           <label className="date-filter">

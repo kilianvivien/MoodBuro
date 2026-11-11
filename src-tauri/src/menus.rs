@@ -138,10 +138,17 @@ pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<(
         text("Edit Bookmarks…", "Modifier les signets…"),
     )
     .build(app)?;
+    let calendar_subscription = MenuItemBuilder::with_id(
+        "calendar-subscribe",
+        text("Subscribe to Calendar…", "S’abonner au calendrier…"),
+    )
+    .accelerator("CmdOrCtrl+Alt+S")
+    .build(app)?;
     let file = SubmenuBuilder::new(app, text("File", "Fichier"))
         .item(&add)
         .separator()
         .item(&save)
+        .item(&calendar_subscription)
         .separator()
         .item(&bookmark)
         .item(&manage_bookmarks)
@@ -218,6 +225,8 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
                     }
                 }
             });
+        } else if id == "calendar-subscribe" {
+            show_local_view(app, "calendar-subscribe");
         } else if LOCAL_VIEWS.contains(&view) {
             show_local_view(app, view);
         } else if id == "bookmark-add" {

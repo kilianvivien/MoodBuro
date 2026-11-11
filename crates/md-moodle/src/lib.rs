@@ -1,4 +1,5 @@
 //! Moodle protocol and navigation policy. No dependency on Tauri.
+pub mod calendar;
 pub mod deep_link;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use serde::{de::DeserializeOwned, Deserialize};
@@ -387,6 +388,7 @@ pub enum Page {
     Notifications,
     Messages,
     Calendar,
+    CalendarExport,
     CalendarDay(i64),
     Course(i64),
 }
@@ -394,6 +396,7 @@ pub fn page_url(base: &Url, page: Page) -> Result<Url, Error> {
     let (path, query) = match page {
         Page::Notifications => ("message/output/popup/notifications.php", None),
         Page::Messages => ("message/index.php", None),
+        Page::CalendarExport => ("calendar/export.php", None),
         Page::Calendar => ("calendar/view.php", Some("view=upcoming".to_owned())),
         Page::CalendarDay(time) if time >= 0 => {
             ("calendar/view.php", Some(format!("view=day&time={time}")))

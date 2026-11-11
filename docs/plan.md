@@ -117,10 +117,12 @@ Implementation checks below are for this bounded selected-resource policy; the o
 
 ### B2 — live calendar integration
 
-- [ ] Resolve the PRD Q6 export-token/capability question and safe credential handling before constructing any subscription URL.
-- [ ] Implement supported Apple Calendar subscription/refresh (OS-8/MAC-5), with explicit consent, permission errors and account removal/revocation behavior; retain manual ICS fallback.
-- [ ] Reconcile upcoming-view coverage with the full reminder requirement; define handling of missing completion/action data and scheduling limitations.
+- [x] Resolve the stock export-token mechanism and safe credential handling: dedicated token API, Rust-only HTTPS feed, explicit consent. Primary browser account returned a valid cookie-free feed; full REST/SSO/version matrix remains a qualification gate. [Calendar QA](calendar-qa.md).
+- [x] Implement Apple Calendar setup through explicit HTTPS native handoff, consent, fixed errors, durable repeat guards and account-lifecycle handling; retain manual ICS and Moodle-export fallbacks. External Calendar controls refresh/removal; removing an organisation does not revoke its permanent feed. Installed subscription/refresh qualification stays open.
+- [x] Document separate coverage: rolling stock feed (past 5/next 60 days), bounded cached upcoming view and existing while-running reminders. Missing action/completion metadata is not proof of completion; full coverage is not guaranteed. [Policy and evidence](calendar-qa.md).
 - [ ] Qualify subscription refresh, time zones/DST, changed/deleted events, token revocation and duplicate prevention in Calendar.
+
+**Implementation — 11 November 2026:** stock provider is isolated from UI/native handoff to support a future Inspcal-derived plugin adapter; no hypothetical endpoint or plugin credential format is enabled. 119 frontend / 127 Rust tests pass. Primary feed is currently empty, so live event changes/DST were not qualified.
 
 **Dependencies:** A4/A5 event/export model and subscription token spike; native qualification runs alongside implementation. **Exit:** a qualified live integration with clear refresh/revocation behavior, or an explicit scope decision retaining snapshot-only support.
 

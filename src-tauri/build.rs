@@ -27,6 +27,8 @@ fn main() {
             "sites_list",
             "site_move",
             "agenda_export",
+            "calendar_handoffs",
+            "calendar_subscribe",
             "popup_context",
             "popup_nav",
             "deep_link_open",

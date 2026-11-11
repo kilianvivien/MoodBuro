@@ -177,7 +177,9 @@ pub struct Activity {
 }
 mod assistant;
 mod bookmarks;
+mod calendar;
 mod course_sync;
+pub use calendar::CalendarHandoff;
 mod files;
 pub use course_sync::CourseSync;
 mod offline;
@@ -191,7 +193,7 @@ impl Store {
     pub fn open(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 15 {
+        if version > 16 {
             return Err(rusqlite::Error::InvalidQuery);
         }
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; BEGIN;
@@ -225,7 +227,8 @@ impl Store {
             CREATE TABLE IF NOT EXISTS download_hashes (download_id TEXT PRIMARY KEY REFERENCES downloads(id) ON DELETE CASCADE, sha256 TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS course_sync (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,course_id INTEGER NOT NULL,generation INTEGER NOT NULL,interval INTEGER NOT NULL,state TEXT NOT NULL,next_run INTEGER NOT NULL,refreshed_at INTEGER NOT NULL,failures INTEGER NOT NULL,error TEXT,PRIMARY KEY(site_id,course_id));
             CREATE TABLE IF NOT EXISTS sync_selection (site_id TEXT NOT NULL,course_id INTEGER NOT NULL,resource_key TEXT NOT NULL,pending INTEGER NOT NULL,missing INTEGER NOT NULL,PRIMARY KEY(site_id,course_id,resource_key),FOREIGN KEY(site_id,course_id) REFERENCES course_sync(site_id,course_id) ON DELETE CASCADE);
-            PRAGMA user_version=15; COMMIT;",
+            CREATE TABLE IF NOT EXISTS calendar_handoffs (site_id TEXT PRIMARY KEY REFERENCES sites(id) ON DELETE CASCADE,user_id INTEGER NOT NULL,opened_at INTEGER NOT NULL,provider TEXT NOT NULL);
+            PRAGMA user_version=16; COMMIT;",
         )?;
         Ok(Self(connection))
     }
@@ -837,6 +840,7 @@ impl Store {
         let tx = self.0.unchecked_transaction()?;
         // A different account must start with a fresh, silent notification seed.
         for table in [
+            "calendar_handoffs",
             "course_sync",
             "bookmarks",
             "notifications",
