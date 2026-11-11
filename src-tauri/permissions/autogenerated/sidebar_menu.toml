@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-sidebar-menu"
+description = "Enables the sidebar_menu command without any pre-configured scope."
+commands.allow = ["sidebar_menu"]
+
+[[permission]]
+identifier = "deny-sidebar-menu"
+description = "Denies the sidebar_menu command without any pre-configured scope."
+commands.deny = ["sidebar_menu"]

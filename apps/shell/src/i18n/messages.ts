@@ -64,6 +64,9 @@ const en = {
       "MoodBuro keeps the latest 100 notification subjects per organisation on this Mac. Opening one shows that organisation’s notifications page in Moodle.",
   },
   sync: {
+    off: "Off",
+    summary: "Refreshes the chosen files, only while MoodBuro is open.",
+    pick: "Select 1–50 files in the Moodle list above.",
     title: "Automatic Offline Refresh",
     selected: "Selected for automatic refresh",
     hint: "Opt in for selected files in this course. Refresh runs only while MoodBuro is open, one file at a time, with retry backoff. Saved copies remain usable after failures. Unfinished files restart after cancellation or quit; completed files are kept. Remote deletions and renames never remove local files.",
@@ -76,12 +79,12 @@ const en = {
     enable: "Refresh Selected Files Daily",
     replaceSelection: "Use Selected Files for Automatic Refresh",
     selectionHint:
-      "Select 1–50 files from the Moodle list below. Applying a new selection replaces this course’s schedule selection and stops any current attempt. Files no longer selected stay on the Mac. Browser demo records preferences but does not run background transfers.",
+      "Select 1–50 files from the Moodle list above. Applying a new selection replaces this course’s schedule selection and stops any current attempt. Files no longer selected stay on the Mac. Browser demo records preferences but does not run background transfers.",
     count: (total: number, pending: number) =>
       `${total} selected · ${pending} remaining`,
     next: (date: string) => `Next attempt while the app is open: ${date}`,
     missing: (count: number) =>
-      `${count} selected files are no longer returned by Moodle. They may have been renamed, moved or removed, or access may have changed. Saved copies are kept. Load the file list to review the selection.`,
+      `${count} selected files are no longer returned by Moodle. Saved copies are kept. Load the file list to review the selection.`,
     states: {
       paused: "Paused",
       waiting: "Waiting to refresh",
@@ -94,6 +97,8 @@ const en = {
     },
   },
   offline: {
+    emptySavedTitle: "No saved copies",
+    limitShort: "Up to 50 files, 128 MB each.",
     files: "Files…",
     filesLabel: (name: string) => `Offline files for ${name}`,
     title: "Course files",
@@ -106,11 +111,11 @@ const en = {
     removeTitle: (name: string, site: string) =>
       `Remove “${name}” from ${site}?`,
     removeBody:
-      "Only this saved version will leave the offline list. An unchanged file moves to ~/Moodle/.trash, where it stays until you remove it in Finder. A locally edited file stays in its current folder. A file shared with another saved entry or download also stays in place. Other versions and Moodle files are kept. This does not free disk space immediately. An automatic refresh selection may save this file again; pause or change the selection to prevent that.",
+      "This saved version leaves the offline list. An unchanged file moves to ~/Moodle/.trash; a locally edited file stays where it is, as does one shared with another entry. Automatic refresh may save it again.",
     removed: {
       archived:
-        "Copy removed. The unchanged file is recoverable in ~/Moodle/.trash (Finder → Go → Go to Folder). No automatic cleanup is applied.",
-      kept: "Entry removed. The file was edited, shared with another saved entry or download, or could not be safely moved, so it was kept in its current folder.",
+        "Copy removed. The unchanged file is recoverable in ~/Moodle/.trash.",
+      kept: "Entry removed. The file was edited or is shared, so it stays in its folder.",
       missing: "Unavailable copy removed from the list. No file was moved.",
     },
     available: "Available offline",
@@ -124,8 +129,7 @@ const en = {
     savedTitle: "Saved on This Mac",
     availableTitle: "Available from Moodle",
     load: "Load File List",
-    emptySaved:
-      "No saved copies for this course yet. Load the file list to choose files.",
+    emptySaved: "Load the file list to choose files.",
     noResources:
       "No supported files were returned. Open the course in Moodle to find other resources.",
     missing:
@@ -187,7 +191,7 @@ const en = {
     updated: (date: string) => `Agenda refreshed ${date}`,
     stale: "Agenda data is stale. Reminders wait for a successful refresh.",
     deliveryFailed:
-      "A notification attempt failed. Check macOS notification settings. Failed or interrupted attempts are not replayed.",
+      "A notification attempt failed. Check macOS notification settings.",
     saving: "Saving reminder preferences…",
   },
   desktop: {
@@ -296,12 +300,15 @@ const en = {
       "Moodle controls which upcoming events appear here. Completion information and reminder eligibility may be incomplete.",
   },
   bookmarks: {
+    removeTitle: (name: string) => `Remove “${name}”?`,
+    removeBody: "Only the bookmark is removed. The Moodle page is not changed.",
+    confirmRemove: "Remove",
+    emptyTitle: "No bookmarks yet",
     title: "Bookmarks",
     newTitle: "New bookmark",
     editTitle: "Edit bookmark",
     saved: "Bookmark saved.",
     saving: "Saving…",
-    removeQuestion: "Remove this bookmark?",
     add: "Bookmark This Page… (⌘D)",
     more: "More bookmarks",
     edit: "Edit bookmark",
@@ -361,8 +368,8 @@ const en = {
     navigation: "Navigation",
     back: "Back",
     forward: "Forward",
-    reload: "Reload page",
-    openInBrowser: "Open page in browser",
+    reload: "Reload Page",
+    openInBrowser: "Open in Default Browser",
     dismiss: "Dismiss",
     dismissLabel: "Dismiss message",
     settings: "Settings",
@@ -458,10 +465,24 @@ const en = {
   onboarding: {
     welcome: "Welcome to MoodBuro",
     addTitle: "Add an organisation",
-    lead: "Enter the address of your organisation’s Moodle. You’ll sign in on its own page, exactly as you do in a browser.",
+    lead: "Enter your organisation’s Moodle address. You’ll sign in on its own page, exactly as you do in a browser.",
+    features: [
+      {
+        title: "Notifications in one place",
+        body: "Unread counts for every organisation, even with the window closed.",
+      },
+      {
+        title: "Courses and deadlines at a glance",
+        body: "Your courses, upcoming events and optional reminders.",
+      },
+      {
+        title: "Files that stay with you",
+        body: "Downloads sorted by course, and chosen files saved for offline use.",
+      },
+    ],
     fieldLabel: "Moodle address",
     placeholder: "moodle.example.edu",
-    help: "The address you use to reach Moodle, such as moodle.example.edu. HTTPS only.",
+    help: "The address you use to reach Moodle. HTTPS only.",
     findSite: "Finding your Moodle site",
     signIn: "Signing in with your organisation",
     stepDone: " — done",
@@ -500,7 +521,6 @@ const en = {
       "⌘⇧M shows MoodBuro and opens Quick Open while the app is running.",
     shortcutFootnote:
       "macOS does not always report a shortcut conflict: if another app already uses ⌘⇧M, that app may keep it.",
-    shortcutOptions: { off: "Off", on: "On" },
     shortcutUnavailable:
       "⌘⇧M could not be registered when MoodBuro started. Turn it off and on again to retry.",
     files: "Files",
@@ -791,6 +811,10 @@ const fr: Messages = {
       "MoodBuro conserve sur ce Mac les objets des 100 dernières notifications de chaque organisation. En ouvrir une affiche la page des notifications de cette organisation dans Moodle.",
   },
   sync: {
+    off: "Désactivée",
+    summary:
+      "Actualise les fichiers choisis, uniquement lorsque MoodBuro est ouvert.",
+    pick: "Sélectionnez 1 à 50 fichiers dans la liste Moodle ci-dessus.",
     title: "Actualisation hors connexion automatique",
     selected: "Choisi pour l’actualisation automatique",
     hint: "Activez-la pour les fichiers choisis dans ce cours. Elle fonctionne uniquement lorsque MoodBuro est ouvert, un fichier à la fois, avec un délai croissant entre les échecs. Les copies restent consultables en cas d’échec. Après annulation ou fermeture, les fichiers partiels redémarrent\u00a0; les fichiers terminés sont conservés. Les suppressions et changements de nom distants ne suppriment aucun fichier local.",
@@ -803,13 +827,13 @@ const fr: Messages = {
     enable: "Actualiser chaque jour les fichiers choisis",
     replaceSelection: "Utiliser la sélection pour l’actualisation automatique",
     selectionHint:
-      "Choisissez 1 à 50 fichiers dans la liste Moodle ci-dessous. Appliquer une nouvelle sélection remplace celle du cours et arrête la tentative en cours. Les fichiers désélectionnés restent sur le Mac. La démonstration enregistre les préférences sans transfert en arrière-plan.",
+      "Choisissez 1 à 50 fichiers dans la liste Moodle ci-dessus. Appliquer une nouvelle sélection remplace celle du cours et arrête la tentative en cours. Les fichiers désélectionnés restent sur le Mac. La démonstration enregistre les préférences sans transfert en arrière-plan.",
     count: (total: number, pending: number) =>
       `${total} sélectionnés · ${pending} restants`,
     next: (date: string) =>
       `Prochaine tentative si l’app est ouverte\u00a0: ${date}`,
     missing: (count: number) =>
-      `${count} fichiers choisis ne sont plus renvoyés par Moodle. Leur nom, emplacement ou accès a pu changer, ou ils ont été supprimés. Les copies sont conservées. Chargez la liste pour revoir la sélection.`,
+      `${count} fichiers choisis ne sont plus renvoyés par Moodle. Les copies sont conservées. Chargez la liste pour revoir la sélection.`,
     states: {
       paused: "En pause",
       waiting: "En attente d’actualisation",
@@ -822,6 +846,8 @@ const fr: Messages = {
     },
   },
   offline: {
+    emptySavedTitle: "Aucune copie enregistrée",
+    limitShort: "50 fichiers maximum, 128 Mo chacun.",
     files: "Fichiers…",
     filesLabel: (name: string) => `Fichiers hors connexion de ${name}`,
     title: "Fichiers du cours",
@@ -834,11 +860,11 @@ const fr: Messages = {
     removeTitle: (name: string, site: string) =>
       `Retirer « ${name} » de ${site}\u00a0?`,
     removeBody:
-      "Seule cette version quitte la liste hors connexion. Un fichier inchangé est déplacé dans ~/Moodle/.trash, où il reste jusqu’à son retrait dans le Finder. Un fichier modifié localement reste dans son dossier actuel, tout comme un fichier partagé avec une autre entrée ou un téléchargement. Les autres versions et les fichiers Moodle sont conservés. L’espace disque n’est pas libéré immédiatement. Une sélection d’actualisation automatique peut enregistrer à nouveau ce fichier\u00a0; mettez-la en pause ou modifiez-la pour l’éviter.",
+      "Cette version quitte la liste hors connexion. Un fichier inchangé est déplacé dans ~/Moodle/.trash\u00a0; un fichier modifié localement reste à sa place, tout comme un fichier partagé avec une autre entrée. L’actualisation automatique peut l’enregistrer à nouveau.",
     removed: {
       archived:
-        "Copie retirée. Le fichier inchangé reste récupérable dans ~/Moodle/.trash (Finder → Aller → Aller au dossier). Aucun nettoyage automatique n’est appliqué.",
-      kept: "Entrée retirée. Le fichier a été modifié, est partagé avec une autre entrée ou un téléchargement, ou n’a pas pu être déplacé en toute sécurité\u00a0; il reste dans son dossier actuel.",
+        "Copie retirée. Le fichier inchangé reste récupérable dans ~/Moodle/.trash.",
+      kept: "Entrée retirée. Le fichier a été modifié ou est partagé\u00a0; il reste dans son dossier.",
       missing:
         "Copie indisponible retirée de la liste. Aucun fichier n’a été déplacé.",
     },
@@ -854,8 +880,7 @@ const fr: Messages = {
     savedTitle: "Enregistrés sur ce Mac",
     availableTitle: "Disponibles dans Moodle",
     load: "Charger la liste des fichiers",
-    emptySaved:
-      "Aucune copie enregistrée pour ce cours. Chargez la liste pour choisir des fichiers.",
+    emptySaved: "Chargez la liste pour choisir des fichiers.",
     noResources:
       "Aucun fichier pris en charge n’a été renvoyé. Ouvrez le cours dans Moodle pour trouver les autres ressources.",
     missing:
@@ -923,7 +948,7 @@ const fr: Messages = {
     stale:
       "Les données de l’agenda sont anciennes. Les rappels attendent une actualisation réussie.",
     deliveryFailed:
-      "Une tentative de notification a échoué. Vérifiez les réglages de notifications macOS. Les tentatives échouées ou interrompues ne sont pas rejouées.",
+      "Une tentative de notification a échoué. Vérifiez les réglages de notifications macOS.",
     saving: "Enregistrement des préférences de rappel…",
   },
   desktop: {
@@ -1036,12 +1061,16 @@ const fr: Messages = {
       "Moodle détermine les évènements à venir affichés ici. L’achèvement et l’éligibilité aux rappels peuvent être incomplets.",
   },
   bookmarks: {
+    removeTitle: (name: string) => `Supprimer «\u00a0${name}\u00a0»\u00a0?`,
+    removeBody:
+      "Seul le signet est supprimé. La page Moodle n’est pas modifiée.",
+    confirmRemove: "Supprimer",
+    emptyTitle: "Aucun signet",
     title: "Signets",
     newTitle: "Nouveau signet",
     editTitle: "Modifier le signet",
     saved: "Signet enregistré.",
     saving: "Enregistrement…",
-    removeQuestion: "Supprimer ce signet\u00a0?",
     add: "Ajouter cette page aux signets… (⌘D)",
     more: "Autres signets",
     edit: "Modifier le signet",
@@ -1104,7 +1133,7 @@ const fr: Messages = {
     back: "Précédent",
     forward: "Suivant",
     reload: "Recharger la page",
-    openInBrowser: "Ouvrir la page dans le navigateur",
+    openInBrowser: "Ouvrir dans le navigateur",
     dismiss: "Fermer",
     dismissLabel: "Fermer le message",
     settings: "Réglages",
@@ -1204,9 +1233,23 @@ const fr: Messages = {
     welcome: "Bienvenue dans MoodBuro",
     addTitle: "Ajouter une organisation",
     lead: "Saisissez l’adresse du Moodle de votre organisation. Vous vous connecterez sur sa propre page, exactement comme dans un navigateur.",
+    features: [
+      {
+        title: "Toutes vos notifications au même endroit",
+        body: "Les non lus de chaque organisation, même fenêtre fermée.",
+      },
+      {
+        title: "Cours et échéances en un coup d’œil",
+        body: "Vos cours, les événements à venir et des rappels facultatifs.",
+      },
+      {
+        title: "Des fichiers toujours à portée de main",
+        body: "Téléchargements classés par cours et fichiers choisis disponibles hors connexion.",
+      },
+    ],
     fieldLabel: "Adresse Moodle",
     placeholder: "moodle.exemple.fr",
-    help: "L’adresse que vous utilisez pour accéder à Moodle, par exemple moodle.exemple.fr. HTTPS uniquement.",
+    help: "L’adresse que vous utilisez pour accéder à Moodle. HTTPS uniquement.",
     findSite: "Recherche de votre site Moodle",
     signIn: "Connexion avec votre organisation",
     stepDone: " — terminé",
@@ -1246,7 +1289,6 @@ const fr: Messages = {
       "⌘⇧M affiche MoodBuro et l’ouverture rapide tant que l’app est lancée.",
     shortcutFootnote:
       "macOS ne signale pas toujours un conflit de raccourci\u00a0: si une autre app utilise déjà ⌘⇧M, elle peut le conserver.",
-    shortcutOptions: { off: "Désactivé", on: "Activé" },
     shortcutUnavailable:
       "⌘⇧M n’a pas pu être enregistré au lancement de MoodBuro. Désactivez-le puis réactivez-le pour réessayer.",
     files: "Fichiers",

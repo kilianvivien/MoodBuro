@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { desktop, ipc, message, type CalendarHandoff, type Site } from "../ipc";
 import { useI18n } from "../i18n/context";
 import { ErrorText } from "../i18n/ErrorText";
+import { initials } from "../lib/site";
+import { Confirm, Notice } from "./ui";
 
 export function CalendarConsent({
   site,
@@ -17,51 +19,30 @@ export function CalendarConsent({
   onConfirm: () => void;
 }) {
   const { t } = useI18n();
-  const cancel = useRef<HTMLButtonElement>(null);
-  useEffect(() => cancel.current?.focus(), []);
   return (
-    <div
-      className="confirm standalone"
-      role="alertdialog"
-      aria-labelledby="calendar-consent-title"
-      aria-describedby="calendar-consent-body"
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          event.preventDefault();
-          event.stopPropagation();
-          if (!busy) onCancel();
-        }
-      }}
+    <Confirm
+      id="calendar-consent"
+      title={t.calendar.consentTitle(site.name)}
+      body={t.calendar.consent}
+      cancel={t.downloads.cancel}
+      confirm={busy ? t.calendar.connecting : t.calendar.confirm}
+      busy={busy}
+      onCancel={onCancel}
+      onConfirm={onConfirm}
     >
-      <p id="calendar-consent-title" className="confirm-title">
-        {t.calendar.consentTitle(site.name)}
-      </p>
-      <p id="calendar-consent-body" className="confirm-body">
-        {t.calendar.consent}
-      </p>
       {repeat && <p className="confirm-body">{t.calendar.duplicate}</p>}
-      <div className="confirm-actions">
-        <button
-          ref={cancel}
-          className="button"
-          disabled={busy}
-          onClick={onCancel}
-        >
-          {t.downloads.cancel}
-        </button>
-        <button className="button" disabled={busy} onClick={onConfirm}>
-          {busy ? t.calendar.connecting : t.calendar.confirm}
-        </button>
-      </div>
-    </div>
+    </Confirm>
   );
 }
 export function CalendarSubscription({
   sites,
   request = 0,
+  onOpenPage,
 }: {
   sites: Site[];
   request?: number;
+  /** Shows the organisation's own calendar export page in Moodle. */
+  onOpenPage?: (siteId: string) => void;
 }) {
   const { t, date } = useI18n();
   const [history, setHistory] = useState<CalendarHandoff[]>([]);
@@ -169,6 +150,9 @@ export function CalendarSubscription({
           );
           return (
             <li className="list-row" key={`${site.id}:${site.userId}`}>
+              <span className="row-avatar" aria-hidden="true">
+                {site.shortLabel || initials(site.name)}
+              </span>
               <span className="row-text">
                 <span className="row-title">{site.name}</span>
                 {previous && (
@@ -195,9 +179,11 @@ export function CalendarSubscription({
                   className="button small"
                   disabled={busy}
                   onClick={() => {
-                    void ipc
-                      .openPage(site.id, "calendar-export")
-                      .catch((error) => setError(message(error)));
+                    if (onOpenPage) onOpenPage(site.id);
+                    else
+                      void ipc
+                        .openPage(site.id, "calendar-export")
+                        .catch((error) => setError(message(error)));
                   }}
                 >
                   {t.calendar.moodle}
@@ -227,14 +213,14 @@ export function CalendarSubscription({
           />
         )}
       {error && (
-        <p className="section-message error" role="alert">
+        <Notice tone="error">
           <ErrorText error={error} context="navigation" />
-        </p>
+        </Notice>
       )}
       {sent && (
-        <p className="section-message" role="status">
+        <Notice tone="success">
           {desktop ? t.calendar.sent : t.calendar.demoSent}
-        </p>
+        </Notice>
       )}
       <details className="help-disclosure">
         <summary>{t.common.details}</summary>

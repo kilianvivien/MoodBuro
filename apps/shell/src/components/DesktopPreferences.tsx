@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { ipc, message, type DesktopPreferences as Preferences } from "../ipc";
 import { useI18n } from "../i18n/context";
 import { ErrorText } from "../i18n/ErrorText";
+import { Notice, Switch } from "./ui";
 export function DesktopPreferences() {
   const { t } = useI18n();
   const [value, setValue] = useState<Preferences | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [finder, setFinder] = useState(false);
   const pending = useRef(false);
   useEffect(() => {
     let alive = true;
@@ -38,63 +38,56 @@ export function DesktopPreferences() {
     }
   }
   return (
-    <section>
-      <h3 className="section-title">{t.desktop.title}</h3>
+    <section aria-labelledby="desktop-heading">
+      <h2 id="desktop-heading" className="section-title">
+        {t.desktop.title}
+      </h2>
       <div className="group">
         {value && (
           <>
             <div className="group-row">
-              <label className="row-title" htmlFor="menu-bar-only">
-                {t.desktop.menuBar}
+              <label className="row-text" htmlFor="menu-bar-only">
+                <span className="row-title">{t.desktop.menuBar}</span>
               </label>
-              <input
+              <Switch
                 id="menu-bar-only"
-                type="checkbox"
                 checked={value.menuBarOnly}
                 disabled={busy}
-                onChange={(e) => void change({ menuBarOnly: e.target.checked })}
+                onChange={(menuBarOnly) => void change({ menuBarOnly })}
               />
             </div>
             <div className="group-row">
-              <label className="row-title" htmlFor="login-start">
-                {t.desktop.login}
+              <label className="row-text" htmlFor="login-start">
+                <span className="row-title">{t.desktop.login}</span>
               </label>
-              <input
+              <Switch
                 id="login-start"
-                type="checkbox"
                 checked={value.startAtLogin}
                 disabled={busy}
-                onChange={(e) =>
-                  void change({ startAtLogin: e.target.checked })
-                }
+                onChange={(startAtLogin) => void change({ startAtLogin })}
               />
             </div>
           </>
         )}
         <div className="group-row">
-          <span className="row-title">{t.desktop.finder}</span>
+          <div className="row-text">
+            <span className="row-title">{t.desktop.finder}</span>
+            <span className="row-subtitle">{t.desktop.finderHint}</span>
+          </div>
           <button
             className="button"
             onClick={() => {
-              void ipc
-                .finderMoodleFolder()
-                .then(() => setFinder(true))
-                .catch((e) => setError(message(e)));
+              void ipc.finderMoodleFolder().catch((e) => setError(message(e)));
             }}
           >
             {t.desktop.showFolder}
           </button>
         </div>
       </div>
-      {finder && (
-        <p className="section-footnote" role="status">
-          {t.desktop.finderHint}
-        </p>
-      )}
       {error && (
-        <p className="section-message error" role="alert">
+        <Notice tone="error">
           <ErrorText error={error} context="settings" />
-        </p>
+        </Notice>
       )}
     </section>
   );

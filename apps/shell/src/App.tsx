@@ -40,7 +40,12 @@ import { Toolbar } from "./components/Toolbar";
 import { Uploads } from "./views/Uploads";
 import { Downloads } from "./views/Downloads";
 import { AddSite } from "./views/AddSite";
-import { Settings, type Notice, type SettingsSection } from "./views/Settings";
+import {
+  Settings,
+  settingsSections,
+  type Notice,
+  type SettingsSection,
+} from "./views/Settings";
 import { I18nProvider } from "./i18n/context";
 import { resolveLocale, systemLanguages } from "./i18n/locale";
 import { catalogues } from "./i18n/messages";
@@ -76,6 +81,8 @@ export default function App() {
   const [bookmarkDraft, setBookmarkDraft] = useState<Bookmark | null>(null);
   const [bookmarkRevision, setBookmarkRevision] = useState(0);
   const [palette, setPalette] = useState(false);
+  // Bumped after a refresh asked from a context menu, to remount the open list.
+  const [listRevision, setListRevision] = useState(0);
   const [connection, dispatch] = useReducer(reduce, idle);
   // Raw backend messages: translated when rendered, so a language switch
   // also translates what is already on screen.
@@ -194,6 +201,12 @@ export default function App() {
       failed(cause);
     }
   }
+  /** The full bookmark list, not the editor of a captured page. */
+  function showBookmarks() {
+    setBookmarkDraft(null);
+    setBookmarkRevision((r) => r + 1);
+    void showLocal("bookmarks");
+  }
   async function openPalette() {
     if (sites.length > 0) setPalette(true);
   }
@@ -218,6 +231,7 @@ export default function App() {
     else if (target.kind === "activity")
       void openPage(target.siteId, "activity", target.activityId);
     else if (target.view === "settings") void showSettings();
+    else if (target.view === "bookmarks") showBookmarks();
     else void showLocal(target.view);
   }
 
@@ -364,11 +378,8 @@ export default function App() {
       void showLocal("agenda");
     } else if (target === "settings") void showSettings();
     else if (target === "onboarding") void showOnboarding();
-    else if (target === "bookmarks") {
-      setBookmarkDraft(null);
-      setBookmarkRevision((r) => r + 1);
-      void showLocal("bookmarks");
-    } else if (
+    else if (target === "bookmarks") showBookmarks();
+    else if (
       target === "uploads" ||
       target === "downloads" ||
       target === "inbox" ||
@@ -379,6 +390,62 @@ export default function App() {
     else if (target === "quick-open") {
       if (sites.length > 0) setPalette((open) => !open);
       else leave();
+    }
+  });
+  /** A choice in a sidebar context menu: `action` or `action:id`, named by Rust. */
+  const onSidebarAction = useEffectEvent((payload: string) => {
+    const split = payload.indexOf(":");
+    const action = split < 0 ? payload : payload.slice(0, split);
+    const id = split < 0 ? "" : payload.slice(split + 1);
+    const run = (work: Promise<unknown>) => void work.catch(failed);
+    if (action === "view") {
+      if (id === "onboarding") void showOnboarding();
+      else if (id === "inbox" || id === "courses" || id === "agenda")
+        void showLocal(id);
+    } else if (action === "settings") {
+      const section = settingsSections.find((name) => name === id);
+      void showSettings(section ?? "general");
+    } else if (action === "bookmarks") showBookmarks();
+    else if (action === "calendar") onNavigate("calendar-subscribe");
+    else if (action === "mark-read") {
+      // Every organisation, or the one whose menu it was.
+      const targets = sites.filter((s) => !id || s.id === id);
+      run(
+        Promise.all(targets.map((s) => ipc.markRead(s.id, null)))
+          .then(() => ipc.unread())
+          .then(setUnread),
+      );
+    } else if (action === "refresh" && (id === "courses" || id === "agenda")) {
+      const refreshOne =
+        id === "courses" ? ipc.refreshCourses : ipc.refreshAgenda;
+      run(
+        Promise.allSettled(sites.map((s) => refreshOne(s.id))).then(() => {
+          // Remount the list so it reads what was just saved.
+          setListRevision((revision) => revision + 1);
+          return showLocal(id);
+        }),
+      );
+    } else if (action === "site-open") void openSite(id);
+    else if (action === "site-home")
+      run(openSite(id).then(() => ipc.nav("home")));
+    else if (action === "site-notifications")
+      void openPage(id, "notifications");
+    else if (action === "site-messages") void openPage(id, "messages");
+    else if (action === "site-up" || action === "site-down")
+      run(
+        ipc.moveSite(id, action === "site-up" ? -1 : 1).then(() => refresh()),
+      );
+    else if (action === "site-reauth")
+      run(showSettings("organisations").then(() => reauthenticate(id)));
+    else if (action === "bookmark-open" || action === "bookmark-edit") {
+      const bookmark = bookmarks.find((b) => b.id === id);
+      if (!bookmark) return;
+      if (action === "bookmark-open") void openBookmark(bookmark);
+      else {
+        setBookmarkDraft(bookmark);
+        setBookmarkRevision((r) => r + 1);
+        void showLocal("bookmarks");
+      }
     }
   });
   const onBookmarkAdd = useEffectEvent(() => {
@@ -465,6 +532,7 @@ export default function App() {
       // View › AI Assistant (⇧⌘A).
       listen("assistant://toggle", () => void toggleAssistant()),
       listen("bookmarks://add", () => void onBookmarkAdd()),
+      listen<string>("sidebar://action", (e) => onSidebarAction(e.payload)),
       listen<string | null>("auth://finished", (e) =>
         onAuthFinished(e.payload),
       ),
@@ -527,13 +595,10 @@ export default function App() {
             sites.some((s) => s.id === b.siteId && s.userId === b.userId),
           )}
           onBookmark={(b) => void openBookmark(b)}
+          onMenu={(target) => void ipc.sidebarMenu(target).catch(failed)}
           onBookmarkMenu={() => {
             if (desktop) void ipc.bookmarkMenu().catch(failed);
-            else {
-              setBookmarkDraft(null);
-              setBookmarkRevision((r) => r + 1);
-              void showLocal("bookmarks");
-            }
+            else showBookmarks();
           }}
           active={active}
           view={view}
@@ -601,18 +666,28 @@ export default function App() {
           )}
           {ready && view === "courses" && (
             <Courses
+              key={listRevision}
               sites={sites}
               onOpenCourse={(id, course) => void openPage(id, "course", course)}
             />
           )}
           {ready && view === "uploads" && (
-            <Uploads sites={sites} revision={uploadRevision} />
+            <Uploads
+              sites={sites}
+              revision={uploadRevision}
+              onOpened={(id) => {
+                select(id);
+                setView("site");
+              }}
+            />
           )}
           {ready && view === "agenda" && (
             <Agenda
+              key={listRevision}
               calendarRequest={calendarRequest}
               sites={sites}
-              onSettings={() => void showSettings()}
+              onSettings={() => void showSettings("notifications")}
+              onOpenPage={(id) => void openPage(id, "calendar-export")}
               onOpenDay={(id, time) => void openPage(id, "calendar-day", time)}
             />
           )}

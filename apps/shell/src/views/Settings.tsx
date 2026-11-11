@@ -1,6 +1,6 @@
 import { DesktopPreferences } from "../components/DesktopPreferences";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Segmented } from "../components/ui";
+import { Segmented, Switch } from "../components/ui";
 import {
   ArrowUp,
   SlidersHorizontal,
@@ -544,16 +544,11 @@ export function Settings({
                   {t.settings.globalShortcutHint}
                 </span>
               </div>
-              <Segmented
-                name="global-shortcut"
-                legend={t.settings.globalShortcut}
-                value={globalShortcut ? "on" : "off"}
+              <Switch
+                label={t.settings.globalShortcut}
+                checked={globalShortcut}
                 disabled={globalShortcutSaving}
-                onChange={(value) => onGlobalShortcut(value === "on")}
-                options={(["off", "on"] as const).map((value) => ({
-                  value,
-                  label: t.settings.shortcutOptions[value],
-                }))}
+                onChange={onGlobalShortcut}
               />
             </div>
           </div>

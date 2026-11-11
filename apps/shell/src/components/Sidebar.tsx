@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 import {
   Bell,
   BookOpen,
@@ -7,7 +7,7 @@ import {
   Settings,
   Ellipsis,
 } from "lucide-react";
-import type { Site, UnreadStatus, Bookmark } from "../ipc";
+import type { Site, UnreadStatus, Bookmark, SidebarTarget } from "../ipc";
 import { BookmarkIcon } from "./Bookmarks";
 import { displayHost, initials } from "../lib/site";
 import { useI18n } from "../i18n/context";
@@ -27,9 +27,9 @@ export const isLocal = (view: View) => view !== "site";
 /** Views reached from the sidebar's top group. */
 export type Destination = "inbox" | "courses" | "agenda";
 const destinations = [
-  { view: "inbox", icon: Bell },
-  { view: "courses", icon: BookOpen },
-  { view: "agenda", icon: CalendarDays },
+  { view: "inbox", icon: Bell, keys: "⌘1" },
+  { view: "courses", icon: BookOpen, keys: "⌘2" },
+  { view: "agenda", icon: CalendarDays, keys: "⌘3" },
 ] as const;
 
 /** Up/Down/Home/End move focus between sidebar items, like a native source list. */
@@ -66,7 +66,10 @@ export function Sidebar({
   bookmarks = [],
   onBookmark,
   onBookmarkMenu,
+  onMenu,
 }: {
+  /** Right-click (or the menu key) on an item: show its native context menu. */
+  onMenu?: (target: SidebarTarget) => void;
   sites: Site[];
   bookmarks?: Bookmark[];
   onBookmark?: (bookmark: Bookmark) => void;
@@ -81,11 +84,16 @@ export function Sidebar({
 }) {
   const { t } = useI18n();
   const total = unread.reduce((sum, status) => sum + status.unread, 0);
+  const menu = (target: SidebarTarget) => (event: MouseEvent<HTMLElement>) => {
+    if (!onMenu) return;
+    event.preventDefault();
+    onMenu(target);
+  };
   return (
     <nav className="sidebar" aria-label={t.sidebar.label} onKeyDown={moveFocus}>
       {onView && sites.length > 0 && (
         <ul className="view-list" role="list" aria-label={t.sidebar.views}>
-          {destinations.map(({ view: target, icon: Icon }) => {
+          {destinations.map(({ view: target, icon: Icon, keys }) => {
             const badge = target === "inbox" && total > 0;
             const label = badge
               ? `${t.sidebar[target]} — ${t.sidebar.unread(total)}`
@@ -95,10 +103,11 @@ export function Sidebar({
                 <button
                   data-sidebar-item
                   className="sidebar-item"
-                  title={label}
+                  title={`${label} (${keys})`}
                   aria-label={label}
                   aria-current={view === target ? "page" : undefined}
                   onClick={() => onView(target)}
+                  onContextMenu={menu({ kind: target })}
                 >
                   <Icon size={18} strokeWidth={1.75} aria-hidden="true" />
                   {badge && (
@@ -143,6 +152,7 @@ export function Sidebar({
                 aria-label={label}
                 aria-current={current ? "page" : undefined}
                 onClick={() => onSite(site.id)}
+                onContextMenu={menu({ kind: "site", id: site.id })}
               >
                 <span aria-hidden="true">
                   {site.shortLabel || initials(site.name)}
@@ -175,10 +185,11 @@ export function Sidebar({
           <button
             data-sidebar-item
             className="sidebar-item add-site"
-            title={t.sidebar.add}
+            title={`${t.sidebar.add} (⌘N)`}
             aria-label={t.sidebar.add}
             aria-current={view === "onboarding" ? "page" : undefined}
             onClick={onAdd}
+            onContextMenu={menu({ kind: "add" })}
           >
             <Plus size={18} strokeWidth={1.75} aria-hidden="true" />
           </button>
@@ -191,9 +202,12 @@ export function Sidebar({
               <button
                 data-sidebar-item
                 className="sidebar-item"
-                title={`${b.name} — ${sites.find((s) => s.id === b.siteId)?.name ?? ""}`}
+                title={[b.name, sites.find((s) => s.id === b.siteId)?.name]
+                  .filter(Boolean)
+                  .join(" — ")}
                 aria-label={b.name}
                 onClick={() => onBookmark?.(b)}
+                onContextMenu={menu({ kind: "bookmark", id: b.id })}
               >
                 <BookmarkIcon name={b.icon} />
               </button>
@@ -216,10 +230,11 @@ export function Sidebar({
       <button
         data-sidebar-item
         className="sidebar-item settings-button"
-        title={t.sidebar.settings}
+        title={`${t.sidebar.settings} (⌘,)`}
         aria-label={t.sidebar.settings}
         aria-current={view === "settings" ? "page" : undefined}
         onClick={onSettings}
+        onContextMenu={menu({ kind: "settings" })}
       >
         <Settings size={18} strokeWidth={1.75} aria-hidden="true" />
       </button>

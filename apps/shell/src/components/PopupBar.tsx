@@ -1,7 +1,21 @@
 import { useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
-import { ArrowLeft, ArrowRight, House, Download, RotateCw } from "lucide-react";
-import { ipc, message, type PopupContext, type NavAction } from "../ipc";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CircleAlert,
+  Download,
+  House,
+  RotateCw,
+  X,
+} from "lucide-react";
+import {
+  desktop,
+  ipc,
+  message,
+  type PopupContext,
+  type NavAction,
+} from "../ipc";
 import { I18nProvider } from "../i18n/context";
 import { catalogues } from "../i18n/messages";
 import { resolveLocale, systemLanguages } from "../i18n/locale";
@@ -33,9 +47,12 @@ export function PopupBar() {
         if (!cancelled) setError(message(cause));
       }
     };
-    const listener = listen("navigation://changed", () => {
-      void refresh();
-    });
+    // The browser preview has no events; it shows the bar with sample context.
+    const listener = desktop
+      ? listen("navigation://changed", () => {
+          void refresh();
+        })
+      : Promise.resolve(() => {});
     void listener
       .then(() => refresh())
       .catch((cause) => {
@@ -61,6 +78,14 @@ export function PopupBar() {
       <header className="popup-bar" aria-label={t.toolbar.navigation}>
         <button
           className="tool"
+          title={t.toolbar.home}
+          aria-label={t.toolbar.home}
+          onClick={() => void navigate("home")}
+        >
+          <House {...icon} />
+        </button>
+        <button
+          className="tool"
           title={back}
           aria-label={back}
           onClick={() => void navigate("back")}
@@ -78,27 +103,30 @@ export function PopupBar() {
         </button>
         <button
           className="tool"
-          title={t.toolbar.home}
-          aria-label={t.toolbar.home}
-          onClick={() => void navigate("home")}
-        >
-          <House {...icon} />
-        </button>
-        <button
-          className="tool"
           title={t.toolbar.reload}
           aria-label={t.toolbar.reload}
           onClick={() => void navigate("reload")}
         >
-          <RotateCw {...icon} />
+          <RotateCw size={15} strokeWidth={1.75} aria-hidden="true" />
         </button>
         <h1 title={context?.siteName}>
           {context?.siteName ?? t.toolbar.popup}
         </h1>
         {error && (
-          <span className="popup-error" role="alert" title={error}>
-            {describeError(locale, error, "navigation").text}
-          </span>
+          <div className="toolbar-alert" role="alert">
+            <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
+            <span title={error}>
+              {describeError(locale, error, "navigation").text}
+            </span>
+            <button
+              className="tool small"
+              title={t.toolbar.dismiss}
+              aria-label={t.toolbar.dismissLabel}
+              onClick={() => setError(null)}
+            >
+              <X size={13} strokeWidth={2} aria-hidden="true" />
+            </button>
+          </div>
         )}
         <button
           className="tool"

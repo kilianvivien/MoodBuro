@@ -1,5 +1,12 @@
 import { CalendarSubscription } from "../components/CalendarSubscription";
-import { Bell, BellRing, CalendarDays, CircleAlert } from "lucide-react";
+import {
+  Bell,
+  BellRing,
+  CalendarDays,
+  CalendarRange,
+  CircleAlert,
+  Share,
+} from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
 import {
   desktop,
@@ -16,6 +23,7 @@ import { useListing } from "../lib/useListing";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   EmptyState,
+  Notice,
   PageHeader,
   RefreshControl,
   SiteSelect,
@@ -166,11 +174,14 @@ export function Agenda({
   sites,
   calendarRequest = 0,
   onOpenDay,
+  onOpenPage,
   onSettings,
 }: {
   sites: Site[];
   calendarRequest?: number;
   onOpenDay: (siteId: string, time: number) => void;
+  /** Shows an organisation's calendar export page in Moodle. */
+  onOpenPage?: (siteId: string) => void;
   onSettings: () => void;
 }) {
   const { t } = useI18n();
@@ -274,6 +285,7 @@ export function Agenda({
           }
           onClick={() => void exportCalendar()}
         >
+          <Share size={13} strokeWidth={2} aria-hidden="true" />
           {exporting ? t.agenda.exporting : t.agenda.export}
         </button>
         <RefreshControl
@@ -286,7 +298,7 @@ export function Agenda({
       <div className="filter-bar">
         <SiteSelect sites={sites} value={siteId} onChange={setSiteId} />
         <button
-          className="button small"
+          className="button"
           aria-expanded={showDates}
           aria-controls="agenda-date-filters"
           onClick={() => {
@@ -297,10 +309,10 @@ export function Agenda({
             setShowDates(!showDates);
           }}
         >
+          <CalendarRange size={13} strokeWidth={2} aria-hidden="true" />
           {showDates ? t.agenda.clearDates : t.agenda.dates}
         </button>
       </div>
-      <CalendarSubscription sites={shownSites} request={calendarRequest} />
       {showDates && (
         <div className="filter-bar" id="agenda-date-filters">
           <label className="date-filter">
@@ -325,11 +337,7 @@ export function Agenda({
           </label>
         </div>
       )}
-      {!range.valid && (
-        <p className="section-message error" role="alert">
-          {t.agenda.invalidRange}
-        </p>
-      )}
+      {!range.valid && <Notice tone="error">{t.agenda.invalidRange}</Notice>}
       {remindError && (
         <p className="section-message error" role="alert">
           <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
@@ -337,15 +345,15 @@ export function Agenda({
         </p>
       )}
       {exportError && (
-        <p className="section-message error" role="alert">
+        <Notice tone="error">
           <ErrorText error={exportError} context="navigation" />
-        </p>
+        </Notice>
       )}
       {exported && (
-        <p className="section-message" role="status">
+        <Notice tone="success">
           {t.agenda.exported(exported.count, exported.filename)}{" "}
           {exported.revealed ? "" : t.agenda.revealFailed}
-        </p>
+        </Notice>
       )}
       {failures.map((site) => (
         <p className="section-message error" role="alert" key={site.id}>
@@ -376,6 +384,11 @@ export function Agenda({
           onOpen={(event) => onOpenDay(event.siteId, event.timeStart)}
         />
       )}
+      <CalendarSubscription
+        sites={shownSites}
+        request={calendarRequest}
+        onOpenPage={onOpenPage}
+      />
       <footer className="agenda-footer">
         <span>{t.agenda.timeZone(timeZone())}</span>
         <details className="help-disclosure">

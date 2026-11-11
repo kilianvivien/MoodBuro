@@ -8,7 +8,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { ApiKeyHelp } from "../components/ApiKeyHelp";
-import { Segmented } from "../components/ui";
+import { Segmented, Switch } from "../components/ui";
 import { ipc, message, type AssistantProvider } from "../ipc";
 import { useAssistant } from "../stores/assistant";
 import { providerNames, providers } from "../lib/assistant";
@@ -236,16 +236,11 @@ export function AssistantSettingsView(props: AssistantSettingsViewProps) {
               <p>{s.consentHint(name)}</p>
             </details>
           </div>
-          <Segmented
-            name="assistant-consent"
-            legend={s.consent}
-            value={props.consent ? "on" : "off"}
+          <Switch
+            label={s.consent}
+            checked={props.consent}
             disabled={props.busy}
-            onChange={(value) => props.onConsent(value === "on")}
-            options={(["off", "on"] as const).map((value) => ({
-              value,
-              label: t.settings.shortcutOptions[value],
-            }))}
+            onChange={props.onConsent}
           />
         </div>
         <div className="group-row">

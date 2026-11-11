@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  Bookmark,
   BookOpen,
   Building2,
   CalendarDays,
@@ -20,7 +21,13 @@ import { useListing } from "../lib/useListing";
 import { SearchField } from "./ui";
 
 export type QuickView =
-  "inbox" | "courses" | "agenda" | "downloads" | "uploads" | "settings";
+  | "inbox"
+  | "courses"
+  | "agenda"
+  | "downloads"
+  | "bookmarks"
+  | "uploads"
+  | "settings";
 export type QuickTarget =
   | { kind: "course"; siteId: string; courseId: number }
   | { kind: "activity"; siteId: string; activityId: number }
@@ -41,6 +48,7 @@ const views: readonly QuickView[] = [
   "courses",
   "agenda",
   "downloads",
+  "bookmarks",
   "uploads",
   "settings",
 ];
@@ -127,6 +135,7 @@ const viewIcons: Record<QuickView, typeof Bell> = {
   courses: BookOpen,
   agenda: CalendarDays,
   downloads: Download,
+  bookmarks: Bookmark,
   uploads: Upload,
   settings: Settings,
 };

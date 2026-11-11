@@ -77,6 +77,7 @@ fn main() {
             "session_status",
             "bookmarks_list",
             "bookmark_menu",
+            "sidebar_menu",
             "bookmark_capture",
             "bookmark_save",
             "bookmark_delete",

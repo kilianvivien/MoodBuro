@@ -288,6 +288,7 @@ pub fn run() {
             commands::session_status,
             commands::bookmarks_list,
             commands::bookmark_menu,
+            commands::sidebar_menu,
             commands::bookmark_capture,
             commands::bookmark_save,
             commands::bookmark_delete,

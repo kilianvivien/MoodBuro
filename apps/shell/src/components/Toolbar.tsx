@@ -24,6 +24,8 @@ import type { View } from "./Sidebar";
 import { useI18n } from "../i18n/context";
 
 const icon = { size: 16, strokeWidth: 1.75, "aria-hidden": true } as const;
+/** Tooltip of a toolbar item: its command name and the menu shortcut. */
+const tip = (label: string, keys: string) => `${label} (${keys})`;
 
 export function Toolbar({
   view,
@@ -133,9 +135,9 @@ export function Toolbar({
       <button
         className="download-feedback-link"
         onClick={onDownloads}
-        title={t.downloads.feedback[downloadFeedback.state](
+        title={`${t.downloads.feedback[downloadFeedback.state](
           downloadFeedback.filename,
-        )}
+        )}\n${tip(t.toolbar.downloads, "⌥⌘L")}`}
       >
         {t.downloads.feedback[downloadFeedback.state](
           downloadFeedback.filename,
@@ -188,7 +190,7 @@ export function Toolbar({
           >
             <button
               className="tool"
-              title={t.toolbar.home}
+              title={tip(t.toolbar.home, "⇧⌘H")}
               aria-label={t.toolbar.home}
               disabled={paused}
               onClick={() => onNav("home")}
@@ -197,7 +199,7 @@ export function Toolbar({
             </button>
             <button
               className="tool"
-              title={t.toolbar.back}
+              title={tip(t.toolbar.back, "⌘[")}
               aria-label={t.toolbar.back}
               disabled={paused}
               onClick={() => onNav("back")}
@@ -206,7 +208,7 @@ export function Toolbar({
             </button>
             <button
               className="tool"
-              title={t.toolbar.forward}
+              title={tip(t.toolbar.forward, "⌘]")}
               aria-label={t.toolbar.forward}
               disabled={paused}
               onClick={() => onNav("forward")}
@@ -215,7 +217,7 @@ export function Toolbar({
             </button>
             <button
               className="tool"
-              title={t.toolbar.reload}
+              title={tip(t.toolbar.reload, "⌘R")}
               aria-label={t.toolbar.reload}
               disabled={paused}
               onClick={() => onNav("reload")}
@@ -245,7 +247,7 @@ export function Toolbar({
           {onDownloads && (
             <button
               className="tool"
-              title={t.toolbar.downloads}
+              title={tip(t.toolbar.downloads, "⌥⌘L")}
               aria-label={t.toolbar.downloads}
               onClick={onDownloads}
             >
@@ -254,7 +256,7 @@ export function Toolbar({
           )}
           <button
             className="tool"
-            title={t.toolbar.openInBrowser}
+            title={tip(t.toolbar.openInBrowser, "⇧⌘B")}
             aria-label={t.toolbar.openInBrowser}
             disabled={paused}
             onClick={() => onNav("open_in_browser")}
@@ -275,7 +277,7 @@ export function Toolbar({
           {view !== "onboarding" && view !== "downloads" && onDownloads && (
             <button
               className="tool"
-              title={t.toolbar.downloads}
+              title={tip(t.toolbar.downloads, "⌥⌘L")}
               aria-label={t.toolbar.downloads}
               onClick={onDownloads}
             >
@@ -284,7 +286,14 @@ export function Toolbar({
           )}
           {assistant}
           {canLeave && (
-            <button className="button" onClick={onLeave}>
+            <button
+              className="button"
+              title={tip(
+                view === "onboarding" ? t.toolbar.cancel : t.toolbar.done,
+                "esc",
+              )}
+              onClick={onLeave}
+            >
               {view === "onboarding" ? t.toolbar.cancel : t.toolbar.done}
             </button>
           )}

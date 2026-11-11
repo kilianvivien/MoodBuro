@@ -10,10 +10,9 @@ import {
   GraduationCap,
   Pencil,
   Trash2,
-  ChevronsUpDown,
 } from "lucide-react";
 import { ipc, message, type Bookmark, type Site } from "../ipc";
-import { PageHeader } from "./ui";
+import { Confirm, EmptyState, Notice, PageHeader, PopupButton } from "./ui";
 import { ErrorText } from "../i18n/ErrorText";
 import { useI18n } from "../i18n/context";
 export const bookmarkIcons = {
@@ -116,15 +115,11 @@ export function BookmarksView({
         detail={draft ? undefined : String(items.length)}
       />
       {error && (
-        <p role="alert" className="section-message error">
+        <Notice tone="error">
           <ErrorText error={error} context="navigation" />
-        </p>
+        </Notice>
       )}
-      {saved && (
-        <p role="status" className="section-message">
-          {t.bookmarks.saved}
-        </p>
-      )}
+      {saved && <Notice tone="success">{t.bookmarks.saved}</Notice>}
       {draft ? (
         <form
           className="group bookmark-editor"
@@ -139,8 +134,8 @@ export function BookmarksView({
             }
           }}
         >
-          <div className="group-row bookmark-preview">
-            <span className="bookmark-preview-icon">
+          <div className="group-row">
+            <span className="row-icon" aria-hidden="true">
               <BookmarkIcon name={draft.icon} />
             </span>
             <span className="row-text">
@@ -152,36 +147,45 @@ export function BookmarksView({
               </span>
             </span>
           </div>
-          <label className="group-row">
-            <span>{t.bookmarks.name}</span>
-            <input
-              ref={nameField}
-              className="text-field"
-              value={draft.name}
-              maxLength={100}
-              required
-              disabled={busy}
-              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-            />
-          </label>
-          <label className="group-row">
-            <span>{t.bookmarks.icon}</span>
-            <span className="popup-button">
-              <select
-                value={draft.icon}
+          <div className="group-row">
+            <label className="row-text" htmlFor="bookmark-name">
+              <span className="row-title">{t.bookmarks.name}</span>
+            </label>
+            <span
+              className="text-field compact bookmark-name"
+              data-disabled={busy || undefined}
+            >
+              <input
+                id="bookmark-name"
+                ref={nameField}
+                value={draft.name}
+                maxLength={100}
+                required
                 disabled={busy}
-                onChange={(e) => setDraft({ ...draft, icon: e.target.value })}
-              >
-                {Object.keys(bookmarkIcons).map((key) => (
-                  <option key={key} value={key}>
-                    {t.bookmarks.icons[key as keyof typeof bookmarkIcons]}
-                  </option>
-                ))}
-              </select>
-              <ChevronsUpDown size={12} strokeWidth={2} aria-hidden="true" />
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+              />
             </span>
-          </label>
-          <div className="group-row bookmark-actions">
+          </div>
+          <div className="group-row">
+            <label className="row-text" htmlFor="bookmark-icon">
+              <span className="row-title">{t.bookmarks.icon}</span>
+            </label>
+            <PopupButton
+              id="bookmark-icon"
+              value={draft.icon}
+              disabled={busy}
+              onChange={(icon) => setDraft({ ...draft, icon })}
+            >
+              {Object.keys(bookmarkIcons).map((key) => (
+                <option key={key} value={key}>
+                  {t.bookmarks.icons[key as keyof typeof bookmarkIcons]}
+                </option>
+              ))}
+            </PopupButton>
+          </div>
+          <div className="group-row group-footer">
             <button
               type="button"
               className="button"
@@ -198,57 +202,37 @@ export function BookmarksView({
             </button>
           </div>
         </form>
+      ) : items.length === 0 ? (
+        <EmptyState
+          icon={<BookmarkGlyph size={22} strokeWidth={1.75} />}
+          title={t.bookmarks.emptyTitle}
+          hint={t.bookmarks.empty}
+        />
       ) : (
         <ul
           ref={listRoot}
           className="group bookmark-list"
+          role="list"
           aria-label={t.bookmarks.title}
         >
           {items.map((b) => (
-            <li key={b.id} className="group-row">
-              <button
-                className="bookmark-link"
-                data-bookmark-id={b.id}
-                disabled={busy}
-                title={b.name}
-                onClick={() => onOpen(b)}
-              >
-                <BookmarkIcon name={b.icon} />
+            <li key={b.id}>
+              <div className="list-row">
+                <span className="row-icon" aria-hidden="true">
+                  <BookmarkIcon name={b.icon} />
+                </span>
                 <span className="row-text">
-                  <span className="row-title">{b.name}</span>
+                  <span className="row-title" title={b.name}>
+                    {b.name}
+                  </span>
                   <span className="row-subtitle">
                     {sites.find((s) => s.id === b.siteId)?.name}
                   </span>
                 </span>
-              </button>
-              {removing === b.id ? (
-                <span
-                  className="row-actions bookmark-confirm"
-                  role="group"
-                  aria-label={t.bookmarks.remove}
-                >
-                  <span>{t.bookmarks.removeQuestion}</span>
-                  <button
-                    className="button"
-                    autoFocus
-                    disabled={busy}
-                    onClick={() => setRemoving(null)}
-                  >
-                    {t.bookmarks.cancel}
-                  </button>
-                  <button
-                    className="button destructive"
-                    disabled={busy}
-                    onClick={() => void remove(b.id)}
-                  >
-                    {t.bookmarks.remove}
-                  </button>
-                </span>
-              ) : (
                 <span className="row-actions">
                   <button
-                    className="tool"
-                    disabled={busy}
+                    className="button small icon"
+                    disabled={busy || removing !== null}
                     title={t.bookmarks.edit}
                     aria-label={`${t.bookmarks.edit} — ${b.name}`}
                     onClick={() => {
@@ -256,24 +240,47 @@ export function BookmarksView({
                       setSaved(false);
                     }}
                   >
-                    <Pencil size={15} />
+                    <Pencil size={13} strokeWidth={2} aria-hidden="true" />
                   </button>
                   <button
-                    className="tool"
-                    disabled={busy}
+                    className="button small icon"
+                    disabled={busy || removing !== null}
                     title={t.bookmarks.remove}
                     aria-label={`${t.bookmarks.remove} — ${b.name}`}
-                    onClick={() => setRemoving(b.id)}
+                    onClick={() => {
+                      lastEdited.current = b.id;
+                      setRemoving(b.id);
+                    }}
                   >
-                    <Trash2 size={15} />
+                    <Trash2 size={13} strokeWidth={2} aria-hidden="true" />
+                  </button>
+                  <button
+                    className="button small"
+                    data-bookmark-id={b.id}
+                    disabled={busy}
+                    aria-label={`${t.courses.open} — ${b.name}`}
+                    onClick={() => onOpen(b)}
+                  >
+                    {t.courses.open}
                   </button>
                 </span>
+              </div>
+              {removing === b.id && (
+                <Confirm
+                  id={`remove-bookmark-${b.id}`}
+                  title={t.bookmarks.removeTitle(b.name)}
+                  body={t.bookmarks.removeBody}
+                  cancel={t.bookmarks.cancel}
+                  confirm={t.bookmarks.confirmRemove}
+                  tone="destructive"
+                  nested
+                  busy={busy}
+                  onCancel={() => setRemoving(null)}
+                  onConfirm={() => void remove(b.id)}
+                />
               )}
             </li>
           ))}
-          {!items.length && (
-            <li className="group-row section-message">{t.bookmarks.empty}</li>
-          )}
         </ul>
       )}
       <p className="section-footnote">{t.bookmarks.local}</p>

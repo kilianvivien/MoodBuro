@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useLayoutEffect,
   useRef,
   type KeyboardEvent,
@@ -7,7 +8,19 @@ import {
 } from "react";
 import {
   ChevronsUpDown,
+  CircleAlert,
+  CircleCheck,
+  File,
+  FileArchive,
+  FileAudio,
+  FileCode,
+  FileImage,
+  FileSpreadsheet,
+  FileText,
+  FileVideo,
+  Info,
   LoaderCircle,
+  Presentation,
   RotateCw,
   Search,
   X,
@@ -131,7 +144,48 @@ export function SearchField({
   );
 }
 
-/** Pop-up button built on a native select, so the menu is the real macOS one. */
+/**
+ * Pop-up button: a native select in a push-button bezel, so the menu is the
+ * real macOS one. `label` names it for VoiceOver unless a visible label is
+ * linked through `id`.
+ */
+export function PopupButton({
+  id,
+  label,
+  value,
+  disabled = false,
+  className,
+  onChange,
+  children,
+}: {
+  id?: string;
+  label?: string;
+  value: string | number;
+  disabled?: boolean;
+  className?: string;
+  onChange: (value: string) => void;
+  children: ReactNode;
+}) {
+  return (
+    <span
+      className={className ? `popup-button ${className}` : "popup-button"}
+      data-disabled={disabled || undefined}
+    >
+      <select
+        id={id}
+        aria-label={label}
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        {children}
+      </select>
+      <ChevronsUpDown size={12} strokeWidth={2} aria-hidden="true" />
+    </span>
+  );
+}
+
+/** Organisation filter; hidden while there is only one organisation. */
 export function SiteSelect({
   sites,
   value,
@@ -144,21 +198,169 @@ export function SiteSelect({
   const { t } = useI18n();
   if (sites.length < 2) return null;
   return (
-    <label className="popup-button">
-      <span className="visually-hidden">{t.common.siteFilter}</span>
-      <select
-        value={value ?? ""}
-        onChange={(event) => onChange(event.target.value || null)}
-      >
-        <option value="">{t.common.allSites}</option>
-        {sites.map((site) => (
-          <option key={site.id} value={site.id}>
-            {site.name}
-          </option>
-        ))}
-      </select>
-      <ChevronsUpDown size={12} strokeWidth={2} aria-hidden="true" />
-    </label>
+    <PopupButton
+      label={t.common.siteFilter}
+      value={value ?? ""}
+      onChange={(next) => onChange(next || null)}
+    >
+      <option value="">{t.common.allSites}</option>
+      {sites.map((site) => (
+        <option key={site.id} value={site.id}>
+          {site.name}
+        </option>
+      ))}
+    </PopupButton>
+  );
+}
+
+/** On/off setting that applies immediately: a native checkbox drawn as a switch. */
+export function Switch({
+  id,
+  label,
+  checked,
+  disabled = false,
+  describedBy,
+  onChange,
+}: {
+  id?: string;
+  /** Accessible name when no visible label is linked through `id`. */
+  label?: string;
+  checked: boolean;
+  disabled?: boolean;
+  describedBy?: string;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <input
+      id={id}
+      className="switch"
+      type="checkbox"
+      role="switch"
+      aria-label={label}
+      aria-describedby={describedBy}
+      checked={checked}
+      disabled={disabled}
+      onChange={(event) => onChange(event.target.checked)}
+    />
+  );
+}
+
+/** Outcome or state of an action, under the group it concerns. */
+export function Notice({
+  tone = "info",
+  children,
+}: {
+  tone?: "info" | "success" | "error";
+  children: ReactNode;
+}) {
+  const Icon =
+    tone === "error" ? CircleAlert : tone === "success" ? CircleCheck : Info;
+  return (
+    <p
+      className={`section-message ${tone}`}
+      role={tone === "error" ? "alert" : "status"}
+    >
+      <Icon size={14} strokeWidth={2} aria-hidden="true" />
+      <span className="error-text">{children}</span>
+    </p>
+  );
+}
+
+/**
+ * Inline confirmation. Focus starts on Cancel; Escape cancels only the
+ * confirmation, never the view around it.
+ */
+export function Confirm({
+  id,
+  title,
+  body,
+  cancel,
+  confirm,
+  tone = "default",
+  nested = false,
+  busy = false,
+  onCancel,
+  onConfirm,
+  children,
+}: {
+  /** Prefix for the title/body ids; unique among confirmations on screen. */
+  id: string;
+  title?: string;
+  body: ReactNode;
+  cancel: ReactNode;
+  confirm: ReactNode;
+  tone?: "default" | "primary" | "destructive";
+  /** Under a list row, aligned with its text column. */
+  nested?: boolean;
+  busy?: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+  /** Further body paragraphs. */
+  children?: ReactNode;
+}) {
+  const cancelButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => cancelButton.current?.focus(), []);
+  return (
+    <div
+      className={nested ? "confirm" : "confirm standalone"}
+      role="alertdialog"
+      aria-labelledby={title ? `${id}-title` : `${id}-body`}
+      aria-describedby={`${id}-body`}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          if (!busy) onCancel();
+        }
+      }}
+    >
+      {title && (
+        <p className="confirm-title" id={`${id}-title`}>
+          {title}
+        </p>
+      )}
+      <p className="confirm-body" id={`${id}-body`}>
+        {body}
+      </p>
+      {children}
+      <div className="confirm-actions">
+        <button
+          className="button"
+          ref={cancelButton}
+          disabled={busy}
+          onClick={onCancel}
+        >
+          {cancel}
+        </button>
+        <button
+          className={tone === "default" ? "button" : `button ${tone}`}
+          disabled={busy}
+          onClick={onConfirm}
+        >
+          {confirm}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const fileKinds: readonly [RegExp, typeof File][] = [
+  [/\.(pdf|docx?|odt|rtf|txt|md|pages)$/i, FileText],
+  [/\.(xlsx?|ods|csv|numbers)$/i, FileSpreadsheet],
+  [/\.(pptx?|odp|key)$/i, Presentation],
+  [/\.(zip|tar|gz|tgz|7z|rar)$/i, FileArchive],
+  [/\.(png|jpe?g|gif|webp|svg|heic|tiff?)$/i, FileImage],
+  [/\.(mp3|m4a|wav|aac|ogg|flac)$/i, FileAudio],
+  [/\.(mp4|mov|m4v|webm|mkv|avi)$/i, FileVideo],
+  [/\.(html?|xml|json|py|js|ts|c|h|java|r|ipynb|tex)$/i, FileCode],
+];
+/** Leading tile of a file row: a glyph for the kind of file, from its name. */
+export function FileIcon({ name }: { name: string }) {
+  const Icon = fileKinds.find(([pattern]) => pattern.test(name))?.[1] ?? File;
+  return (
+    <span className="row-icon file-icon" aria-hidden="true">
+      <Icon size={16} strokeWidth={1.75} />
+    </span>
   );
 }
 
@@ -273,10 +475,4 @@ export function RefreshControl({
       </button>
     </>
   );
-}
-
-/** Small monogram tile naming the organisation a row belongs to. */
-export function SiteTag({ site }: { site: Site | undefined }) {
-  if (!site) return null;
-  return <span className="site-tag">{site.name}</span>;
 }

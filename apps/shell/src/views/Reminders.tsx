@@ -9,6 +9,8 @@ import {
 } from "../ipc";
 import { useI18n } from "../i18n/context";
 import { ErrorText } from "../i18n/ErrorText";
+import { initials } from "../lib/site";
+import { Notice } from "../components/ui";
 
 export function ReminderRows({
   sites,
@@ -32,6 +34,9 @@ export function ReminderRows({
         );
         return (
           <li className="group-row" key={site.id}>
+            <span className="row-avatar" aria-hidden="true">
+              {site.shortLabel || initials(site.name)}
+            </span>
             <div className="row-text">
               <span className="row-title">{site.name}</span>
               <span className="row-subtitle">
@@ -48,17 +53,17 @@ export function ReminderRows({
                 (saved.hour || saved.day) &&
                 (saved.refreshedAt === null ||
                   now - saved.refreshedAt > 900) && (
-                  <span className="row-subtitle" role="status">
+                  <span className="row-subtitle warning" role="status">
                     {t.reminders.stale}
                   </span>
                 )}
               {saved?.refreshError && (
-                <span className="error" role="alert">
+                <span className="row-subtitle warning" role="alert">
                   <ErrorText error={saved.refreshError} context="navigation" />
                 </span>
               )}
               {saved?.deliveryFailed && (
-                <span className="error" role="alert">
+                <span className="row-subtitle warning" role="alert">
                   {t.reminders.deliveryFailed}
                 </span>
               )}
@@ -67,6 +72,7 @@ export function ReminderRows({
               {(["day", "hour"] as const).map((offset) => (
                 <label className="reminder-choice" key={offset}>
                   <input
+                    className="checkbox"
                     type="checkbox"
                     checked={saved?.[offset] ?? false}
                     disabled={busy || !saved}
@@ -185,14 +191,14 @@ export function Reminders({
         onChange={(saved, hour, day) => void change(saved, hour, day)}
       />
       {busy && (
-        <p className="section-message" role="status">
+        <span className="visually-hidden" role="status">
           {t.reminders.saving}
-        </p>
+        </span>
       )}
       {error && (
-        <p className="section-message error" role="alert">
+        <Notice tone="error">
           <ErrorText error={error} context="settings" />
-        </p>
+        </Notice>
       )}
       <details className="help-disclosure section-footnote">
         <summary>{t.reminders.help}</summary>

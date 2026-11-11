@@ -62,6 +62,7 @@
     "allow-session-status",
     "allow-bookmarks-list",
     "allow-bookmark-menu",
+    "allow-sidebar-menu",
     "allow-bookmark-capture",
     "allow-bookmark-save",
     "allow-bookmark-delete",

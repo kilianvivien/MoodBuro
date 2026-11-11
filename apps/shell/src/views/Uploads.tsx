@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { CircleAlert, CircleCheck, LoaderCircle, Upload } from "lucide-react";
 import {
   ipc,
   message,
@@ -9,9 +10,16 @@ import {
   type UploadReview,
   type DraftUpload,
 } from "../ipc";
-import { PageHeader } from "../components/ui";
+import {
+  Confirm,
+  FileIcon,
+  Notice,
+  PageHeader,
+  PopupButton,
+} from "../components/ui";
 import { useI18n } from "../i18n/context";
 import { ErrorText } from "../i18n/ErrorText";
+
 export function UploadConfirmation({
   review,
   busy,
@@ -62,18 +70,36 @@ export function UploadConfirmation({
           </button>
         )}
         <button className="button primary" disabled={busy} onClick={onConfirm}>
+          {busy && (
+            <LoaderCircle
+              className="spin"
+              size={14}
+              strokeWidth={2}
+              aria-hidden="true"
+            />
+          )}
           {busy ? t.uploads.uploading : t.uploads.confirm}
         </button>
       </div>
     </div>
   );
 }
+const historyIcons = {
+  saved: CircleCheck,
+  reviewed: CircleCheck,
+  uncertain: CircleAlert,
+  failed: CircleAlert,
+} as const;
+
 export function Uploads({
   sites,
   revision = 0,
+  onOpened,
 }: {
   sites: Site[];
   revision?: number;
+  /** Moodle now shows an assignment of this organisation. */
+  onOpened?: (siteId: string) => void;
 }) {
   const { t, locale, date } = useI18n();
   const [courses, setCourses] = useState<Course[]>([]);
@@ -88,10 +114,6 @@ export function Uploads({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [ack, setAck] = useState<string | null>(null);
-  const ackCancel = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (ack) ackCancel.current?.focus();
-  }, [ack]);
   const pending = useRef(false);
   const alive = useRef(true);
   const title = useRef<HTMLHeadingElement>(null);
@@ -160,7 +182,11 @@ export function Uploads({
       ? { siteId: site.id, userId: site.userId, courseId: Number(courseId) }
       : null;
   async function open(assignment = Number(assignmentId), target = identity) {
-    if (target) await action(() => ipc.uploadOpen(target, assignment));
+    if (target)
+      await action(async () => {
+        await ipc.uploadOpen(target, assignment);
+        onOpened?.(target.siteId);
+      });
   }
   async function confirm() {
     if (!review) return;
@@ -186,143 +212,152 @@ export function Uploads({
     setReview(null);
     title.current?.focus();
   }
+  const locked = busy || !!review;
   return (
     <div className="page uploads-page">
       <PageHeader title={t.uploads.title} />
       <h3 ref={title} tabIndex={-1} className="visually-hidden">
         {t.uploads.title}
       </h3>
-      <p className="section-footnote">{t.uploads.hint}</p>
-      <section className="group">
-        <div className="group-row">
-          <span className="row-text">
-            <span className="row-title">{file?.name ?? t.uploads.noFile}</span>
-            {file && (
-              <span className="row-subtitle">
-                {t.offline.bytes(
-                  new Intl.NumberFormat(locale).format(file.bytes),
-                )}
+      <section>
+        <div className="group">
+          <div className="group-row">
+            {file ? (
+              <FileIcon name={file.name} />
+            ) : (
+              <span className="row-icon" aria-hidden="true">
+                <Upload size={16} strokeWidth={1.75} />
               </span>
             )}
-          </span>
-          <button
-            className="button"
-            disabled={busy || !!review}
-            onClick={() =>
-              void action(async () => {
-                const next = await ipc.uploadPick();
-                if (alive.current && next) {
-                  setFile(next);
-                  setSaved(false);
-                }
-              })
-            }
-          >
-            {t.uploads.chooseFile}
-          </button>
-        </div>
-        <div className="group-row">
-          <label className="row-title" htmlFor="upload-site">
-            {t.uploads.organisation}
-          </label>
-          <select
-            id="upload-site"
-            disabled={busy || !!review}
-            value={siteId}
-            onChange={(e) => {
-              setSiteId(e.target.value);
-              setCourseId("");
-              setAssignmentId("");
-              setTargets([]);
-              setSaved(false);
-              sequence.current++;
-            }}
-          >
-            <option value="">{t.uploads.choose}</option>
-            {sites.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="group-row">
-          <label className="row-title" htmlFor="upload-course">
-            {t.uploads.course}
-          </label>
-          <select
-            id="upload-course"
-            disabled={!site || busy || !!review}
-            value={courseId}
-            onChange={(e) => void load(e.target.value)}
-          >
-            <option value="">{t.uploads.choose}</option>
-            {courses
-              .filter((c) => c.siteId === siteId)
-              .map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
+            <span className="row-text">
+              <span className="row-title">
+                {file?.name ?? t.uploads.noFile}
+              </span>
+              <span className="row-subtitle">
+                {file
+                  ? t.offline.bytes(
+                      new Intl.NumberFormat(locale).format(file.bytes),
+                    )
+                  : t.uploads.hint}
+              </span>
+            </span>
+            <button
+              className="button"
+              disabled={locked}
+              onClick={() =>
+                void action(async () => {
+                  const next = await ipc.uploadPick();
+                  if (alive.current && next) {
+                    setFile(next);
+                    setSaved(false);
+                  }
+                })
+              }
+            >
+              {t.uploads.chooseFile}
+            </button>
+          </div>
+          <div className="group-row">
+            <label className="row-text" htmlFor="upload-site">
+              <span className="row-title">{t.uploads.organisation}</span>
+            </label>
+            <PopupButton
+              id="upload-site"
+              disabled={locked}
+              value={siteId}
+              onChange={(value) => {
+                setSiteId(value);
+                setCourseId("");
+                setAssignmentId("");
+                setTargets([]);
+                setSaved(false);
+                sequence.current++;
+              }}
+            >
+              <option value="">{t.uploads.choose}</option>
+              {sites.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
                 </option>
               ))}
-          </select>
-        </div>
-        <div className="group-row">
-          <label className="row-title" htmlFor="upload-assignment">
-            {t.uploads.assignment}
-          </label>
-          <select
-            id="upload-assignment"
-            disabled={!courseId || busy || !!review}
-            value={assignmentId}
-            onChange={(e) => {
-              setAssignmentId(e.target.value);
-              setSaved(false);
-            }}
-          >
-            <option value="">{t.uploads.choose}</option>
-            {targets.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </section>
-      {chosen && !chosen.supported && (
-        <p className="section-message">{t.uploads.unsupported}</p>
-      )}
-      <div className="filter-bar">
-        <button
-          className="button primary"
-          disabled={
-            !identity || !file || !chosen?.supported || busy || !!review
-          }
-          onClick={() =>
-            void action(async () => {
-              if (identity && file) {
-                const r = await ipc.uploadPrepare(
-                  identity,
-                  Number(assignmentId),
-                  file.id,
-                );
-                if (alive.current) {
-                  setReview(r);
-                  setSaved(false);
-                }
+            </PopupButton>
+          </div>
+          <div className="group-row">
+            <label className="row-text" htmlFor="upload-course">
+              <span className="row-title">{t.uploads.course}</span>
+            </label>
+            <PopupButton
+              id="upload-course"
+              disabled={!site || locked}
+              value={courseId}
+              onChange={(value) => void load(value)}
+            >
+              <option value="">{t.uploads.choose}</option>
+              {courses
+                .filter((c) => c.siteId === siteId)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </PopupButton>
+          </div>
+          <div className="group-row">
+            <label className="row-text" htmlFor="upload-assignment">
+              <span className="row-title">{t.uploads.assignment}</span>
+            </label>
+            <PopupButton
+              id="upload-assignment"
+              disabled={!courseId || locked}
+              value={assignmentId}
+              onChange={(value) => {
+                setAssignmentId(value);
+                setSaved(false);
+              }}
+            >
+              <option value="">{t.uploads.choose}</option>
+              {targets.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </PopupButton>
+          </div>
+          <div className="group-row group-footer">
+            <button
+              className="button"
+              disabled={!chosen || busy}
+              onClick={() => void open()}
+            >
+              {t.uploads.openMoodle}
+            </button>
+            <button
+              className="button primary"
+              disabled={!identity || !file || !chosen?.supported || locked}
+              onClick={() =>
+                void action(async () => {
+                  if (identity && file) {
+                    const r = await ipc.uploadPrepare(
+                      identity,
+                      Number(assignmentId),
+                      file.id,
+                    );
+                    if (alive.current) {
+                      setReview(r);
+                      setSaved(false);
+                    }
+                  }
+                })
               }
-            })
-          }
-        >
-          {t.uploads.review}
-        </button>
-        <button
-          className="button"
-          disabled={!chosen || busy}
-          onClick={() => void open()}
-        >
-          {t.uploads.openMoodle}
-        </button>
-      </div>
+            >
+              {t.uploads.review}
+            </button>
+          </div>
+        </div>
+        {chosen && !chosen.supported && (
+          <Notice>{t.uploads.unsupported}</Notice>
+        )}
+      </section>
       {review && (
         <UploadConfirmation
           review={review}
@@ -335,104 +370,98 @@ export function Uploads({
         />
       )}
       {error && (
-        <p className="section-message error" role="alert">
+        <Notice tone="error">
           <ErrorText error={error} context="navigation" />
-        </p>
+        </Notice>
       )}
-      {saved && (
-        <p className="section-message" role="status">
-          {t.uploads.saved}
-        </p>
+      {saved && <Notice tone="success">{t.uploads.saved}</Notice>}
+      {ack && (
+        <Confirm
+          id="upload-ack"
+          title={t.uploads.newAttempt}
+          body={t.uploads.acknowledge}
+          cancel={t.downloads.cancel}
+          confirm={t.uploads.checked}
+          busy={busy}
+          onCancel={() => {
+            setAck(null);
+            title.current?.focus();
+          }}
+          onConfirm={() =>
+            void action(async () => {
+              await ipc.uploadReviewed(ack, true);
+              const rows = await ipc.uploadHistory();
+              if (alive.current) {
+                setHistory(rows);
+                setAck(null);
+              }
+            })
+          }
+        />
       )}
       {history.length > 0 && (
         <section>
           <h3 className="section-title">{t.uploads.history}</h3>
           <ul className="group" role="list">
-            {history.map((row) => (
-              <li className="list-row" key={row.id}>
-                <span className="row-text">
-                  <span className="row-title">{row.filename}</span>
-                  <span className="row-subtitle">
-                    {t.uploads.states[row.state]} ·{" "}
-                    {date(row.createdAt * 1000, {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })}
+            {history.map((row) => {
+              const Icon =
+                historyIcons[row.state as keyof typeof historyIcons] ?? Upload;
+              return (
+                <li
+                  className="list-row"
+                  key={row.id}
+                  data-state={
+                    row.state === "failed" || row.state === "uncertain"
+                      ? "failed"
+                      : row.state === "saved" || row.state === "reviewed"
+                        ? "complete"
+                        : undefined
+                  }
+                >
+                  <span className="row-icon" aria-hidden="true">
+                    <Icon size={16} strokeWidth={1.75} />
                   </span>
-                </span>
-                <span className="row-actions">
-                  <button
-                    className="button small"
-                    disabled={busy}
-                    onClick={() =>
-                      void open(row.assignmentId, {
-                        siteId: row.siteId,
-                        userId: row.userId,
-                        courseId: row.courseId,
-                      })
-                    }
-                  >
-                    {t.uploads.openMoodle}
-                  </button>
-                  {row.state === "uncertain" && (
+                  <span className="row-text">
+                    <span className="row-title" title={row.filename}>
+                      {row.filename}
+                    </span>
+                    <span className="row-subtitle">
+                      {t.uploads.states[row.state]} ·{" "}
+                      {date(row.createdAt * 1000, {
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}
+                    </span>
+                  </span>
+                  <span className="row-actions">
+                    {row.state === "uncertain" && (
+                      <button
+                        className="button small"
+                        disabled={busy}
+                        onClick={() => setAck(row.id)}
+                      >
+                        {t.uploads.newAttempt}
+                      </button>
+                    )}
                     <button
                       className="button small"
                       disabled={busy}
-                      onClick={() => setAck(row.id)}
+                      onClick={() =>
+                        void open(row.assignmentId, {
+                          siteId: row.siteId,
+                          userId: row.userId,
+                          courseId: row.courseId,
+                        })
+                      }
                     >
-                      {t.uploads.newAttempt}
+                      {t.uploads.openMoodle}
                     </button>
-                  )}
-                </span>
-              </li>
-            ))}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </section>
-      )}
-      {ack && (
-        <div
-          className="confirm standalone"
-          role="alertdialog"
-          aria-label={t.uploads.newAttempt}
-          onKeyDown={(e) => {
-            if (e.key === "Escape" && !busy) {
-              e.stopPropagation();
-              setAck(null);
-              title.current?.focus();
-            }
-          }}
-        >
-          <p className="confirm-body">{t.uploads.acknowledge}</p>
-          <div className="confirm-actions">
-            <button
-              className="button"
-              ref={ackCancel}
-              disabled={busy}
-              onClick={() => {
-                setAck(null);
-                title.current?.focus();
-              }}
-            >
-              {t.downloads.cancel}
-            </button>
-            <button
-              className="button"
-              disabled={busy}
-              onClick={() =>
-                void action(async () => {
-                  await ipc.uploadReviewed(ack, true);
-                  const rows = await ipc.uploadHistory();
-                  if (alive.current) {
-                    setHistory(rows);
-                    setAck(null);
-                  }
-                })
-              }
-            >
-              {t.uploads.checked}
-            </button>
-          </div>
-        </div>
       )}
     </div>
   );

@@ -219,7 +219,12 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
     app.on_menu_event(|app, event| {
         let id = event.id().as_ref();
         let view = if id == "add-site" { "onboarding" } else { id };
-        if let Some(id) = id.strip_prefix("bookmark:") {
+        if id == "ctx:check" {
+            crate::notifications::check_now(app);
+        } else if let Some(action) = id.strip_prefix("ctx:") {
+            // A sidebar context-menu choice: the shell runs it through its own commands.
+            let _ = app.emit_to("shell", "sidebar://action", action);
+        } else if let Some(id) = id.strip_prefix("bookmark:") {
             let app = app.clone();
             let id = id.to_owned();
             tauri::async_runtime::spawn(async move {
@@ -255,6 +260,190 @@ pub fn install(app: &AppHandle) -> tauri::Result<()> {
         }
     });
     Ok(())
+}
+
+/// What a sidebar context menu offers: `(action, English, French, enabled)`; `None` is a
+/// separator. Actions are fixed names, completed with `id` for an organisation or bookmark.
+type ContextItem = Option<(String, &'static str, &'static str, bool)>;
+fn context_items(kind: &str, id: &str, position: Option<(usize, usize)>) -> Vec<ContextItem> {
+    let item = |action: &str, en, fr| Some((action.to_owned(), en, fr, true));
+    let with = |action: &str, en, fr, enabled| Some((format!("{action}:{id}"), en, fr, enabled));
+    match kind {
+        "inbox" => vec![
+            item(
+                "view:inbox",
+                "Open Notifications",
+                "Ouvrir les notifications",
+            ),
+            None,
+            item("mark-read", "Mark All as Read", "Tout marquer comme lu"),
+            item(
+                "check",
+                "Check for Notifications",
+                "Relever les notifications",
+            ),
+        ],
+        "courses" => vec![
+            item("view:courses", "Open Courses", "Ouvrir les cours"),
+            None,
+            item("refresh:courses", "Refresh Courses", "Actualiser les cours"),
+        ],
+        "agenda" => vec![
+            item("view:agenda", "Open Agenda", "Ouvrir l’agenda"),
+            None,
+            item("refresh:agenda", "Refresh Agenda", "Actualiser l’agenda"),
+            item(
+                "calendar",
+                "Subscribe to Calendar…",
+                "S’abonner au calendrier…",
+            ),
+            item(
+                "settings:notifications",
+                "Reminder Settings…",
+                "Réglages des rappels…",
+            ),
+        ],
+        "site" => {
+            let (index, count) = position.unwrap_or((0, 1));
+            vec![
+                with("site-open", "Open", "Ouvrir", true),
+                with("site-home", "Moodle Home", "Accueil Moodle", true),
+                with(
+                    "site-notifications",
+                    "Notifications in Moodle",
+                    "Notifications dans Moodle",
+                    true,
+                ),
+                with(
+                    "site-messages",
+                    "Messages in Moodle",
+                    "Messages dans Moodle",
+                    true,
+                ),
+                None,
+                with(
+                    "mark-read",
+                    "Mark Notifications as Read",
+                    "Marquer les notifications comme lues",
+                    true,
+                ),
+                None,
+                with("site-up", "Move Up", "Monter", index > 0),
+                with("site-down", "Move Down", "Descendre", index + 1 < count),
+                None,
+                with("site-reauth", "Sign In Again…", "Se reconnecter…", true),
+                item(
+                    "settings:organisations",
+                    "Organisation Settings…",
+                    "Réglages des organisations…",
+                ),
+            ]
+        }
+        "add" => vec![item(
+            "view:onboarding",
+            "Add Organisation…",
+            "Ajouter une organisation…",
+        )],
+        "bookmark" => vec![
+            with("bookmark-open", "Open", "Ouvrir", true),
+            with(
+                "bookmark-edit",
+                "Edit Bookmark…",
+                "Modifier le signet…",
+                true,
+            ),
+            None,
+            item("bookmarks", "Edit Bookmarks…", "Modifier les signets…"),
+        ],
+        "settings" => vec![
+            item("settings:general", "General", "Général"),
+            item("settings:files", "Files", "Fichiers"),
+            item("settings:notifications", "Reminders", "Rappels"),
+            item("settings:assistant", "AI Assistant", "Assistant IA"),
+            item("settings:organisations", "Organisations", "Organisations"),
+        ],
+        _ => Vec::new(),
+    }
+}
+/// Shows the native context menu of a sidebar item at the pointer. The menu only names
+/// fixed actions on a saved organisation or bookmark; the shell performs the chosen one.
+pub fn sidebar_context(app: &AppHandle, kind: &str, id: Option<&str>) -> Result<(), String> {
+    use tauri::menu::ContextMenu;
+    const FAILED: &str = "Could not show the menu.";
+    let state = app.state::<crate::AppState>();
+    let (id, position) = match kind {
+        "site" => {
+            let sites = state
+                .store
+                .lock()
+                .map_err(|_| "Site storage unavailable.")?
+                .sites()
+                .map_err(|_| "Could not read sites.")?;
+            let id = id.ok_or(FAILED)?;
+            let index = sites.iter().position(|s| s.id == id).ok_or(FAILED)?;
+            (id, Some((index, sites.len())))
+        }
+        "bookmark" => {
+            let id = id.ok_or(FAILED)?;
+            if !crate::bookmarks::list(app)?.iter().any(|b| b.id == id) {
+                return Err(FAILED.into());
+            }
+            (id, None)
+        }
+        _ => ("", None),
+    };
+    let items = context_items(kind, id, position);
+    if items.is_empty() {
+        return Err(FAILED.into());
+    }
+    let fr = french(app);
+    let mut menu = MenuBuilder::new(app);
+    for item in items {
+        menu = match item {
+            None => menu.separator(),
+            Some((action, en, french, enabled)) => menu.item(
+                &MenuItemBuilder::with_id(format!("ctx:{action}"), if fr { french } else { en })
+                    .enabled(enabled)
+                    .build(app)
+                    .map_err(|_| FAILED)?,
+            ),
+        };
+    }
+    let menu = menu.build().map_err(|_| FAILED)?;
+    let window = app.get_window("main").ok_or("Main window missing.")?;
+    menu.popup(window).map_err(|_| FAILED.into())
+}
+
+#[cfg(test)]
+mod context_tests {
+    use super::context_items;
+    #[test]
+    fn context_menus_name_fixed_actions_and_respect_the_organisation_order() {
+        let first = context_items("site", "a", Some((0, 2)));
+        let find = |items: &[super::ContextItem], action: &str| {
+            items
+                .iter()
+                .flatten()
+                .find(|item| item.0 == action)
+                .map(|item| item.3)
+        };
+        assert_eq!(find(&first, "site-up:a"), Some(false));
+        assert_eq!(find(&first, "site-down:a"), Some(true));
+        let only = context_items("site", "a", Some((0, 1)));
+        assert_eq!(find(&only, "site-down:a"), Some(false));
+        // Nothing destructive, and nothing for a kind the sidebar does not have.
+        for kind in [
+            "inbox", "courses", "agenda", "site", "add", "bookmark", "settings",
+        ] {
+            let items = context_items(kind, "a", None);
+            assert!(!items.is_empty());
+            assert!(items
+                .iter()
+                .flatten()
+                .all(|item| !item.0.contains("remove")));
+        }
+        assert!(context_items("other", "a", None).is_empty());
+    }
 }
 
 fn preferred_french(languages: impl IntoIterator<Item = String>) -> bool {

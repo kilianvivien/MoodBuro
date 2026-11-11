@@ -1,9 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import {
-  CircleAlert,
-  ChevronsUpDown,
-  CircleCheck,
   Copy,
   Download as DownloadIcon,
   Eye,
@@ -12,6 +9,7 @@ import {
   LoaderCircle,
   SearchX,
   TriangleAlert,
+  Upload,
   XCircle,
   Trash2,
 } from "lucide-react";
@@ -29,8 +27,12 @@ import {
 import { useI18n } from "../i18n/context";
 import { ErrorText } from "../i18n/ErrorText";
 import {
+  Confirm,
   EmptyState,
+  FileIcon,
+  Notice,
   PageHeader,
+  PopupButton,
   SearchField,
   SiteSelect,
   Skeleton,
@@ -39,57 +41,36 @@ import {
 export function Confirmation({
   item,
   busy,
+  standalone = false,
   onCancel,
   onOpen,
 }: {
   item: Pick<Download, "filename">;
   busy: boolean;
+  /** Not under the row it concerns. */
+  standalone?: boolean;
   onCancel: () => void;
   onOpen: () => void;
 }) {
   const { t } = useI18n();
-  const cancel = useRef<HTMLButtonElement>(null);
-  useEffect(() => cancel.current?.focus(), []);
   return (
-    <div
-      className="confirm"
-      role="alertdialog"
-      aria-labelledby="open-download-title"
-      aria-describedby="open-download-body"
-      onKeyDown={(e) => {
-        if (e.key === "Escape") {
-          e.stopPropagation();
-          e.preventDefault();
-          if (!busy) onCancel();
-        }
-      }}
-    >
-      <p className="confirm-title" id="open-download-title">
-        {t.downloads.confirmTitle(item.filename)}
-      </p>
-      <p className="confirm-body" id="open-download-body">
-        {t.downloads.confirmBody}
-      </p>
-      <div className="confirm-actions">
-        <button
-          className="button"
-          ref={cancel}
-          disabled={busy}
-          onClick={onCancel}
-        >
-          {t.downloads.cancel}
-        </button>
-        <button className="button" disabled={busy} onClick={onOpen}>
-          {t.downloads.confirm}
-        </button>
-      </div>
-    </div>
+    <Confirm
+      id="open-download"
+      title={t.downloads.confirmTitle(item.filename)}
+      body={t.downloads.confirmBody}
+      cancel={t.downloads.cancel}
+      confirm={t.downloads.confirm}
+      nested={!standalone}
+      busy={busy}
+      onCancel={onCancel}
+      onConfirm={onOpen}
+    />
   );
 }
 
+/** Rows that are not a finished file show their state instead of its kind. */
 const stateIcons = {
   downloading: LoaderCircle,
-  complete: CircleCheck,
   failed: TriangleAlert,
   cancelled: XCircle,
   removed: Trash2,
@@ -147,20 +128,26 @@ export function DownloadList({
   return (
     <ul className="group" role="list">
       {items.map((item) => {
-        const Icon = stateIcons[item.state];
+        const Icon = item.state === "complete" ? null : stateIcons[item.state];
         const transfer = progress.find((p) => p.id === item.id);
         const number = new Intl.NumberFormat(locale);
         const unavailable = busy || item.state !== "complete";
         return (
           <li key={item.id}>
             <div className="list-row" data-state={item.state}>
-              <span className="row-icon" aria-hidden="true">
-                <Icon
-                  className={item.state === "downloading" ? "spin" : undefined}
-                  size={16}
-                  strokeWidth={1.75}
-                />
-              </span>
+              {Icon ? (
+                <span className="row-icon" aria-hidden="true">
+                  <Icon
+                    className={
+                      item.state === "downloading" ? "spin" : undefined
+                    }
+                    size={16}
+                    strokeWidth={1.75}
+                  />
+                </span>
+              ) : (
+                <FileIcon name={item.filename} />
+              )}
               <div className="row-text">
                 <strong className="row-title" title={item.filename}>
                   {item.filename}
@@ -203,7 +190,7 @@ export function DownloadList({
                   </>
                 )}
                 {item.metadataApplied === false && (
-                  <span className="row-subtitle">
+                  <span className="row-subtitle warning">
                     {t.downloads.metadataFailed}
                   </span>
                 )}
@@ -312,46 +299,18 @@ export function RemoveConfirmation({
   onConfirm: () => void;
 }) {
   const { t } = useI18n();
-  const cancel = useRef<HTMLButtonElement>(null);
-  useEffect(() => cancel.current?.focus(), []);
   return (
-    <div
-      className="confirm standalone"
-      role="alertdialog"
-      aria-labelledby="remove-file-title"
-      aria-describedby="remove-file-body"
-      onKeyDown={(e) => {
-        if (e.key === "Escape") {
-          e.preventDefault();
-          e.stopPropagation();
-          if (!busy) onCancel();
-        }
-      }}
-    >
-      <p className="confirm-title" id="remove-file-title">
-        {t.downloads.removeTitle(item.filename)}
-      </p>
-      <p className="confirm-body" id="remove-file-body">
-        {t.downloads.removeBody}
-      </p>
-      <div className="confirm-actions">
-        <button
-          ref={cancel}
-          className="button"
-          disabled={busy}
-          onClick={onCancel}
-        >
-          {t.downloads.cancel}
-        </button>
-        <button
-          className="button destructive"
-          disabled={busy}
-          onClick={onConfirm}
-        >
-          {t.downloads.confirmRemove}
-        </button>
-      </div>
-    </div>
+    <Confirm
+      id="remove-file"
+      title={t.downloads.removeTitle(item.filename)}
+      body={t.downloads.removeBody}
+      cancel={t.downloads.cancel}
+      confirm={t.downloads.confirmRemove}
+      tone="destructive"
+      busy={busy}
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+    />
   );
 }
 
@@ -367,46 +326,20 @@ function ClearConfirmation({
   onConfirm: () => void;
 }) {
   const { t } = useI18n();
-  const cancel = useRef<HTMLButtonElement>(null);
-  useEffect(() => cancel.current?.focus(), []);
   return (
-    <div
-      className="confirm standalone"
-      role="alertdialog"
-      aria-labelledby="clear-downloads-title"
-      aria-describedby="clear-downloads-body"
-      onKeyDown={(e) => {
-        if (e.key === "Escape") {
-          e.stopPropagation();
-          e.preventDefault();
-          if (!busy) onCancel();
-        }
-      }}
-    >
-      <p className="confirm-title" id="clear-downloads-title">
-        {site ? t.downloads.clearTitleFor(site.name) : t.downloads.clearTitle}
-      </p>
-      <p className="confirm-body" id="clear-downloads-body">
-        {t.downloads.clearBody}
-      </p>
-      <div className="confirm-actions">
-        <button
-          className="button"
-          ref={cancel}
-          disabled={busy}
-          onClick={onCancel}
-        >
-          {t.downloads.cancel}
-        </button>
-        <button
-          className="button destructive"
-          disabled={busy}
-          onClick={onConfirm}
-        >
-          {t.downloads.confirmClear}
-        </button>
-      </div>
-    </div>
+    <Confirm
+      id="clear-downloads"
+      title={
+        site ? t.downloads.clearTitleFor(site.name) : t.downloads.clearTitle
+      }
+      body={t.downloads.clearBody}
+      cancel={t.downloads.cancel}
+      confirm={t.downloads.confirmClear}
+      tone="destructive"
+      busy={busy}
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+    />
   );
 }
 
@@ -568,6 +501,7 @@ export function Downloads({
             disabled={busy || sites.length === 0}
             onClick={onUpload}
           >
+            <Upload size={14} strokeWidth={2} aria-hidden="true" />
             {t.uploads.title}
           </button>
         )}
@@ -614,14 +548,11 @@ export function Downloads({
             setCourseId(null);
           }}
         />
-        <select
-          className="popup-button"
-          aria-label={t.downloads.courseFilter}
+        <PopupButton
+          label={t.downloads.courseFilter}
           value={courseId ?? "all"}
-          onChange={(e) =>
-            filter(setCourseId)(
-              e.target.value === "all" ? null : Number(e.target.value),
-            )
+          onChange={(value) =>
+            filter(setCourseId)(value === "all" ? null : Number(value))
           }
         >
           <option value="all">{t.downloads.allCourses}</option>
@@ -634,32 +565,27 @@ export function Downloads({
                   {course.name}
                 </option>
               ))}
-        </select>
-        <label className="popup-button">
-          <span className="visually-hidden">{t.downloads.stateFilter}</span>
-          <select
-            value={state}
-            onChange={(event) =>
-              filter(setState)(event.target.value as StateFilter)
-            }
-          >
-            <option value="all">{t.downloads.allStates}</option>
-            {(
-              [
-                "downloading",
-                "complete",
-                "failed",
-                "cancelled",
-                "removed",
-              ] as const
-            ).map((value) => (
-              <option key={value} value={value}>
-                {t.downloads.filters[value]}
-              </option>
-            ))}
-          </select>
-          <ChevronsUpDown size={12} strokeWidth={2} aria-hidden="true" />
-        </label>
+        </PopupButton>
+        <PopupButton
+          label={t.downloads.stateFilter}
+          value={state}
+          onChange={(value) => filter(setState)(value as StateFilter)}
+        >
+          <option value="all">{t.downloads.allStates}</option>
+          {(
+            [
+              "downloading",
+              "complete",
+              "failed",
+              "cancelled",
+              "removed",
+            ] as const
+          ).map((value) => (
+            <option key={value} value={value}>
+              {t.downloads.filters[value]}
+            </option>
+          ))}
+        </PopupButton>
       </div>
       {removing && (
         <RemoveConfirmation
@@ -682,17 +608,11 @@ export function Downloads({
         />
       )}
       {error && (
-        <p className="section-message error" role="alert">
-          <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
+        <Notice tone="error">
           <ErrorText error={error} context="navigation" />
-        </p>
+        </Notice>
       )}
-      {notice && (
-        <p className="section-message success" role="status">
-          <CircleCheck size={14} strokeWidth={2} aria-hidden="true" />
-          {notice}
-        </p>
-      )}
+      {notice && <Notice tone="success">{notice}</Notice>}
       {!loaded ? (
         <Skeleton />
       ) : (

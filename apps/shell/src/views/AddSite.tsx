@@ -1,9 +1,12 @@
 import appIcon from "../../../../assets/app-icon.png";
 import { useState, type FormEvent } from "react";
 import {
+  Bell,
+  CalendarDays,
   Check,
   CircleAlert,
   Globe,
+  HardDriveDownload,
   LoaderCircle,
   LockKeyhole,
 } from "lucide-react";
@@ -12,6 +15,8 @@ import { useI18n } from "../i18n/context";
 import { ErrorText } from "../i18n/ErrorText";
 
 type StepState = "waiting" | "active" | "complete";
+/** One glyph per line of `t.onboarding.features`, in the same order. */
+const featureIcons = [Bell, CalendarDays, HardDriveDownload];
 
 function Step({ state, label }: { state: StepState; label: string }) {
   const { t } = useI18n();
@@ -66,7 +71,7 @@ export function AddSite({
   return (
     <div className="onboarding">
       <div className="app-mark" aria-hidden="true">
-        <img src={appIcon} width="64" height="64" alt="" />
+        <img src={appIcon} width="88" height="88" alt="" />
       </div>
       <h2 className="onboarding-title">
         {firstRun ? t.onboarding.welcome : t.onboarding.addTitle}
@@ -77,28 +82,39 @@ export function AddSite({
         <label className="field-label" htmlFor="site-url">
           {t.onboarding.fieldLabel}
         </label>
-        <div
-          className={`text-field ${error ? "invalid" : ""}`}
-          data-disabled={adding || undefined}
-        >
-          <Globe size={16} strokeWidth={1.75} aria-hidden="true" />
-          <input
-            id="site-url"
-            type="text"
-            inputMode="url"
-            autoComplete="url"
-            autoCapitalize="off"
-            autoCorrect="off"
-            spellCheck={false}
-            // Autofocus belongs to this one primary field on an otherwise empty view.
-            autoFocus
-            placeholder={t.onboarding.placeholder}
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            disabled={adding}
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? "url-error" : "url-help"}
-          />
+        <div className="connect-row">
+          <div
+            className={`text-field ${error ? "invalid" : ""}`}
+            data-disabled={adding || undefined}
+          >
+            <Globe size={16} strokeWidth={1.75} aria-hidden="true" />
+            <input
+              id="site-url"
+              type="text"
+              inputMode="url"
+              autoComplete="url"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              // Autofocus belongs to this one primary field on an otherwise empty view.
+              autoFocus
+              placeholder={t.onboarding.placeholder}
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              disabled={adding}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? "url-error" : "url-help"}
+            />
+          </div>
+          {!adding && (
+            <button
+              className="button primary large"
+              type="submit"
+              disabled={!url.trim() || blocked}
+            >
+              {t.onboarding.submit}
+            </button>
+          )}
         </div>
         {error ? (
           <p id="url-error" className="field-message error" role="alert">
@@ -107,11 +123,11 @@ export function AddSite({
           </p>
         ) : (
           <p id="url-help" className="field-message">
-            {t.onboarding.help}
+            {blocked ? t.onboarding.blocked : t.onboarding.help}
           </p>
         )}
 
-        {adding ? (
+        {adding && (
           <div className="progress" role="status" aria-live="polite">
             <ol>
               <Step
@@ -127,21 +143,27 @@ export function AddSite({
               <p className="progress-hint">{t.onboarding.continueInWindow}</p>
             )}
           </div>
-        ) : (
-          <div className="form-actions">
-            {blocked && (
-              <span className="field-message">{t.onboarding.blocked}</span>
-            )}
-            <button
-              className="button primary large"
-              type="submit"
-              disabled={!url.trim() || blocked}
-            >
-              {t.onboarding.submit}
-            </button>
-          </div>
         )}
       </form>
+
+      {firstRun && (
+        <ul className="feature-list" role="list">
+          {t.onboarding.features.map((feature, index) => {
+            const Icon = featureIcons[index] ?? Bell;
+            return (
+              <li key={feature.title}>
+                <span className="row-icon" aria-hidden="true">
+                  <Icon size={16} strokeWidth={1.75} />
+                </span>
+                <span className="row-text">
+                  <span className="row-title">{feature.title}</span>
+                  <span className="feature-body">{feature.body}</span>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       <p className="privacy-note">
         <LockKeyhole size={14} strokeWidth={1.75} aria-hidden="true" />

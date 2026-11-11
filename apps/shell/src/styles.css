@@ -27,6 +27,7 @@
   --radius-xl: 10px;
   --radius-panel: 12px;
   --radius-icon: 15px;
+  --radius-pill: 999px;
 
   /* Type scale (SF Pro): body, secondary, caption, view headline, large title. */
   --text-headline: 15px;
@@ -556,7 +557,7 @@ ol {
   min-width: 0;
   height: 26px;
   padding: 0 3px 0 9px;
-  border-radius: 13px;
+  border-radius: var(--radius-pill);
   background: var(--red-tint);
   color: var(--red-text);
   font-size: var(--text-small);
@@ -624,7 +625,7 @@ ol {
 }
 .button.destructive {
   background: var(--red);
-  color: #fff;
+  color: var(--on-accent);
   box-shadow: 0 0.5px 1px rgb(0 0 0 / 0.15);
 }
 .button.destructive:hover:not(:disabled) {
@@ -660,9 +661,29 @@ ol {
 .button[aria-pressed="true"] {
   color: var(--accent);
 }
-.pin-toggle,
-.remind-toggle {
+/* Inside a grouped list an icon button is borderless: one bezel per row at
+   most, so the row reads as a line of a list rather than a strip of buttons. */
+.group .button.icon {
+  background: transparent;
+  box-shadow: none;
+  color: var(--label-2);
+}
+.group .button.icon:hover:not(:disabled) {
+  background: var(--fill);
+  color: var(--label);
+}
+.group .button.icon:active:not(:disabled) {
+  background: var(--fill-2);
+}
+.group .button.icon:disabled {
   color: var(--label-3);
+}
+.group .button.icon.pin-toggle,
+.group .button.icon.remind-toggle {
+  color: var(--label-3);
+}
+.group .button.icon[aria-pressed="true"] {
+  color: var(--accent);
 }
 .pin-toggle svg {
   transition: transform var(--medium) var(--spring);
@@ -704,6 +725,73 @@ ol {
   right: 6px;
   color: var(--label-2);
   pointer-events: none;
+}
+.popup-button:hover:not([data-disabled]) {
+  background: linear-gradient(var(--fill), var(--fill)), var(--control);
+}
+.popup-button:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+.popup-button select:focus-visible {
+  outline: none;
+}
+.popup-button select:disabled {
+  color: var(--label-3);
+}
+.group-row .popup-button {
+  max-width: min(260px, 100%);
+}
+
+/* On/off switch: a native checkbox, drawn like the one in System Settings. */
+.switch {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 34px;
+  height: 20px;
+  margin: 0;
+  border-radius: var(--radius-pill);
+  background: var(--fill-2);
+  box-shadow: inset 0 0 0 0.5px var(--control-border);
+  transition:
+    background-color var(--medium) var(--ease),
+    opacity var(--fast) var(--ease);
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 1.5px;
+  left: 1.5px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--on-accent);
+  box-shadow:
+    0 0 0 0.5px rgb(0 0 0 / 0.08),
+    0 1px 2px rgb(0 0 0 / 0.25);
+  transition: transform var(--medium) var(--ease-out);
+}
+.switch:checked {
+  background: var(--accent);
+}
+.switch:checked::after {
+  transform: translateX(14px);
+}
+.switch:disabled {
+  opacity: 0.5;
+}
+:root[data-inactive] .switch:checked {
+  background: var(--label-3);
+}
+/* Checkbox: the system control, in the accent colour. */
+.checkbox {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent);
 }
 
 .text-field {
@@ -785,7 +873,7 @@ ol {
   margin: 0;
   padding: 2px;
   border: 0;
-  border-radius: 7px;
+  border-radius: calc(var(--radius-s) + 2px);
   background: var(--fill);
   box-shadow: inset 0 0 0 0.5px var(--separator);
   position: relative;
@@ -859,33 +947,54 @@ ol {
 /* ---------- Onboarding ---------- */
 
 .onboarding {
-  width: min(400px, calc(100% - 48px));
+  width: min(460px, calc(100% - 48px));
   margin: auto;
   padding: 40px 0 48px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  isolation: isolate;
 }
-.app-mark {
-  width: 64px;
-  height: 64px;
-  border-radius: var(--radius-icon);
+/* The parts follow the app icon in, one after another, once. */
+.onboarding > * {
+  animation: row-in var(--slow) var(--ease-out) both;
+}
+.onboarding > :nth-child(2) {
+  animation-delay: 40ms;
+}
+.onboarding > :nth-child(3) {
+  animation-delay: 80ms;
+}
+.onboarding > :nth-child(4) {
+  animation-delay: 120ms;
+}
+.onboarding > :nth-child(n + 5) {
+  animation-delay: 180ms;
+}
+/* The app icon, on a soft halo of the accent colour: the one flourish here. */
+.onboarding > .app-mark {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 22.5%;
   display: grid;
   place-items: center;
   animation: pop 480ms var(--spring) both;
 }
-.date-filter {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--label-2);
-  font-size: var(--text-small);
+.app-mark::before {
+  content: "";
+  position: absolute;
+  inset: -56px -96px;
+  z-index: -1;
+  background: radial-gradient(closest-side, var(--accent-tint), transparent);
+  pointer-events: none;
 }
 .app-mark img {
   width: 100%;
   height: 100%;
   border-radius: inherit;
+  filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.18));
 }
 .onboarding-title {
   margin-top: 20px;
@@ -899,10 +1008,90 @@ ol {
   line-height: 1.45;
   max-width: 34em;
 }
+/* The one thing to do, on its own raised surface. */
 .connect-form {
   width: 100%;
   margin-top: 28px;
+  padding: 16px;
+  border-radius: var(--radius-panel);
+  background: var(--elevated);
+  box-shadow: var(--shadow);
   text-align: left;
+}
+.connect-row {
+  display: flex;
+  gap: 8px;
+}
+.connect-row .text-field {
+  flex: 1;
+  min-width: 0;
+}
+.connect-row .button {
+  height: 32px;
+}
+.connect-form .progress {
+  padding: 12px 2px 0;
+  background: transparent;
+  box-shadow: inset 0 1px 0 var(--separator);
+  border-radius: 0;
+}
+/* What the app adds once connected: three quiet lines, first run only. */
+.feature-list {
+  width: 100%;
+  margin-top: 24px;
+  padding: 0 16px;
+  display: grid;
+  gap: 14px;
+  text-align: left;
+}
+.feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.feature-body {
+  font-size: var(--text-small);
+  color: var(--label-2);
+  line-height: 1.4;
+}
+.date-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--label-2);
+  font-size: var(--text-small);
+}
+.progress {
+  padding: 12px 2px 0;
+  background: transparent;
+  box-shadow: inset 0 1px 0 var(--separator);
+  border-radius: 0;
+}
+/* What the app adds once connected: three quiet lines, first run only. */
+.feature-list {
+  width: 100%;
+  margin-top: 24px;
+  padding: 0 16px;
+  display: grid;
+  gap: 14px;
+  text-align: left;
+}
+.feature-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.feature-body {
+  font-size: var(--text-small);
+  color: var(--label-2);
+  line-height: 1.4;
+}
+.date-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--label-2);
+  font-size: var(--text-small);
 }
 .form-actions {
   display: flex;
@@ -969,7 +1158,9 @@ ol {
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  margin-top: 32px;
+  justify-content: center;
+  margin-top: 28px;
+  padding: 0 16px;
   font-size: var(--text-caption);
   color: var(--label-2);
   text-align: left;
@@ -1225,6 +1416,9 @@ ol {
   flex-shrink: 0;
   margin-top: 1px;
 }
+.section-message.info {
+  color: var(--label-2);
+}
 .section-message.error {
   color: var(--red-text);
 }
@@ -1303,8 +1497,8 @@ ol {
   max-width: 100%;
 }
 .filter-bar .search-field {
-  flex: 1 1 240px;
-  min-width: min(240px, 100%);
+  flex: 1 1 160px;
+  min-width: min(160px, 100%);
 }
 .page .section-footnote {
   margin: 0 2px;
@@ -1363,6 +1557,64 @@ ol {
   flex-shrink: 0;
   align-items: center;
 }
+/* A second line that needs attention: failed refresh, missing copy. */
+.row-subtitle.warning {
+  color: var(--red-text);
+  white-space: normal;
+}
+/* A whole row that is one checkbox label (choosing files to save). */
+.choice-row {
+  width: 100%;
+}
+.list-row.choice-row::before {
+  left: 82px;
+}
+/* Transfer progress under a row's text. */
+.row-text progress {
+  appearance: none;
+  -webkit-appearance: none;
+  width: min(240px, 100%);
+  height: 4px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: var(--fill-2);
+}
+.row-text progress::-webkit-progress-bar {
+  background: transparent;
+}
+.row-text progress::-webkit-progress-value {
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+}
+/* Under a list: what applies to it on the left, its command on the right. */
+.list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+/* Sections of a list view: title, list, then what happened to it. */
+.page > section:not(.day-section) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.page > section .section-title,
+.page > section .section-message {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.page > section .section-header {
+  align-items: center;
+  min-height: 22px;
+}
+.page > section .empty-state {
+  padding: 24px 16px;
+}
 /* Unread marker, as in Mail: accent dot that shrinks away once read. */
 .unread-dot {
   width: 8px;
@@ -1411,8 +1663,12 @@ ol {
 .tag {
   flex-shrink: 0;
   height: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   padding: 0 7px;
-  border-radius: 9px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
   background: var(--fill);
   color: var(--label-2);
   font-size: var(--text-caption);
@@ -1422,6 +1678,9 @@ ol {
 .tag[data-kind="due"] {
   background: var(--accent-tint);
   color: var(--label);
+}
+.tag[data-kind="saved"] {
+  color: var(--green-text);
 }
 .empty-state {
   display: flex;
@@ -2134,12 +2393,15 @@ div.assistant-text {
 @media (prefers-contrast: more) {
   .group,
   .progress,
+  .connect-form,
   .confirm {
     box-shadow: 0 0 0 1px var(--separator);
   }
   .assistant-message[data-role="user"] {
     box-shadow: inset 0 0 0 1px var(--control-border);
   }
+  .group .button.icon,
+  .switch,
   .tag,
   .row-icon,
   .assistant-source,
@@ -2191,7 +2453,7 @@ div.assistant-text {
   gap: 4px;
   padding: 0 8px;
   background: var(--toolbar);
-  border-bottom: 1px solid var(--separator);
+  box-shadow: inset 0 -1px 0 var(--separator);
 }
 .popup-bar h1 {
   flex: 1;
@@ -2203,37 +2465,14 @@ div.assistant-text {
   font-size: var(--text-body);
   font-weight: 600;
 }
-.popup-error {
-  max-width: 240px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--red-text);
-  font-size: var(--text-caption);
-}
-
-.offline-file-choice {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-}
-.offline-file-choice input {
-  accent-color: var(--accent);
-  width: 20px;
-  height: 20px;
-}
-
 .reminder-choice {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: var(--text-small);
 }
-.reminder-choice input {
-  accent-color: var(--accent);
-  width: 20px;
-  height: 20px;
+.reminder-choice + .reminder-choice {
+  margin-left: 8px;
 }
 
 /* Supporting explanations stay available without crowding the event list. */
@@ -2283,6 +2522,10 @@ div.assistant-text {
 .download-feedback[data-state="complete"] > svg,
 .list-row[data-state="complete"] .row-icon {
   color: var(--green-text);
+}
+/* A file's own glyph stays neutral; its state is in the row's second line. */
+.list-row[data-state="complete"] .row-icon.file-icon {
+  color: var(--label-2);
 }
 .download-feedback[data-state="failed"] {
   color: var(--red-text);
@@ -2345,62 +2588,20 @@ div.assistant-text {
 .bookmark-sidebar .sidebar-item {
   height: 34px;
 }
-.bookmark-editor .group-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.bookmark-editor .group-row,
+.bookmark-list .list-row {
   flex-wrap: wrap;
 }
-.bookmark-editor input {
+.bookmark-editor .row-text,
+.bookmark-list .row-text {
+  flex-basis: 160px;
+}
+.text-field.bookmark-name {
   flex: 1 1 220px;
-  min-width: 0;
-  max-width: 420px;
+  max-width: 320px;
 }
-.bookmark-editor .bookmark-preview {
-  justify-content: flex-start;
-}
-.bookmark-preview-icon {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  background: var(--fill);
-  color: var(--label-2);
-  border-radius: var(--radius-l);
-}
-.bookmark-editor .bookmark-actions {
-  justify-content: flex-end;
-}
-.bookmark-list .group-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.bookmark-link {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  flex: 1 1 220px;
-  text-align: start;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  border-radius: var(--radius-s);
-}
-.bookmark-link > svg {
-  flex-shrink: 0;
-  color: var(--label-2);
-}
-.bookmark-link:hover .row-title {
-  color: var(--accent);
-}
-.bookmark-confirm {
-  flex-wrap: wrap;
-  font-size: var(--text-small);
+.bookmark-list .confirm {
+  margin-top: 0;
 }
 
 /* Offline-copy actions wrap beneath metadata in narrow content areas. */
@@ -2428,10 +2629,6 @@ div.assistant-text {
 
 .uploads-page .group-row {
   flex-wrap: wrap;
-}
-.uploads-page .group-row select {
-  max-width: 100%;
-  min-width: 0;
 }
 .uploads-page .list-row,
 .uploads-page .row-actions {
@@ -2514,9 +2711,11 @@ div.assistant-text {
   overflow: auto;
   padding: 20px;
   color: var(--label);
-  background: var(--window);
-  border: 1px solid var(--separator);
-  border-radius: var(--radius-l);
+  background: var(--elevated);
+  border: 0;
+  border-radius: var(--radius-panel);
+  box-shadow: var(--panel-shadow);
+  animation: panel-in var(--medium) var(--ease-out) both;
 }
 .key-help::backdrop {
   background: transparent;
@@ -2553,4 +2752,36 @@ div.assistant-text {
 .downloads-page .row-actions {
   flex-wrap: wrap;
   max-width: 100%;
+}
+.page .calendar-subscriptions > * + * {
+  margin-top: 8px;
+}
+/* A list inside a disclosure keeps list typography, not the footnote's. */
+.help-disclosure .group,
+.help-disclosure .confirm {
+  font-size: var(--text-body);
+  color: var(--label);
+}
+
+/* Course Files: rows wrap beside the assistant; a file's status stays visible. */
+.course-files .list-row,
+.course-files .group-row {
+  flex-wrap: wrap;
+}
+.course-files .row-text {
+  flex-basis: 160px;
+}
+.course-files .row-actions {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.course-files .group-row .button {
+  max-width: 100%;
+  white-space: normal;
+  height: auto;
+  min-height: 22px;
+  text-align: left;
+}
+.choice-row .tag {
+  display: inline-flex;
 }

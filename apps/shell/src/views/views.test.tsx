@@ -79,7 +79,11 @@ describe("Settings", () => {
 
   it("keeps the global shortcut off by default and reports a failed registration", () => {
     const html = settings();
-    expect(html).toContain('name="global-shortcut" checked="" value="off"');
+    expect(html).toContain('role="switch"');
+    expect(html).not.toMatch(/role="switch"[^>]*checked=""/);
+    expect(settings({ globalShortcut: true })).toMatch(
+      /role="switch"[^>]*checked=""/,
+    );
     expect(html).not.toContain("could not be registered");
     expect(
       settings({ globalShortcut: true, shortcutUnavailable: true }),

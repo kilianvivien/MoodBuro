@@ -688,7 +688,20 @@ let demoBookmarks: Bookmark[] = demo
     }))
   : [];
 
+/** A sidebar item that has a context menu. */
+export type SidebarTarget =
+  | { kind: "inbox" | "courses" | "agenda" | "add" | "settings" }
+  | { kind: "site" | "bookmark"; id: string };
+
 export const ipc = {
+  /** Shows the item's native context menu; a choice arrives as `sidebar://action`. */
+  sidebarMenu: (target: SidebarTarget) =>
+    desktop
+      ? invoke<void>("sidebar_menu", {
+          kind: target.kind,
+          id: "id" in target ? target.id : null,
+        })
+      : Promise.resolve(),
   bookmarkMenu: () =>
     desktop ? invoke<void>("bookmark_menu") : Promise.resolve(),
   bookmarks: () =>
@@ -1137,9 +1150,17 @@ export const ipc = {
           confirmed,
         })
       : desktopFeature(),
-  popupContext: () => invoke<PopupContext>("popup_context"),
+  popupContext: (): Promise<PopupContext> =>
+    desktop
+      ? invoke<PopupContext>("popup_context")
+      : Promise.resolve({
+          ...previewSettings,
+          siteName: demo ? demoSites[0].name : "",
+          canGoBack: false,
+          canGoForward: false,
+        }),
   popupNav: (action: NavAction | "downloads") =>
-    invoke<void>("popup_nav", { action }),
+    desktop ? invoke<void>("popup_nav", { action }) : desktopFeature(),
   downloads: (filter: DownloadQuery): Promise<DownloadPage> => {
     if (desktop) return invoke<DownloadPage>("downloads_page", { ...filter });
     const needle = filter.query.trim().toLowerCase();

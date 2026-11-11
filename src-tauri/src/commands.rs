@@ -1241,6 +1241,17 @@ pub fn bookmark_menu(webview: tauri::Webview, app: AppHandle) -> Result<(), Stri
 }
 
 #[tauri::command]
+pub fn sidebar_menu(
+    webview: tauri::Webview,
+    app: AppHandle,
+    kind: String,
+    id: Option<String>,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::menus::sidebar_context(&app, &kind, id.as_deref())
+}
+
+#[tauri::command]
 pub fn course_sync_list(
     webview: tauri::Webview,
     app: AppHandle,

@@ -2,6 +2,14 @@ import { Confirmation } from "./Downloads";
 import { useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import {
+  ArrowLeft,
+  FolderOpen,
+  HardDriveDownload,
+  LoaderCircle,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
+import {
   ipc,
   desktop,
   message,
@@ -14,7 +22,18 @@ import {
 } from "../ipc";
 import { useI18n } from "../i18n/context";
 import { ErrorText } from "../i18n/ErrorText";
-import { PageHeader } from "../components/ui";
+import {
+  Confirm,
+  EmptyState,
+  FileIcon,
+  Notice,
+  PageHeader,
+  PopupButton,
+  Skeleton,
+} from "../components/ui";
+
+/** Largest file the offline store accepts. */
+const MAX_BYTES = 128 * 1024 * 1024;
 
 export function ResourceFiles({
   items,
@@ -34,51 +53,65 @@ export function ResourceFiles({
   const { t, locale } = useI18n();
   return (
     <ul className="group" role="list">
-      {items.map((item) => (
-        <li className="list-row" key={item.key}>
-          <label className="offline-file-choice">
-            <input
-              type="checkbox"
-              checked={selected.includes(item.key)}
-              disabled={
-                busy || (item.bytes !== null && item.bytes > 128 * 1024 * 1024)
-              }
-              onChange={() => onToggle(item.key)}
-            />
-            <span className="row-text">
-              <span className="row-title">{item.filename}</span>
-              <span className="row-subtitle">
-                {[
-                  item.sectionName,
-                  item.activityName,
-                  item.bytes === null
-                    ? t.offline.unknownSize
-                    : t.offline.bytes(
-                        new Intl.NumberFormat(locale).format(item.bytes),
-                      ),
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
+      {items.map((item) => {
+        const tooLarge = item.bytes !== null && item.bytes > MAX_BYTES;
+        const copies = saved.filter((copy) => copy.resourceKey === item.key);
+        return (
+          <li key={item.key}>
+            <label className="list-row choice-row">
+              <input
+                className="checkbox"
+                type="checkbox"
+                checked={selected.includes(item.key)}
+                disabled={busy || tooLarge}
+                onChange={() => onToggle(item.key)}
+              />
+              <FileIcon name={item.filename} />
+              <span className="row-text">
+                <span className="row-title" title={item.filename}>
+                  {item.filename}
+                </span>
+                <span className="row-subtitle">
+                  {[
+                    item.sectionName,
+                    item.activityName,
+                    item.bytes === null
+                      ? t.offline.unknownSize
+                      : t.offline.bytes(
+                          new Intl.NumberFormat(locale).format(item.bytes),
+                        ),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+                {tooLarge && (
+                  <span className="row-subtitle warning">
+                    {t.offline.tooLarge}
+                  </span>
+                )}
               </span>
-              <span className="row-subtitle">
-                {saved.some(
-                  (copy) => copy.resourceKey === item.key && copy.available,
-                )
+              {scheduled.includes(item.key) && (
+                <span className="tag" title={t.sync.selected}>
+                  <RefreshCw size={11} strokeWidth={2} aria-hidden="true" />
+                  <span className="visually-hidden">{t.sync.selected}</span>
+                </span>
+              )}
+              <span
+                className="tag"
+                data-kind={
+                  copies.some((copy) => copy.available) ? "saved" : undefined
+                }
+              >
+                {copies.some((copy) => copy.available)
                   ? t.offline.available
-                  : saved.some((copy) => copy.resourceKey === item.key)
+                  : copies.length > 0
                     ? t.offline.copyMissing
                     : t.offline.notSaved}
               </span>
-              {scheduled.includes(item.key) && (
-                <span className="row-subtitle">{t.sync.selected}</span>
-              )}
-              {item.bytes !== null && item.bytes > 128 * 1024 * 1024 && (
-                <span className="row-subtitle">{t.offline.tooLarge}</span>
-              )}
-            </span>
-          </label>
-        </li>
-      ))}
+            </label>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -97,42 +130,18 @@ export function RemoveCopyConfirmation({
   onConfirm: () => void;
 }) {
   const { t } = useI18n();
-  const cancel = useRef<HTMLButtonElement>(null);
-  useEffect(() => cancel.current?.focus(), []);
   return (
-    <div
-      className="confirm standalone"
-      role="alertdialog"
-      aria-labelledby="remove-copy-title"
-      aria-describedby="remove-copy-body"
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          event.stopPropagation();
-          event.preventDefault();
-          if (!busy) onCancel();
-        }
-      }}
-    >
-      <p className="confirm-title" id="remove-copy-title">
-        {t.offline.removeTitle(copy.filename, siteName)}
-      </p>
-      <p className="confirm-body" id="remove-copy-body">
-        {t.offline.removeBody}
-      </p>
-      <div className="confirm-actions">
-        <button
-          className="button"
-          ref={cancel}
-          disabled={busy}
-          onClick={onCancel}
-        >
-          {t.downloads.cancel}
-        </button>
-        <button className="button" disabled={busy} onClick={onConfirm}>
-          {t.offline.confirmRemove}
-        </button>
-      </div>
-    </div>
+    <Confirm
+      id="remove-copy"
+      title={t.offline.removeTitle(copy.filename, siteName)}
+      body={t.offline.removeBody}
+      cancel={t.downloads.cancel}
+      confirm={t.offline.confirmRemove}
+      tone="destructive"
+      busy={busy}
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+    />
   );
 }
 
@@ -153,30 +162,46 @@ export function SavedFiles({
 }) {
   const { t, date } = useI18n();
   if (items.length === 0)
-    return <p className="section-message">{t.offline.emptySaved}</p>;
+    return (
+      <EmptyState
+        icon={<HardDriveDownload size={22} strokeWidth={1.75} />}
+        title={t.offline.emptySavedTitle}
+        hint={t.offline.emptySaved}
+      />
+    );
   return (
     <ul className="group offline-saved" role="list">
       {items.map((item) => (
-        <li className="list-row" key={item.id}>
+        <li
+          className="list-row"
+          key={item.id}
+          data-state={item.available ? undefined : "failed"}
+        >
+          <FileIcon name={item.filename} />
           <span className="row-text">
-            <span className="row-title">{item.filename}</span>
-            <span className="row-subtitle">
-              {item.sectionName} ·{" "}
-              {t.offline.lastRefreshed(
-                date(item.refreshedAt * 1000, {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }),
-              )}
+            <span className="row-title" title={item.filename}>
+              {item.filename}
             </span>
-            {item.available && (
-              <span className="row-subtitle">{t.offline.available}</span>
-            )}
+            <span className="row-subtitle">
+              {[
+                item.sectionName,
+                t.offline.lastRefreshed(
+                  date(item.refreshedAt * 1000, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  }),
+                ),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
             {item.available && failedKeys.includes(item.resourceKey) && (
-              <span className="row-subtitle">{t.offline.refreshFailed}</span>
+              <span className="row-subtitle warning">
+                {t.offline.refreshFailed}
+              </span>
             )}
             {!item.available && (
-              <span className="row-subtitle">{t.offline.missing}</span>
+              <span className="row-subtitle warning">{t.offline.missing}</span>
             )}
           </span>
           <span className="row-actions">
@@ -189,28 +214,31 @@ export function SavedFiles({
               {t.downloads.open}
             </button>
             <button
-              className="button small"
+              className="button small icon"
               disabled={busy || !item.available}
+              title={t.downloads.reveal}
               aria-label={t.downloads.revealLabel(item.filename)}
               onClick={() => onOpen(item, true)}
             >
-              {t.downloads.reveal}
+              <FolderOpen size={13} strokeWidth={2} aria-hidden="true" />
             </button>
             <button
-              className="button small"
+              className="button small icon"
               disabled={busy}
+              title={t.offline.refresh}
               aria-label={t.offline.refreshLabel(item.filename)}
               onClick={() => onRefresh(item.resourceKey)}
             >
-              {t.offline.refresh}
+              <RefreshCw size={13} strokeWidth={2} aria-hidden="true" />
             </button>
             <button
-              className="button small"
+              className="button small icon"
               disabled={busy}
+              title={t.offline.remove}
               aria-label={t.offline.removeLabel(item.filename)}
               onClick={() => onRemove(item)}
             >
-              {t.offline.remove}
+              <Trash2 size={13} strokeWidth={2} aria-hidden="true" />
             </button>
           </span>
         </li>
@@ -233,86 +261,90 @@ export function CourseSyncControls({
   onControl: (cancel: boolean) => void;
 }) {
   const { t, date } = useI18n();
+  const when = (seconds: number) =>
+    date(seconds * 1000, { dateStyle: "medium", timeStyle: "short" });
+  const active = job?.state === "running" || job?.state === "waiting";
   return (
     <section aria-labelledby="course-sync-title">
       <h3 className="section-title" id="course-sync-title">
         {t.sync.title}
       </h3>
-      <p className="section-footnote">{t.sync.hint}</p>
-      {job && (
-        <>
-          <p className="section-message" role="status">
-            {t.sync.states[job.state]} ·{" "}
-            {t.sync.count(job.keys.length, job.pending)}
-          </p>
-          {job.refreshedAt > 0 && (
-            <p className="section-footnote">
-              {t.offline.lastRefreshed(
-                date(job.refreshedAt * 1000, {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }),
-              )}
-            </p>
-          )}
-          {job.interval > 0 && job.state !== "running" && (
-            <p className="section-footnote">
-              {t.sync.next(
-                date(job.nextRun * 1000, {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                }),
-              )}
-            </p>
-          )}
-          {job.missing > 0 && (
-            <p className="section-message">{t.sync.missing(job.missing)}</p>
-          )}
-          {job.error && (
-            <p className="section-message error" role="alert">
-              <ErrorText error={job.error} context="navigation" />
-            </p>
-          )}
-          <div className="filter-bar">
-            <label>
-              {t.sync.schedule}{" "}
-              <select
-                className="select"
-                disabled={busy}
-                value={job.interval}
-                onChange={(event) =>
-                  onConfigure(job.keys, Number(event.target.value))
-                }
-              >
-                <option value={0}>{t.sync.paused}</option>
-                <option value={3600}>{t.sync.hourly}</option>
-                <option value={86400}>{t.sync.daily}</option>
-              </select>
-            </label>
-            {job.interval > 0 && (
-              <button
-                className="button"
-                disabled={busy}
-                onClick={() =>
-                  onControl(job.state === "running" || job.state === "waiting")
-                }
-              >
-                {job.state === "running" || job.state === "waiting"
-                  ? t.sync.cancel
-                  : t.sync.now}
-              </button>
+      <div className="group">
+        <div className="group-row">
+          <span className="row-icon" aria-hidden="true">
+            {job?.state === "running" ? (
+              <LoaderCircle className="spin" size={16} strokeWidth={1.75} />
+            ) : (
+              <RefreshCw size={16} strokeWidth={1.75} />
+            )}
+          </span>
+          <div className="row-text">
+            <span className="row-title" role={job ? "status" : undefined}>
+              {job ? t.sync.states[job.state] : t.sync.off}
+            </span>
+            <span className="row-subtitle">
+              {job
+                ? [
+                    t.sync.count(job.keys.length, job.pending),
+                    job.refreshedAt > 0 &&
+                      t.offline.lastRefreshed(when(job.refreshedAt)),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")
+                : t.sync.summary}
+            </span>
+            {job && job.interval > 0 && job.state !== "running" && (
+              <span className="row-subtitle">
+                {t.sync.next(when(job.nextRun))}
+              </span>
             )}
           </div>
-        </>
+          {job && job.interval > 0 && (
+            <button
+              className="button small"
+              disabled={busy}
+              onClick={() => onControl(active)}
+            >
+              {active ? t.sync.cancel : t.sync.now}
+            </button>
+          )}
+        </div>
+        {job && (
+          <div className="group-row">
+            <label className="row-text" htmlFor="course-sync-schedule">
+              <span className="row-title">{t.sync.schedule}</span>
+            </label>
+            <PopupButton
+              id="course-sync-schedule"
+              disabled={busy}
+              value={job.interval}
+              onChange={(value) => onConfigure(job.keys, Number(value))}
+            >
+              <option value={0}>{t.sync.paused}</option>
+              <option value={3600}>{t.sync.hourly}</option>
+              <option value={86400}>{t.sync.daily}</option>
+            </PopupButton>
+          </div>
+        )}
+        <div className="group-row">
+          <div className="row-text">
+            <span className="row-subtitle">{t.sync.pick}</span>
+          </div>
+          <button
+            className="button small"
+            disabled={busy || selected.length === 0 || selected.length > 50}
+            onClick={() => onConfigure([...selected], job?.interval || 86400)}
+          >
+            {job ? t.sync.replaceSelection : t.sync.enable}
+          </button>
+        </div>
+      </div>
+      {job && job.missing > 0 && <Notice>{t.sync.missing(job.missing)}</Notice>}
+      {job?.error && (
+        <Notice tone="error">
+          <ErrorText error={job.error} context="navigation" />
+        </Notice>
       )}
-      <button
-        className="button"
-        disabled={busy || selected.length === 0 || selected.length > 50}
-        onClick={() => onConfigure([...selected], job?.interval || 86400)}
-      >
-        {job ? t.sync.replaceSelection : t.sync.enable}
-      </button>
-      <p className="section-footnote">{t.sync.selectionHint}</p>
     </section>
   );
 }
@@ -439,7 +471,7 @@ export function CourseFiles({
             .filter(
               (item) =>
                 sync?.keys.includes(item.key) &&
-                (item.bytes === null || item.bytes <= 128 * 1024 * 1024),
+                (item.bytes === null || item.bytes <= MAX_BYTES),
             )
             .map((item) => item.key),
         );
@@ -561,70 +593,80 @@ export function CourseFiles({
       if (alive.current) setBusy(false);
     }
   }
+  const number = new Intl.NumberFormat(locale);
+  const locked = busy || removing !== null || confirming !== null;
   return (
-    <div className="page">
+    <div className="page course-files">
       <PageHeader title={course.name} detail={t.offline.title}>
         <button className="button" onClick={onBack}>
+          <ArrowLeft size={14} strokeWidth={2} aria-hidden="true" />
           {t.offline.back}
         </button>
         <button className="button" onClick={onOpen}>
           {t.offline.openCourse}
         </button>
       </PageHeader>
-      <details className="help-disclosure">
-        <summary>{t.common.details}</summary>
-        <p>{t.offline.hint}</p>
-      </details>
       {error && (
-        <p className="section-message error" role="alert">
+        <Notice tone="error">
           <ErrorText error={error} context="navigation" />
-        </p>
+        </Notice>
       )}
       {(busy || sync?.state === "running") && (
         <p className="section-message" role="status">
-          {t.offline.working}{" "}
-          {progress &&
-            t.offline.progress(
-              new Intl.NumberFormat(locale).format(progress.received),
-            )}
+          <LoaderCircle
+            className="spin"
+            size={14}
+            strokeWidth={2}
+            aria-hidden="true"
+          />
+          <span>
+            {t.offline.working}{" "}
+            {progress && t.offline.progress(number.format(progress.received))}
+          </span>
         </p>
       )}
       {outcomes.length > 0 && (
         <ul className="group" aria-label={t.offline.results}>
-          {outcomes.map((result) => (
-            <li className="group-row" key={result.key}>
-              <span className="row-text">
-                <span className="row-title">
-                  {catalog?.items.find((r) => r.key === result.key)?.filename ??
-                    saved.find((c) => c.resourceKey === result.key)?.filename ??
-                    t.offline.file}
+          {outcomes.map((result) => {
+            const name =
+              catalog?.items.find((r) => r.key === result.key)?.filename ??
+              saved.find((c) => c.resourceKey === result.key)?.filename ??
+              t.offline.file;
+            return (
+              <li
+                className="list-row"
+                key={result.key}
+                data-state={result.error ? "failed" : "complete"}
+              >
+                <FileIcon name={name} />
+                <span className="row-text">
+                  <span className="row-title">{name}</span>
+                  {result.error ? (
+                    <span className="row-subtitle warning" role="alert">
+                      <ErrorText error={result.error} context="navigation" />
+                    </span>
+                  ) : (
+                    <span className="row-subtitle" role="status">
+                      {result.reused ? t.offline.unchanged : t.offline.saved}
+                    </span>
+                  )}
                 </span>
-                {result.error ? (
-                  <span className="error" role="alert">
-                    <ErrorText error={result.error} context="navigation" />
-                  </span>
-                ) : (
-                  <span role="status">
-                    {result.reused ? t.offline.unchanged : t.offline.saved}
-                  </span>
-                )}
-              </span>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
       {confirming && (
         <Confirmation
           item={confirming}
           busy={busy}
+          standalone
           onCancel={() => setConfirming(null)}
           onOpen={() => void open(confirming, false, true)}
         />
       )}
       {removalResult && (
-        <p className="section-message" role="status">
-          {t.offline.removed[removalResult]}
-        </p>
+        <Notice tone="success">{t.offline.removed[removalResult]}</Notice>
       )}
       {removing && (
         <RemoveCopyConfirmation
@@ -635,19 +677,6 @@ export function CourseFiles({
           onConfirm={() => void remove(removing)}
         />
       )}
-      <CourseSyncControls
-        job={sync}
-        selected={selected}
-        busy={busy || removing !== null || confirming !== null}
-        onConfigure={(keys, interval) =>
-          void updateSync(() =>
-            ipc.courseSyncConfigure(identity, keys, interval),
-          )
-        }
-        onControl={(cancel) =>
-          void updateSync(() => ipc.courseSyncControl(identity, cancel))
-        }
-      />
       <section aria-labelledby="offline-saved">
         <h3
           className="section-title"
@@ -657,13 +686,12 @@ export function CourseFiles({
         >
           {t.offline.savedTitle}
         </h3>
-        <p className="section-footnote">{t.offline.freshnessHint}</p>
         {loadingSaved ? (
-          <p className="section-message">{t.offline.loading}</p>
+          <Skeleton rows={2} />
         ) : (
           <SavedFiles
             items={saved}
-            busy={busy || removing !== null || confirming !== null}
+            busy={locked}
             onOpen={(copy, reveal) => void open(copy, reveal)}
             onRefresh={(key) => void save([key])}
             onRemove={(copy) => {
@@ -681,58 +709,76 @@ export function CourseFiles({
             {t.offline.availableTitle}
           </h3>
           <button
-            className="button"
+            className="button small"
             disabled={busy}
             onClick={() => void loadResources()}
           >
             {t.offline.load}
           </button>
         </div>
-        {catalog && (
-          <>
-            {catalog.skipped > 0 && (
-              <p className="section-footnote">
-                {t.offline.skipped(catalog.skipped)}
-              </p>
-            )}
-            {catalog.items.length === 0 ? (
-              <p className="section-message">{t.offline.noResources}</p>
-            ) : (
-              <>
-                <ResourceFiles
-                  items={catalog.items}
-                  selected={selected}
-                  saved={saved}
-                  scheduled={sync?.keys}
-                  busy={busy}
-                  onToggle={(key) =>
-                    setSelected((current) =>
-                      current.includes(key)
-                        ? current.filter((k) => k !== key)
-                        : [...current, key],
-                    )
+        {catalog &&
+          (catalog.items.length === 0 ? (
+            <Notice>{t.offline.noResources}</Notice>
+          ) : (
+            <>
+              <ResourceFiles
+                items={catalog.items}
+                selected={selected}
+                saved={saved}
+                scheduled={sync?.keys}
+                busy={busy}
+                onToggle={(key) =>
+                  setSelected((current) =>
+                    current.includes(key)
+                      ? current.filter((k) => k !== key)
+                      : [...current, key],
+                  )
+                }
+              />
+              <div className="list-actions">
+                <span className="section-footnote">{t.offline.limitShort}</span>
+                <button
+                  className="button primary"
+                  disabled={
+                    busy ||
+                    sync?.state === "running" ||
+                    selected.length === 0 ||
+                    selected.length > 50
                   }
-                />
-                <div className="filter-bar">
-                  <button
-                    className="button primary"
-                    disabled={
-                      busy ||
-                      sync?.state === "running" ||
-                      selected.length === 0 ||
-                      selected.length > 50
-                    }
-                    onClick={() => void save(selected)}
-                  >
-                    {t.offline.saveSelected(selected.length)}
-                  </button>
-                  <span className="section-footnote">{t.offline.limit}</span>
-                </div>
-              </>
-            )}
-          </>
+                  onClick={() => void save(selected)}
+                >
+                  {t.offline.saveSelected(selected.length)}
+                </button>
+              </div>
+            </>
+          ))}
+        {catalog && catalog.skipped > 0 && (
+          <p className="section-footnote">
+            {t.offline.skipped(catalog.skipped)}
+          </p>
         )}
       </section>
+      <CourseSyncControls
+        job={sync}
+        selected={selected}
+        busy={locked}
+        onConfigure={(keys, interval) =>
+          void updateSync(() =>
+            ipc.courseSyncConfigure(identity, keys, interval),
+          )
+        }
+        onControl={(cancel) =>
+          void updateSync(() => ipc.courseSyncControl(identity, cancel))
+        }
+      />
+      <details className="help-disclosure section-footnote">
+        <summary>{t.common.details}</summary>
+        <p>{t.offline.hint}</p>
+        <p>{t.offline.freshnessHint}</p>
+        <p>{t.offline.limit}</p>
+        <p>{t.sync.hint}</p>
+        <p>{t.sync.selectionHint}</p>
+      </details>
     </div>
   );
 }
