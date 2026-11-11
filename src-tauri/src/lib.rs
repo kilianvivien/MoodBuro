@@ -26,6 +26,12 @@ mod pdf_save;
 mod reminders;
 mod session_restore;
 mod shortcut;
+mod timetable;
+#[cfg(target_os = "macos")]
+mod timetable_calendar;
+#[cfg(target_os = "macos")]
+mod timetable_menu;
+mod timetable_review;
 mod tray;
 mod updates;
 mod uploads;
@@ -50,6 +56,21 @@ pub struct AppState {
     open_next: Mutex<std::collections::HashMap<String, std::time::Instant>>,
     /// The saved global shortcut could not be registered at launch.
     shortcut_unavailable: std::sync::atomic::AtomicBool,
+}
+
+/// The metadata database. Debug builds use their own copy, seeded once from a
+/// consistent snapshot of the release database, so a development schema never
+/// migrates the database the installed app depends on.
+fn store_path(dir: &std::path::Path) -> std::io::Result<std::path::PathBuf> {
+    let release = dir.join("index.db");
+    if !cfg!(debug_assertions) {
+        return Ok(release);
+    }
+    let dev = dir.join("index.dev.db");
+    if !dev.exists() && release.exists() {
+        md_store::Store::snapshot(&release, &dev).map_err(std::io::Error::other)?;
+    }
+    Ok(dev)
 }
 
 /// Run the native timetable engine's self-check; returns the exit status.
@@ -79,6 +100,9 @@ pub fn run() {
         .manage(calendar_subscription::Operations::default())
         .manage(uploads::State::default())
         .manage(updates::State::default())
+        .manage(timetable::State::default())
+        .manage(timetable_review::Drafts::default())
+        .manage(timetable_calendar::Worker::default())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             tray::show(app);
             for arg in args
@@ -102,7 +126,7 @@ pub fn run() {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
             app.manage(AppState {
-                store: Mutex::new(md_store::Store::open(dir.join("index.db"))?),
+                store: Mutex::new(md_store::Store::open(store_path(&dir)?)?),
                 offline_job: tauri::async_runtime::Mutex::new(()),
                 workers: Mutex::new(Default::default()),
                 downloads: Mutex::new(Default::default()),
@@ -159,6 +183,7 @@ pub fn run() {
             for site in sites {
                 notifications::start(app.handle(), site);
             }
+            timetable_calendar::start(app.handle());
             for arg in std::env::args()
                 .skip(1)
                 .filter(|arg| arg.to_ascii_lowercase().starts_with("moodledesk:"))
@@ -213,6 +238,13 @@ pub fn run() {
                 }
             }
             if let tauri::WindowEvent::Destroyed = event {
+                if window.label() == "main" {
+                    use tauri::Manager;
+                    window
+                        .app_handle()
+                        .state::<timetable_review::Drafts>()
+                        .clear();
+                }
                 #[cfg(target_os = "macos")]
                 if window.label().starts_with("document-") {
                     native_preview::remove(window.label());
@@ -220,6 +252,8 @@ pub fn run() {
                 #[cfg(target_os = "macos")]
                 if window.label().starts_with("popup-") {
                     pdf_save::remove(window.app_handle(), window.label());
+                    #[cfg(target_os = "macos")]
+                    timetable_menu::remove(window.app_handle(), window.label());
                     frame_guard::remove(window.app_handle(), window.label());
                 }
                 if let Some(id) = window.label().strip_prefix("auth-") {
@@ -237,6 +271,22 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            commands::timetable_status,
+            commands::timetable_prepare,
+            commands::timetable_review,
+            commands::timetable_commit,
+            commands::timetable_discard,
+            commands::timetable_weeks,
+            commands::timetable_week,
+            commands::timetable_edit,
+            commands::timetable_remove,
+            commands::timetable_preferences,
+            commands::timetable_preferences_set,
+            commands::timetable_open_link,
+            commands::timetable_export,
+            commands::timetable_calendar,
+            commands::timetable_calendar_enable,
+            commands::timetable_calendar_disable,
             commands::assistant_status,
             commands::assistant_configure,
             commands::assistant_key_set,

@@ -204,8 +204,12 @@ pub fn switch_at(app: &AppHandle, id: &str, target: Option<url::Url>) -> Result<
         crate::pdf_save::install(app, &view, id, site.user_id)
             .map_err(|_| "Could not prepare PDF saving.")?;
         let base = md_moodle::normalize_site(&site.wwwroot).map_err(|e| e.to_string())?;
-        crate::frame_guard::install(app, &view, id, base)
+        crate::frame_guard::install(app, &view, id, base.clone())
             .map_err(|_| "Could not prepare the Moodle view.")?;
+        if md_inspcal::supports_site(&site.wwwroot) {
+            crate::timetable_menu::install(app, &view, id, site.user_id, base)
+                .map_err(|_| "Could not prepare the Moodle view.")?;
+        }
     }
     resize(app).map_err(|_| "Could not resize the Moodle view.")?;
     hide_sites(app).map_err(|_| "Could not switch sites.")?;
@@ -301,12 +305,16 @@ pub fn remove_session(app: &AppHandle, site: &md_store::Site) -> Result<(), Stri
         #[cfg(target_os = "macos")]
         crate::pdf_save::remove(app, &label);
         #[cfg(target_os = "macos")]
+        crate::timetable_menu::remove(app, &label);
+        #[cfg(target_os = "macos")]
         crate::frame_guard::remove(app, &label);
     } else if let Some(view) = app.get_webview(&label) {
         view.close()
             .map_err(|_| "Could not close the Moodle view.")?;
         #[cfg(target_os = "macos")]
         crate::pdf_save::remove(app, &label);
+        #[cfg(target_os = "macos")]
+        crate::timetable_menu::remove(app, &label);
         #[cfg(target_os = "macos")]
         crate::frame_guard::remove(app, &label);
     }

@@ -36,6 +36,9 @@ import { QuickOpen, type QuickTarget } from "./components/QuickOpen";
 import { Inbox } from "./views/Inbox";
 import { Courses } from "./views/Courses";
 import { Agenda } from "./views/Agenda";
+import type { TimetableRequest } from "./views/Timetable";
+import { timetable, type TimetableStatus } from "./lib/timetable";
+import { TimetableSettings } from "./views/TimetableSettings";
 import { Toolbar } from "./components/Toolbar";
 import { Uploads } from "./views/Uploads";
 import { Downloads } from "./views/Downloads";
@@ -68,6 +71,12 @@ export default function App() {
   const linkAgain = useRef(false);
   const [uploadRevision, setUploadRevision] = useState(0);
   const [calendarRequest, setCalendarRequest] = useState(0);
+  // Organisations with timetables (the INSP Moodle), as Rust decides.
+  const [timetableStatus, setTimetableStatus] =
+    useState<TimetableStatus | null>(null);
+  const timetableIds = timetableStatus?.sites ?? [];
+  const [timetableRequest, setTimetableRequest] =
+    useState<TimetableRequest | null>(null);
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("general");
   const [view, setView] = useState<View>("onboarding");
@@ -93,6 +102,24 @@ export default function App() {
   const locale = resolveLocale(settings.language, preferred);
   const t = catalogues[locale];
   const site = sites.find((s) => s.id === active);
+  const timetableSites = sites.filter((s) => timetableIds.includes(s.id));
+  useEffect(() => {
+    void timetable
+      .status()
+      .then(setTimetableStatus)
+      .catch(() => setTimetableStatus(null));
+  }, [sites]);
+  /** Read a timetable in Agenda › Week, from any entry point. */
+  const openTimetable = useEffectEvent(
+    (siteId: string, source: TimetableRequest["source"]) => {
+      setTimetableRequest((previous) => ({
+        revision: (previous?.revision ?? 0) + 1,
+        siteId,
+        source,
+      }));
+      void showLocal("agenda");
+    },
+  );
 
   useEffect(() => {
     document.documentElement.lang = locale;
@@ -531,6 +558,13 @@ export default function App() {
       ),
       // View › AI Assistant (⇧⌘A).
       listen("assistant://toggle", () => void toggleAssistant()),
+      // The native “Open as timetable” item in a Moodle link menu.
+      listen<{ siteId: string; intentId: string }>("timetable://link", (e) =>
+        openTimetable(e.payload.siteId, {
+          kind: "linkIntent",
+          intentId: e.payload.intentId,
+        }),
+      ),
       listen("bookmarks://add", () => void onBookmarkAdd()),
       listen<string>("sidebar://action", (e) => onSidebarAction(e.payload)),
       listen<string | null>("auth://finished", (e) =>
@@ -686,6 +720,9 @@ export default function App() {
               key={listRevision}
               calendarRequest={calendarRequest}
               sites={sites}
+              timetableSites={timetableSites}
+              timetableRequest={timetableRequest}
+              onFindTimetable={(id) => void openSite(id)}
               onSettings={() => void showSettings("notifications")}
               onOpenPage={(id) => void openPage(id, "calendar-export")}
               onOpenDay={(id, time) => void openPage(id, "calendar-day", time)}
@@ -704,6 +741,13 @@ export default function App() {
             <Downloads
               onUpload={() => void showLocal("uploads")}
               sites={sites}
+              timetableSites={timetableIds}
+              onTimetable={(item) =>
+                openTimetable(item.siteId, {
+                  kind: "download",
+                  downloadId: item.id,
+                })
+              }
               onReturn={(item) => {
                 void ipc
                   .courses()
@@ -729,6 +773,14 @@ export default function App() {
                 <Reminders sites={sites} onAdd={() => void showOnboarding()} />
               }
               assistant={<AssistantSettings />}
+              timetable={
+                timetableSites.length > 0 ? (
+                  <TimetableSettings
+                    sites={timetableSites}
+                    status={timetableStatus}
+                  />
+                ) : undefined
+              }
               desktop={desktop}
               sites={sites}
               appearance={settings.appearance}

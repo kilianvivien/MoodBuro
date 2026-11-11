@@ -2,6 +2,22 @@ fn main() {
     println!("cargo:rerun-if-env-changed=MOODBURO_UPDATE_PUBLIC_KEY");
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
+            "timetable_status",
+            "timetable_prepare",
+            "timetable_review",
+            "timetable_commit",
+            "timetable_discard",
+            "timetable_weeks",
+            "timetable_week",
+            "timetable_edit",
+            "timetable_remove",
+            "timetable_preferences",
+            "timetable_preferences_set",
+            "timetable_open_link",
+            "timetable_export",
+            "timetable_calendar",
+            "timetable_calendar_enable",
+            "timetable_calendar_disable",
             "assistant_status",
             "assistant_configure",
             "assistant_key_set",

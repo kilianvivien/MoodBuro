@@ -18,11 +18,47 @@ pub struct Resource {
     bytes: Option<u64>,
     #[serde(skip_serializing)]
     source: String,
+    /// Moodle's own identity of the file, for matching a clicked link.
+    #[serde(skip_serializing)]
+    context_id: Option<i64>,
+    #[serde(skip_serializing)]
+    raw_filename: String,
+    #[serde(skip_serializing)]
+    raw_filepath: String,
+}
+impl Resource {
+    pub(crate) fn key(&self) -> &str {
+        &self.key
+    }
+    pub(crate) fn module_id(&self) -> i64 {
+        self.module_id
+    }
+    /// The file name as Moodle stores it (the engine reads week dates from it).
+    pub(crate) fn original_name(&self) -> &str {
+        &self.raw_filename
+    }
+    /// Validated web-service URL, without credentials; never leaves Rust.
+    pub(crate) fn source(&self) -> &str {
+        &self.source
+    }
+    pub(crate) fn bytes(&self) -> Option<u64> {
+        self.bytes
+    }
+    pub(crate) fn matches_file(&self, context: i64, filepath: &str, filename: &str) -> bool {
+        self.context_id == Some(context)
+            && self.raw_filepath == filepath
+            && self.raw_filename == filename
+    }
 }
 #[derive(Serialize)]
 pub struct Catalog {
     items: Vec<Resource>,
     skipped: usize,
+}
+impl Catalog {
+    pub(crate) fn items(&self) -> &[Resource] {
+        &self.items
+    }
 }
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -107,6 +143,30 @@ fn latest_copy(
             disk::managed_path(&root, &path).ok()?;
             Some((copy, path))
         }))
+}
+/// The newest saved copy of a resource still on disk, if any.
+pub(crate) fn saved_copy_path(
+    app: &AppHandle,
+    site: &str,
+    id: i64,
+    user: i64,
+    key: &str,
+) -> Result<Option<PathBuf>, String> {
+    Ok(latest_copy(app, site, id, user, |copy| copy.resource_key == key)?.map(|(_, path)| path))
+}
+/// Original Moodle file name of the newest saved copy of a resource. The
+/// catalog's name is not stored; the published name keeps it (sanitized).
+pub(crate) fn saved_copy_name(
+    app: &AppHandle,
+    site: &str,
+    id: i64,
+    user: i64,
+    key: &str,
+) -> Result<Option<String>, String> {
+    Ok(
+        latest_copy(app, site, id, user, |copy| copy.resource_key == key)?
+            .map(|(copy, _)| copy.filename),
+    )
 }
 /// Revalidated path of one saved copy, for the native document reader.
 pub fn copy_path(
@@ -222,6 +282,9 @@ fn catalog(base: &url::Url, sections: Vec<md_moodle::CourseSection>) -> Result<C
                     filename: policy::safe_name(&file.filename),
                     bytes: file.filesize,
                     source: source.to_string(),
+                    context_id: module.contextid,
+                    raw_filename: file.filename.clone(),
+                    raw_filepath: file.filepath.clone().unwrap_or_else(|| "/".into()),
                 });
                 if items.len() > 1000 {
                     return Err(

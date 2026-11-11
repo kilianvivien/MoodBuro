@@ -534,6 +534,7 @@ function buildDemoData() {
       ["d4", "demo-1", "statistics-dataset.zip", "complete", day],
       ["d5", "demo-2", "Guide du stagiaire.pdf", "failed", 2 * day],
       ["d6", "demo-1", "Reading list week 3.docx", "complete", 4 * day],
+      ["d7", "demo-2", "Edt exemple de la semaine.pdf", "complete", 3 * hour],
     ].map(([id, siteId, filename, state, ago]) => ({
       id,
       siteId,

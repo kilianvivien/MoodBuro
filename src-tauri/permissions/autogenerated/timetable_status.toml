@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-timetable-status"
+description = "Enables the timetable_status command without any pre-configured scope."
+commands.allow = ["timetable_status"]
+
+[[permission]]
+identifier = "deny-timetable-status"
+description = "Denies the timetable_status command without any pre-configured scope."
+commands.deny = ["timetable_status"]

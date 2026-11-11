@@ -621,12 +621,15 @@ async fn complete_sign_in(
     crate::notifications::start(app, saved_site(app, id)?);
     // A turn or confirmation started for the previous account must not finish.
     crate::assistant::invalidate(app, id);
+    crate::timetable_review::forget_site(app, id);
     crate::session_restore::cancel(app, id);
     record(AuthEvent::CredentialsSaved);
     drop(pending);
     if let Some(view) = app.get_webview(&format!("site-{id}")) {
         #[cfg(target_os = "macos")]
         crate::pdf_save::remove(app, view.label());
+        #[cfg(target_os = "macos")]
+        crate::timetable_menu::remove(app, view.label());
         #[cfg(target_os = "macos")]
         crate::frame_guard::remove(app, view.label());
         view.close()
@@ -865,6 +868,7 @@ pub async fn site_remove(
         .map_err(|_| "Could not remove the saved organisation.")?;
     crate::notifications::stop(&app, &id);
     crate::assistant::invalidate(&app, &id);
+    crate::timetable_review::forget_site(&app, &id);
     *app.state::<AppState>()
         .active
         .lock()
@@ -1534,4 +1538,221 @@ pub fn updates_restart(webview: tauri::Webview, app: AppHandle) -> Result<(), St
     }
     crate::window_state::save(&app);
     app.restart()
+}
+
+// Timetables (InspCal, INSP Moodle only). Errors are stable codes.
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TimetableStatus {
+    sites: Vec<String>,
+    engine: &'static str,
+    engine_available: bool,
+    rules: String,
+    adapter_contract: u32,
+}
+#[tauri::command]
+pub fn timetable_status(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<TimetableStatus, String> {
+    shell(&webview)?;
+    Ok(TimetableStatus {
+        sites: crate::timetable::enabled_sites(&app),
+        engine: md_inspcal::ENGINE_VERSION,
+        engine_available: cfg!(target_os = "macos"),
+        rules: md_inspcal::rules_version(),
+        adapter_contract: md_inspcal::ADAPTER_CONTRACT,
+    })
+}
+#[tauri::command]
+pub async fn timetable_prepare(
+    webview: tauri::Webview,
+    app: AppHandle,
+    request: crate::timetable_review::PrepareRequest,
+) -> Result<crate::timetable_review::WeekView, String> {
+    shell(&webview)?;
+    crate::timetable_review::prepare(&app, request).await
+}
+#[tauri::command]
+pub async fn timetable_review(
+    webview: tauri::Webview,
+    app: AppHandle,
+    draft_id: String,
+    expected_draft_revision: u64,
+    choices: md_inspcal::request::Choices,
+    options: md_inspcal::request::Options,
+) -> Result<crate::timetable_review::WeekView, String> {
+    shell(&webview)?;
+    crate::timetable_review::review(&app, &draft_id, expected_draft_revision, choices, options)
+        .await
+}
+#[tauri::command]
+pub fn timetable_commit(
+    webview: tauri::Webview,
+    app: AppHandle,
+    draft_id: String,
+    expected_draft_revision: u64,
+    request_id: String,
+) -> Result<crate::timetable_review::WeekView, String> {
+    shell(&webview)?;
+    crate::timetable_review::commit(&app, &draft_id, expected_draft_revision, &request_id)
+}
+#[tauri::command]
+pub fn timetable_discard(
+    webview: tauri::Webview,
+    app: AppHandle,
+    draft_id: String,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::timetable_review::discard(&app, &draft_id);
+    Ok(())
+}
+#[tauri::command]
+pub fn timetable_weeks(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+) -> Result<Vec<md_store::WeekSummary>, String> {
+    shell(&webview)?;
+    crate::timetable_review::weeks(&app, &site_id, user_id)
+}
+#[tauri::command]
+pub fn timetable_week(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+    week_key: String,
+) -> Result<crate::timetable_review::WeekView, String> {
+    shell(&webview)?;
+    crate::timetable_review::week_view(&app, &site_id, user_id, &week_key)
+}
+#[tauri::command]
+pub async fn timetable_edit(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+    week_key: String,
+    expected_week_revision: i64,
+) -> Result<crate::timetable_review::WeekView, String> {
+    shell(&webview)?;
+    crate::timetable_review::edit(&app, &site_id, user_id, &week_key, expected_week_revision).await
+}
+#[tauri::command]
+pub fn timetable_remove(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+    week_key: String,
+    expected_week_revision: i64,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::timetable_review::remove(&app, &site_id, user_id, &week_key, expected_week_revision)
+}
+#[tauri::command]
+pub fn timetable_preferences(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+) -> Result<md_inspcal::request::Options, String> {
+    shell(&webview)?;
+    crate::timetable_review::preferences_get(&app, &site_id, user_id)
+}
+#[tauri::command]
+pub fn timetable_preferences_set(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+    options: md_inspcal::request::Options,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::timetable_review::preferences_set(&app, &site_id, user_id, options)
+}
+#[tauri::command]
+#[allow(clippy::too_many_arguments)] // Tauri passes each IPC field as an argument.
+pub fn timetable_open_link(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+    week_key: String,
+    draft_id: Option<String>,
+    uid: String,
+    index: usize,
+) -> Result<crate::timetable_review::Opened, String> {
+    shell(&webview)?;
+    crate::timetable_review::open_link(
+        &app,
+        &site_id,
+        user_id,
+        &week_key,
+        draft_id.as_deref(),
+        &uid,
+        index,
+    )
+}
+#[tauri::command]
+pub fn timetable_export(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+    week_key: String,
+    expected_week_revision: i64,
+    calendar: bool,
+) -> Result<crate::timetable_review::ExportedWeek, String> {
+    shell(&webview)?;
+    let result = crate::timetable_review::export(
+        &app,
+        &site_id,
+        user_id,
+        &week_key,
+        expected_week_revision,
+        calendar,
+    );
+    #[cfg(debug_assertions)]
+    if let Err(code) = &result {
+        eprintln!("timetable export refused: {code}");
+    }
+    result
+}
+#[tauri::command]
+pub fn timetable_calendar(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+) -> Result<crate::timetable_calendar::CalendarStatus, String> {
+    shell(&webview)?;
+    crate::timetable_calendar::calendar_status(&app, &site_id, user_id)
+}
+#[tauri::command]
+pub async fn timetable_calendar_enable(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+) -> Result<crate::timetable_calendar::Synced, String> {
+    shell(&webview)?;
+    // Waits for the macOS permission prompt and the first sync.
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::timetable_calendar::enable(&app, &site_id, user_id)
+    })
+    .await
+    .map_err(|_| "CALENDAR_FAILED".to_owned())?
+}
+#[tauri::command]
+pub fn timetable_calendar_disable(
+    webview: tauri::Webview,
+    app: AppHandle,
+    site_id: String,
+    user_id: i64,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::timetable_calendar::disable(&app, &site_id, user_id)
 }

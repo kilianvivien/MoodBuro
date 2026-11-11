@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-timetable-commit"
+description = "Enables the timetable_commit command without any pre-configured scope."
+commands.allow = ["timetable_commit"]
+
+[[permission]]
+identifier = "deny-timetable-commit"
+description = "Denies the timetable_commit command without any pre-configured scope."
+commands.deny = ["timetable_commit"]

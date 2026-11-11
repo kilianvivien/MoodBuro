@@ -26,9 +26,20 @@ import {
   Notice,
   PageHeader,
   RefreshControl,
+  Segmented,
   SiteSelect,
   Skeleton,
 } from "../components/ui";
+import { Timetable, type TimetableRequest } from "./Timetable";
+
+const VIEW_KEY = "moodburo.agenda.view";
+function savedAgendaView(): "list" | "week" {
+  try {
+    return localStorage.getItem(VIEW_KEY) === "week" ? "week" : "list";
+  } catch {
+    return "list";
+  }
+}
 
 export function AgendaList({
   events,
@@ -173,18 +184,40 @@ export function agendaRange(
 export function Agenda({
   sites,
   calendarRequest = 0,
+  timetableSites = [],
+  timetableRequest = null,
+  onFindTimetable,
   onOpenDay,
   onOpenPage,
   onSettings,
 }: {
   sites: Site[];
   calendarRequest?: number;
+  /** Organisations with timetables (the INSP Moodle); empty hides Week. */
+  timetableSites?: Site[];
+  timetableRequest?: TimetableRequest | null;
+  onFindTimetable?: (siteId: string) => void;
   onOpenDay: (siteId: string, time: number) => void;
   /** Shows an organisation's calendar export page in Moodle. */
   onOpenPage?: (siteId: string) => void;
   onSettings: () => void;
 }) {
   const { t } = useI18n();
+  const [mode, setMode] = useState<"list" | "week">(() =>
+    timetableRequest ? "week" : savedAgendaView(),
+  );
+  useEffect(() => {
+    if (timetableRequest) setMode("week");
+  }, [timetableRequest]);
+  const changeMode = (next: "list" | "week") => {
+    setMode(next);
+    try {
+      localStorage.setItem(VIEW_KEY, next);
+    } catch {
+      // A per-viewer convenience only.
+    }
+  };
+  const showWeek = timetableSites.length > 0 && mode === "week";
   const listing = useListing(sites, ipc.agenda, ipc.refreshAgenda);
   const [siteId, setSiteId] = useState<string | null>(null);
   const [showDates, setShowDates] = useState(false);
@@ -261,12 +294,36 @@ export function Agenda({
       (range.end === null || event.timeStart < range.end),
   );
   const failures = sites.filter((site) => listing.errors[site.id]);
+  const switcher = timetableSites.length > 0 && (
+    <Segmented
+      name="agenda-view"
+      legend={t.timetable.viewLegend}
+      value={mode}
+      options={[
+        { value: "list", label: t.agenda.title },
+        { value: "week", label: t.timetable.tab },
+      ]}
+      onChange={changeMode}
+    />
+  );
+  if (showWeek)
+    return (
+      <div className="page page-wide">
+        <PageHeader title={t.timetable.tab}>{switcher}</PageHeader>
+        <Timetable
+          sites={timetableSites}
+          request={timetableRequest}
+          onFindInMoodle={(id) => onFindTimetable?.(id)}
+        />
+      </div>
+    );
   return (
     <div className="page">
       <PageHeader
         title={t.agenda.title}
         detail={events.length > 0 ? t.agenda.count(events.length) : undefined}
       >
+        {switcher}
         <button
           className="button icon"
           title={t.agenda.reminders}
