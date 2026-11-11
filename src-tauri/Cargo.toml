@@ -28,6 +28,7 @@ serde_json.workspace = true
 md-store = { path = "../crates/md-store" }
 tauri-plugin-dialog = "2"
 tauri-plugin-autostart = "2"
+tauri-plugin-updater = "2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"

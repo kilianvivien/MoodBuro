@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-updates-preference"
+description = "Enables the updates_preference command without any pre-configured scope."
+commands.allow = ["updates_preference"]
+
+[[permission]]
+identifier = "deny-updates-preference"
+description = "Denies the updates_preference command without any pre-configured scope."
+commands.deny = ["updates_preference"]

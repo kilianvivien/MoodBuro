@@ -1,13 +1,52 @@
 name: Package macOS
 on:
+  push:
+    tags: ['v0.*-beta.*']
   workflow_dispatch:
+    inputs:
+      beta_tag:
+        description: 'Existing beta tag to publish; leave empty for installer-only packaging'
+        type: string
+        default: ''
 permissions:
   contents: read
+concurrency:
+  group: macos-beta-release
+  cancel-in-progress: false
 jobs:
   universal-dmg:
     runs-on: macos-26
+    permissions:
+      contents: write
+    env:
+      BETA_TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.beta_tag }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && github.ref_name || inputs.beta_tag || github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python3 scripts/test-beta-release.py
+      - name: Validate beta release configuration
+        if: env.BETA_TAG != ''
+        env:
+          PUBLIC_KEY: ${{ vars.MOODBURO_UPDATE_PUBLIC_KEY }}
+          PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: |
+          test -n "$PUBLIC_KEY" && test -n "$PRIVATE_KEY"
+          python3 scripts/beta-release.py "$BETA_TAG"
+          test "$(gh repo view --json visibility --jq .visibility)" = PUBLIC
+          # Never overwrite a published version.
+          if gh release view "$BETA_TAG" >/dev/null 2>&1; then
+            echo "Release already exists; choose a new beta version." >&2
+            exit 1
+          fi
+          if gh release view beta-feed >/dev/null 2>&1; then
+            gh release download beta-feed --pattern beta.json --dir "$RUNNER_TEMP/previous-beta"
+            python3 scripts/beta-release.py "$BETA_TAG" --previous "$RUNNER_TEMP/previous-beta/beta.json"
+          fi
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -24,7 +63,19 @@ jobs:
       - run: cargo fmt --all --check && cargo test --workspace --locked
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - run: python3 scripts/check-security.py
-      - run: pnpm tauri build --ci --target universal-apple-darwin --bundles app,dmg --config src-tauri/tauri.alpha.conf.json
+      - name: Build universal installer and signed beta update
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          MOODBURO_UPDATE_PUBLIC_KEY: ${{ env.BETA_TAG != '' && vars.MOODBURO_UPDATE_PUBLIC_KEY || '' }}
+        shell: bash
+        run: |
+          extra=()
+          if [[ -n "$BETA_TAG" ]]; then
+            python3 -c 'import json, os; json.dump({"bundle":{"createUpdaterArtifacts":True},"plugins":{"updater":{"pubkey":os.environ["MOODBURO_UPDATE_PUBLIC_KEY"]}}},open(os.environ["RUNNER_TEMP"]+"/updater.json","w"))'
+            extra=(--config "$RUNNER_TEMP/updater.json")
+          fi
+          pnpm tauri build --ci --target universal-apple-darwin --bundles app,dmg --config src-tauri/tauri.alpha.conf.json "${extra[@]}"
       - name: Verify and collect installer
         shell: bash
         run: |
@@ -43,3 +94,27 @@ jobs:
           name: MoodBuro-macos-universal
           path: artifacts/
           if-no-files-found: error
+
+      - name: Collect beta artifacts
+        if: env.BETA_TAG != ''
+        run: |
+          gh api repos/kilianvivien/MoodBuro/releases/generate-notes -f tag_name="$BETA_TAG" --jq .body > "$RUNNER_TEMP/beta-notes.txt"
+          python3 scripts/beta-release.py "$BETA_TAG" --bundle target/universal-apple-darwin/release/bundle --notes "$RUNNER_TEMP/beta-notes.txt"
+      - name: Upload signed beta artifacts
+        if: env.BETA_TAG != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: MoodBuro-beta-update
+          path: artifacts/
+          if-no-files-found: error
+      - name: Publish beta release and advance feed
+        if: env.BETA_TAG != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$BETA_TAG" artifacts/* --verify-tag --prerelease --title "MoodBuro $BETA_TAG" --notes-file "$RUNNER_TEMP/beta-notes.txt"
+          # GitHub /latest excludes prereleases: clients use this explicit beta feed.
+          if ! gh release view beta-feed >/dev/null 2>&1; then
+            gh release create beta-feed --target "$GITHUB_SHA" --prerelease --title 'Beta update feed' --notes 'Signed beta update manifest. Install a versioned beta DMG for first use.'
+          fi
+          gh release upload beta-feed artifacts/beta.json --clobber

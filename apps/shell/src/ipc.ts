@@ -1500,3 +1500,32 @@ export const ipc = {
 export function message(cause: unknown) {
   return cause instanceof Error ? cause.message : String(cause);
 }
+
+export interface UpdateStatus {
+  configured: boolean;
+  automatic: boolean;
+  phase: string;
+  version: string | null;
+  notes: string | null;
+  received: number;
+  total: number | null;
+}
+export const updates = {
+  status: (): Promise<UpdateStatus> =>
+    isTauri()
+      ? invoke("updates_status")
+      : Promise.resolve({
+          configured: false,
+          automatic: true,
+          phase: "unconfigured",
+          version: null,
+          notes: null,
+          received: 0,
+          total: null,
+        }),
+  check: (): Promise<void> => invoke("updates_check"),
+  install: (): Promise<void> => invoke("updates_install"),
+  preference: (enabled: boolean): Promise<void> =>
+    invoke("updates_preference", { enabled }),
+  restart: (): Promise<void> => invoke("updates_restart"),
+};

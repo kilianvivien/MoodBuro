@@ -5,17 +5,13 @@
 
 MoodBuro hosts the **real Moodle site** in a macOS application, keeping your organisations, courses and tools close at hand. Enter your organisation’s Moodle address and sign in on its own page.
 
-<p align="center">
-  <img src="docs/capture@0.5x.png" width="1100" alt="MoodBuro on macOS: the Moodle dashboard, sidebar bookmarks and the optional AI assistant panel." />
-</p>
-
 ## Download and install
 
-**[Download MoodBuro 0.1.0 for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)** · [Release notes](docs/releases/v0.1.0.md) · [Installation guide](docs/alpha-install.md)
+**[Download MoodBuro 0.1.0 for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
 
 The universal DMG includes **Apple Silicon and Intel** binaries, with macOS 12 as the configured minimum. Download the DMG and `SHA256SUMS.txt`, verify the checksum, then drag MoodBuro into Applications. Quit the app before replacing it during an upgrade.
 
-Version 0.1.0 is **ad-hoc signed and not notarized**. macOS may require approval on first launch; follow the installation guide. Updates install manually. Downloads require repository access if the repository is private.
+Version 0.1.0 is **ad-hoc signed and not notarized**. macOS may require first-launch approval in System Settings → Privacy & Security. Updates install manually.
 
 ## Your courses, at home on the Mac
 
@@ -35,7 +31,7 @@ Version 0.1.0 is **ad-hoc signed and not notarized**. macOS may require approval
 | Document readers | View supported PDF and Office documents in native reader windows. |
 | Optional AI assistant | Use Albert API or Mistral AI with your own key, attach Moodle context explicitly, follow sources and confirm proposed actions. |
 
-The assistant can find courses, activities, notifications, files and deadlines. Actions that change data or save a file require confirmation. Conversations stay in memory until quit; see [assistant scope and qualification](docs/assistant-qa.md).
+The assistant can find courses, activities, notifications, files and deadlines. Actions that change data or save a file require confirmation. Conversations stay in memory until quit.
 
 ## Useful shortcuts
 
@@ -94,8 +90,15 @@ The current distribution targets macOS. Full macOS-version, Intel runtime, SSO, 
 
 The native PDF Save adapter uses a private WebKit callback and requires macOS compatibility qualification. MoodBuro is generic: no organisation is preconfigured. This project is independent of Moodle HQ.
 
-[Progress tracker](docs/plan.md) · [Implementation status](docs/implementation-status.md) · [PRD](docs/prd.md) · [Architecture](docs/adr/0001-alpha-foundation.md) · [UI decisions](docs/ui-design.md) · [Design guidelines](docs/design-guidelines.md)
 
 ## License
 
 [MIT](LICENSE) — © 2026 Kilian Vivien.
+
+## Beta update releases (maintainers)
+
+The macOS packaging workflow builds signed universal updater archives and publishes beta prereleases from `v0.*-beta.*` tags. Set matching versions (for example `0.2.0-beta.1`) in the workspace Cargo manifest, Tauri config and both package manifests; refresh lockfiles before tagging. Version `0.1.0` itself remains a manual-upgrade release.
+
+Actions uses the `TAURI_SIGNING_PRIVATE_KEY` secret and `MOODBURO_UPDATE_PUBLIC_KEY` variable. The public repository serves a separate `beta-feed` prerelease with `beta.json`; the app accepts newer beta versions only. The first updater-enabled build must be installed manually. Settings → General checks at launch/every six hours and supports opt-out, release notes, progress, explicit install and relaunch. Developer ID signing/notarization and installed Intel/Apple Silicon update qualification remain open.
+
+If publication succeeds but feed upload fails, upload the versioned release’s `beta.json` to `beta-feed` with `gh release upload beta-feed beta.json --clobber` after checking that its version advances the feed. Keep the signing-key backup safe; replacing the verification key requires an update signed by the old key first.

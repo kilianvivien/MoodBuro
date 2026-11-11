@@ -14,17 +14,13 @@
 
 MoodBuro affiche **le vrai site Moodle** dans une application macOS, avec vos organisations, vos cours et vos outils à portée de main. Vous renseignez l’adresse Moodle de votre organisation et vous vous connectez sur sa propre page.
 
-<p align="center">
-  <img src="docs/capture@0.5x.png" width="1100" alt="MoodBuro sur macOS : tableau de bord Moodle, barre latérale avec signets et panneau de l’assistant IA." />
-</p>
-
 ## Télécharger et installer
 
-**[Télécharger MoodBuro 0.1.0 pour macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)** · [Notes de version](docs/releases/v0.1.0.md) · [Guide d’installation](docs/alpha-install.md)
+**[Télécharger MoodBuro 0.1.0 pour macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
 
 Le DMG universel contient les versions **Apple Silicon et Intel**, avec macOS 12 comme version minimale configurée. Téléchargez le DMG et `SHA256SUMS.txt`, vérifiez la somme de contrôle, puis glissez MoodBuro dans Applications. Pour une mise à jour, quittez d’abord l’application.
 
-La version 0.1.0 utilise une **signature ad hoc et n’est pas notariée**. macOS peut demander d’autoriser sa première ouverture ; le guide détaille la procédure. Les mises à jour s’installent manuellement. L’accès au dépôt est nécessaire pour télécharger les versions si celui-ci est privé.
+La version 0.1.0 utilise une **signature ad hoc et n’est pas notariée**. macOS peut demander d’autoriser sa première ouverture dans Réglages Système → Confidentialité et sécurité. Les mises à jour s’installent manuellement.
 
 ## Vos cours, dans une interface pensée pour le Mac
 
@@ -44,7 +40,7 @@ La version 0.1.0 utilise une **signature ad hoc et n’est pas notariée**. macO
 | Lecture de documents | Consulter les PDF et documents Office pris en charge dans des fenêtres de lecture natives. |
 | Assistant IA facultatif | Utiliser Albert API ou Mistral AI avec votre propre clé, joindre explicitement un contexte Moodle, consulter les sources et confirmer les actions proposées. |
 
-L’assistant peut notamment retrouver des cours, activités, notifications, fichiers et échéances. Les actions qui modifient des données ou enregistrent un fichier demandent une confirmation. Les conversations restent en mémoire jusqu’à la fermeture de l’application ; voir le [périmètre de l’assistant](docs/assistant-qa.md).
+L’assistant peut notamment retrouver des cours, activités, notifications, fichiers et échéances. Les actions qui modifient des données ou enregistrent un fichier demandent une confirmation. Les conversations restent en mémoire jusqu’à la fermeture de l’application.
 
 ## Raccourcis utiles
 
@@ -113,8 +109,11 @@ La distribution actuelle cible macOS. La qualification complète des versions de
 
 Le lecteur PDF utilise un rappel privé de WebKit pour l’enregistrement ; sa compatibilité doit être vérifiée sur les versions de macOS prises en charge. MoodBuro est générique : aucune organisation n’est préconfigurée. Le projet est indépendant de Moodle HQ.
 
-[Suivi d’avancement](docs/plan.md) · [État de l’implémentation](docs/implementation-status.md) · [PRD](docs/prd.md) · [Architecture](docs/adr/0001-alpha-foundation.md) · [Interface](docs/ui-design.md) · [Charte d’interface](docs/design-guidelines.md)
 
 ## Licence
 
 [MIT](LICENSE) — © 2026 Kilian Vivien.
+
+## Mises à jour bêta
+
+Le workflow macOS prépare des archives universelles signées pour les tags `v0.*-beta.*`, avec un flux bêta distinct sur GitHub Releases. La première version compatible doit être installée manuellement. Réglages → Général permet la recherche automatique au lancement puis toutes les six heures, sa désactivation, la consultation des notes, le suivi du téléchargement, l’installation et le relancement explicites. La version 0.1.0 reste à mettre à jour manuellement. La qualification des mises à jour sur Intel et Apple Silicon reste ouverte. Voir les consignes de publication dans le [README anglais](README.en.md#beta-update-releases-maintainers).

@@ -1498,3 +1498,40 @@ pub fn assistant_key_help(
         )
         .map_err(|_| "Could not open the browser.".into())
 }
+
+#[tauri::command]
+pub fn updates_status(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<crate::updates::Status, String> {
+    shell(&webview)?;
+    crate::updates::status(&app)
+}
+#[tauri::command]
+pub async fn updates_check(webview: tauri::Webview, app: AppHandle) -> Result<(), String> {
+    shell(&webview)?;
+    crate::updates::check(&app).await
+}
+#[tauri::command]
+pub async fn updates_install(webview: tauri::Webview, app: AppHandle) -> Result<(), String> {
+    shell(&webview)?;
+    crate::updates::install(&app).await
+}
+#[tauri::command]
+pub fn updates_preference(
+    webview: tauri::Webview,
+    app: AppHandle,
+    enabled: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::updates::preference(&app, enabled)
+}
+#[tauri::command]
+pub fn updates_restart(webview: tauri::Webview, app: AppHandle) -> Result<(), String> {
+    shell(&webview)?;
+    if crate::updates::status(&app)?.phase != "ready" {
+        return Err("Update is not ready.".into());
+    }
+    crate::window_state::save(&app);
+    app.restart()
+}

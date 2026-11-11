@@ -1,3 +1,4 @@
+import { Updates } from "../components/Updates";
 import { DesktopPreferences } from "../components/DesktopPreferences";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Segmented, Switch } from "../components/ui";
@@ -545,6 +546,7 @@ export function Settings({
                 </span>
               </div>
               <Switch
+                id="global-shortcut"
                 label={t.settings.globalShortcut}
                 checked={globalShortcut}
                 disabled={globalShortcutSaving}
@@ -570,6 +572,7 @@ export function Settings({
         </section>
 
         <DesktopPreferences />
+        <Updates />
       </div>
       <div {...panel("files")}>
         <section aria-labelledby="files-heading">

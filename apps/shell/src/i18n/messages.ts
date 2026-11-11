@@ -194,6 +194,32 @@ const en = {
       "A notification attempt failed. Check macOS notification settings.",
     saving: "Saving reminder preferences…",
   },
+  updates: {
+    title: "Software updates",
+    automatic: "Check Automatically",
+    cadence:
+      "Checks at launch and every six hours. Installation and relaunch require your approval.",
+    check: "Check Again",
+    install: "Download and Install",
+    restart: "Relaunch Now",
+    version: (v: string) => `Beta ${v} is available`,
+    phases: {
+      unconfigured:
+        "Updates are not configured in this build. Install the first update-enabled beta manually.",
+      idle: "Beta updates are delivered through GitHub Releases.",
+      checking: "Checking for updates…",
+      current: "This beta is up to date.",
+      available: "Review the release notes before installing.",
+      downloading: "Downloading and verifying the update…",
+      installing: "Installing…",
+      ready: "Update installed. Relaunch when ready to finish.",
+      checkFailed:
+        "Could not check for updates. Check your connection and try again.",
+      installFailed:
+        "Download, verification or installation failed. Retry, or install the release manually.",
+      error: "Could not complete the update action. Try again.",
+    },
+  },
   desktop: {
     title: "Mac Integration",
     menuBar: "Menu-bar-only mode",
@@ -950,6 +976,32 @@ const fr: Messages = {
     deliveryFailed:
       "Une tentative de notification a échoué. Vérifiez les réglages de notifications macOS.",
     saving: "Enregistrement des préférences de rappel…",
+  },
+  updates: {
+    title: "Mises à jour",
+    automatic: "Rechercher automatiquement",
+    cadence:
+      "Recherche au lancement puis toutes les six heures. Installation et relancement avec votre accord.",
+    check: "Rechercher à nouveau",
+    install: "Télécharger et installer",
+    restart: "Relancer maintenant",
+    version: (v: string) => `La bêta ${v} est disponible`,
+    phases: {
+      unconfigured:
+        "Les mises à jour ne sont pas configurées dans cette version. Installez manuellement la première bêta compatible.",
+      idle: "Les mises à jour bêta sont distribuées par GitHub Releases.",
+      checking: "Recherche de mises à jour…",
+      current: "Cette bêta est à jour.",
+      available: "Consultez les notes avant l’installation.",
+      downloading: "Téléchargement et vérification…",
+      installing: "Installation…",
+      ready: "Mise à jour installée. Relancez quand vous êtes prêt.",
+      checkFailed:
+        "Recherche impossible. Vérifiez votre connexion puis réessayez.",
+      installFailed:
+        "Échec du téléchargement, de la vérification ou de l’installation. Réessayez ou installez manuellement la version.",
+      error: "L’action a échoué. Réessayez.",
+    },
   },
   desktop: {
     title: "Intégration Mac",

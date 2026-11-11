@@ -91,6 +91,11 @@
     "allow-download-preview",
     "allow-course-folders-refresh",
     "allow-download-open",
-    "allow-download-reveal"
+    "allow-download-reveal",
+    "allow-updates-status",
+    "allow-updates-check",
+    "allow-updates-install",
+    "allow-updates-preference",
+    "allow-updates-restart"
   ]
 }

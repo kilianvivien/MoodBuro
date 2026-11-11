@@ -1,4 +1,5 @@
 fn main() {
+    println!("cargo:rerun-if-env-changed=MOODBURO_UPDATE_PUBLIC_KEY");
     tauri_build::try_build(tauri_build::Attributes::new().app_manifest(
         tauri_build::AppManifest::new().commands(&[
             "assistant_status",
@@ -82,6 +83,11 @@ fn main() {
             "bookmark_save",
             "bookmark_delete",
             "bookmark_open",
+            "updates_status",
+            "updates_check",
+            "updates_install",
+            "updates_preference",
+            "updates_restart",
             "settings_get",
             "settings_set",
         ]),

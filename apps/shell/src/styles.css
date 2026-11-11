@@ -2785,3 +2785,9 @@ div.assistant-text {
 .choice-row .tag {
   display: inline-flex;
 }
+
+.update-notes {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}

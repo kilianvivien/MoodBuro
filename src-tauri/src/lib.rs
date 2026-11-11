@@ -27,6 +27,7 @@ mod reminders;
 mod session_restore;
 mod shortcut;
 mod tray;
+mod updates;
 mod uploads;
 mod window_state;
 mod windows;
@@ -56,6 +57,7 @@ pub fn run() {
         .manage(Mutex::new(links::Inbox::default()))
         .manage(calendar_subscription::Operations::default())
         .manage(uploads::State::default())
+        .manage(updates::State::default())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             tray::show(app);
             for arg in args
@@ -66,6 +68,7 @@ pub fn run() {
                 links::receive(app, arg);
             }
         }))
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(shortcut::plugin())
@@ -125,6 +128,7 @@ pub fn run() {
             shortcut::restore(app.handle());
             reminders::install(app.handle());
             course_sync::install(app.handle());
+            updates::start(app.handle());
             let sites = app
                 .state::<AppState>()
                 .store
@@ -293,6 +297,11 @@ pub fn run() {
             commands::bookmark_save,
             commands::bookmark_delete,
             commands::bookmark_open,
+            commands::updates_status,
+            commands::updates_check,
+            commands::updates_install,
+            commands::updates_preference,
+            commands::updates_restart,
             commands::settings_get,
             commands::settings_set
         ])

@@ -34,6 +34,7 @@ jobs:
       - run: cargo test --locked -p md-moodle -p md-store -p md-notifier -p md-os -p md-assistant
       - run: cargo clippy --locked -p md-moodle -p md-store -p md-notifier -p md-os -p md-assistant --all-targets -- -D warnings
       - run: python3 scripts/check-security.py
+      - run: python3 scripts/test-beta-release.py
   macos:
     runs-on: macos-26
     steps:

@@ -9,3 +9,9 @@ src-tauri/gen/
 *.log
 
 *.tsbuildinfo
+
+# Local planning and qualification records
+docs/
+
+__pycache__/
+*.pyc

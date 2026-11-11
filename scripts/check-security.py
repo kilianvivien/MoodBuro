@@ -26,3 +26,8 @@ print('Local shell/popup-toolbar capability and caller guards passed; remote vie
 
 for label in ['site-0000', 'auth-0000', 'popup-0000-1111', 'document-0000-1111']:
     assert not any(fnmatchcase(label, pattern) for data in [cap, popup] for pattern in data['webviews'])
+
+# Updater access stays behind our caller-checked commands, never generic plugin IPC.
+assert not any(p.startswith('updater:') for data in [cap, popup] for p in data['permissions'])
+for action in ['status', 'check', 'install', 'preference', 'restart']:
+    assert f'allow-updates-{action}' in cap['permissions']
