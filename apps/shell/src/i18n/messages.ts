@@ -326,6 +326,175 @@ const en = {
     footnote:
       "Moodle controls which upcoming events appear here. Completion information and reminder eligibility may be incomplete.",
   },
+  timetable: {
+    viewLegend: "Agenda view",
+    tab: "Timetable",
+    layoutLegend: "Timetable layout",
+    list: "List",
+    week: "Week",
+    today: "Today",
+    previous: "Previous Week",
+    next: "Next Week",
+    savedWeeks: "Saved weeks",
+    savedWeek: (range: string) => `Week of ${range}`,
+    noSavedWeeks: "None saved",
+    organisation: "Organisation",
+    emptyTitle: "No timetable for this week",
+    emptyHint: "In Moodle, right-click a timetable PDF › Open as Timetable.",
+    findInMoodle: "Find a Timetable in Moodle",
+    fetching: "Fetching the timetable…",
+    reading: "Reading the timetable…",
+    add: "Add Week",
+    update: "Update Week",
+    saveChanges: "Save Changes",
+    showSaved: "Show Saved Week",
+    discard: "Discard",
+    edit: "Edit Choices…",
+    remove: "Remove Week…",
+    removeTitle: (range: string) => `Remove the week of ${range}?`,
+    removeBody:
+      "The saved week and its reminders are removed from MoodBuro. The PDF in Moodle and any calendar you exported to are not changed.",
+    confirmRemove: "Remove",
+    removed: "Week removed.",
+    saved: "Week saved. It stays in Agenda, even offline.",
+    unchanged: "This week is already saved and unchanged.",
+    choicesReset:
+      "The new timetable no longer matches some of your choices. Review them again.",
+    review: (count: number) =>
+      `${formatNumber("en", count)} ${plural("en", count) === "one" ? "choice" : "choices"} to review`,
+    reviewNext: "Review Next",
+    diff: (moved: number, added: number, removed: number, changed: number) =>
+      [
+        moved && `${moved} moved`,
+        added && `${added} added`,
+        removed && `${removed} removed`,
+        changed && `${changed} changed`,
+      ]
+        .filter(Boolean)
+        .join(" · ") || "No changes",
+    preview: "Preview — not saved yet",
+    source: (filename: string) => `From ${filename}`,
+    tentative: "Tentative",
+    allDay: "All day",
+    allDayShort: "All-day",
+    sessions: (count: number) =>
+      `${formatNumber("en", count)} ${plural("en", count) === "one" ? "session" : "sessions"}`,
+    weekGrid: (range: string) => `Timetable, week of ${range}`,
+    timeZone: "Times are Paris time (Europe/Paris).",
+    session: {
+      close: "Close",
+      when: "When",
+      room: "Room",
+      speakers: "Speakers",
+      module: "Module",
+      cohort: "For",
+      preparation: "Preparation",
+      notes: "Notes",
+      links: "Links",
+      openLink: (label: string) => `Open ${label}`,
+      remote: "Remote",
+      group: "Your group",
+      groupNone: "Not chosen",
+      participation: "Participation",
+      attend: "Attending",
+      decline: "Not Attending",
+      unanswered: "Not answered",
+      halfPromotion: "Your half-promotion",
+      excluded: "Not in your week",
+      include: "Include",
+    },
+    cohort: "Cohort",
+    cohorts: {
+      ALL: "Whole promotion",
+      FI: "FI",
+      CIL: "CIL",
+      OFF: "OFF",
+    },
+    weekStartPrompt:
+      "The dates of this timetable could not be read. Choose its Monday:",
+    readWithDate: "Read with This Date",
+    retry: "Try Again",
+    backToMoodle: "Back to Moodle",
+    exportIcs: "Export .ics",
+    sync: "Sync with Calendar",
+    synced: "Synced with Calendar",
+    syncDone: (count: number) =>
+      `${count} ${count === 1 ? "session" : "sessions"} in Calendar › Emploi du temps. Saved weeks now stay in sync.`,
+    addToCalendar: "Add to Calendar…",
+    exporting: "Exporting…",
+    exported: (filename: string) =>
+      `Saved in Moodle › Calendriers: ${filename}.`,
+    exportedCancelled: (count: number) => ` ${count} cancelled.`,
+    openedInCalendar:
+      "Opened in Calendar. Choose a calendar there to add the week.",
+    exportHistoryFailed:
+      " MoodBuro could not remember this export: the next one may not cancel removed sessions.",
+    exportHint:
+      "An exported file is a snapshot. Import a corrected week again to update it: sessions keep their identity, and removed ones are cancelled.",
+    openAsTimetable: "Open as Timetable",
+    openAsTimetableLabel: (name: string) => `Open ${name} as a timetable`,
+    settings: {
+      title: "Timetables (InspCal)",
+      description:
+        "Weekly timetable PDFs from your school’s Moodle, read on this Mac and saved in Agenda.",
+      cohort: "Default cohort",
+      cohortHint: "Used for new weeks. Each saved week keeps its own choices.",
+      prefix: "Exported event prefix",
+      prefixHint: "Added before each session title in exported calendars.",
+      alarm: "Exported alarm",
+      alarmNone: "None",
+      alarmMinutes: (minutes: number) => `${minutes} min before`,
+      calendar: "Calendar",
+      calendarOn: "Synced to « Emploi du temps »",
+      calendarOff: "Off",
+      calendarDenied:
+        "Allow MoodBuro in System Settings › Privacy & Security › Calendars",
+      calendarStart: "Sync…",
+      calendarStop: "Stop",
+      calendarHelp:
+        "MoodBuro creates an « Emploi du temps » calendar in the account of your default calendar (iCloud reaches your other devices) and keeps it equal to your saved weeks. Stop leaves the calendar in Calendar; delete it there if you no longer want it.",
+      engine: (engine: string, rules: string) =>
+        `Timetable reader ${engine} · rules ${rules}`,
+      notices: "Licences: InspCal engine (MIT), PDFium (BSD-3-Clause).",
+    },
+    errors: {
+      UNSUPPORTED_SITE:
+        "Timetables are only available for your school’s Moodle.",
+      ACCOUNT_CHANGED: "The account changed. Open the timetable again.",
+      SOURCE_UNAVAILABLE: "This file is no longer available.",
+      LINK_UNRESOLVED:
+        "MoodBuro could not find this file in your courses. Download it, then use Open as Timetable in Downloads.",
+      INTENT_EXPIRED: "The page changed. Right-click the timetable again.",
+      TOO_LARGE: "This PDF is too large to read (4 MB maximum).",
+      NOT_PDF: "This file is not a PDF. You may need to sign in again.",
+      UNSUPPORTED_PDF: "This PDF is not a timetable MoodBuro can read.",
+      WEEK_DATE_MISSING: "The week’s dates could not be read.",
+      NETWORK:
+        "Moodle could not be reached. Check your connection and try again.",
+      ACCESS_DENIED: "Moodle refused access to this file.",
+      RECONNECT: "Reconnect this organisation in Settings, then try again.",
+      ENGINE_UNAVAILABLE: "The timetable reader is not available here.",
+      ENGINE_BUSY: "Another timetable is being read. Try again in a moment.",
+      ENGINE_TIMEOUT: "Reading took too long. Try again.",
+      ENGINE_INTERNAL: "The timetable reader failed. Try again.",
+      STALE_DRAFT: "This preview expired. Open the timetable again.",
+      WEEK_CHANGED: "This week was changed elsewhere. Reopen it.",
+      WEEK_MISSING: "This week is no longer saved.",
+      UID_COLLISION:
+        "A session in this timetable already belongs to another saved week.",
+      INVALID_CHOICE: "One of the choices is not valid for this week.",
+      TOO_MANY_CHOICES: "Too many choices for one week.",
+      INVALID_PREFIX: "The prefix is too long (60 characters maximum).",
+      INVALID_ALARM: "Choose an alarm between 0 and 1,440 minutes.",
+      STORAGE: "MoodBuro could not save this. Try again.",
+      CALENDAR_DENIED:
+        "MoodBuro is not allowed to use Calendar. Allow it in System Settings › Privacy & Security › Calendars.",
+      CALENDAR_FAILED: "Calendar could not be updated. Try again.",
+      CALENDAR_OFF: "Calendar sync is off.",
+      EXPORT_FAILED: "The calendar file could not be saved.",
+      unknown: "Something went wrong with this timetable.",
+    },
+  },
   bookmarks: {
     removeTitle: (name: string) => `Remove “${name}”?`,
     removeBody: "Only the bookmark is removed. The Moodle page is not changed.",
@@ -527,6 +696,7 @@ const en = {
       files: "Files",
       notifications: "Reminders",
       assistant: "AI Assistant",
+      inspcal: "InspCal",
       organisations: "Organisations",
     },
     previewBanner:
@@ -1114,6 +1284,187 @@ const fr: Messages = {
     footnote:
       "Moodle détermine les évènements à venir affichés ici. L’achèvement et l’éligibilité aux rappels peuvent être incomplets.",
   },
+  timetable: {
+    viewLegend: "Présentation de l’agenda",
+    tab: "Emploi du temps",
+    layoutLegend: "Disposition de l’emploi du temps",
+    list: "Liste",
+    week: "Semaine",
+    today: "Aujourd’hui",
+    previous: "Semaine précédente",
+    next: "Semaine suivante",
+    savedWeeks: "Semaines enregistrées",
+    savedWeek: (range: string) => `Semaine du ${range}`,
+    noSavedWeeks: "Aucune",
+    organisation: "Organisation",
+    emptyTitle: "Aucun emploi du temps pour cette semaine",
+    emptyHint:
+      "Dans Moodle, faites un clic droit sur un emploi du temps PDF et choisissez « Ouvrir comme emploi du temps ». Les semaines enregistrées restent ici, même hors ligne.",
+    findInMoodle: "Trouver un emploi du temps dans Moodle",
+    fetching: "Récupération de l’emploi du temps…",
+    reading: "Lecture de l’emploi du temps…",
+    add: "Ajouter la semaine",
+    update: "Mettre à jour la semaine",
+    saveChanges: "Enregistrer les modifications",
+    showSaved: "Afficher la semaine enregistrée",
+    discard: "Abandonner",
+    edit: "Modifier les choix…",
+    remove: "Retirer la semaine…",
+    removeTitle: (range: string) => `Retirer la semaine du ${range}\u00a0?`,
+    removeBody:
+      "La semaine enregistrée et ses rappels sont retirés de MoodBuro. Le PDF dans Moodle et les calendriers vers lesquels vous avez exporté ne sont pas modifiés.",
+    confirmRemove: "Retirer",
+    removed: "Semaine retirée.",
+    saved: "Semaine enregistrée. Elle reste dans l’agenda, même hors ligne.",
+    unchanged: "Cette semaine est déjà enregistrée et n’a pas changé.",
+    choicesReset:
+      "Le nouvel emploi du temps ne correspond plus à certains de vos choix. Vérifiez-les à nouveau.",
+    review: (count: number) =>
+      `${formatNumber("fr", count)} ${plural("fr", count) === "one" ? "choix" : "choix"} à vérifier`,
+    reviewNext: "Vérifier le suivant",
+    diff: (moved: number, added: number, removed: number, changed: number) =>
+      [
+        moved && `${moved} ${moved > 1 ? "déplacées" : "déplacée"}`,
+        added && `${added} ${added > 1 ? "ajoutées" : "ajoutée"}`,
+        removed && `${removed} ${removed > 1 ? "retirées" : "retirée"}`,
+        changed && `${changed} ${changed > 1 ? "modifiées" : "modifiée"}`,
+      ]
+        .filter(Boolean)
+        .join(" · ") || "Aucun changement",
+    preview: "Aperçu — pas encore enregistré",
+    source: (filename: string) => `D’après ${filename}`,
+    tentative: "Provisoire",
+    allDay: "Toute la journée",
+    allDayShort: "Journée",
+    sessions: (count: number) =>
+      `${formatNumber("fr", count)} ${plural("fr", count) === "one" ? "séance" : "séances"}`,
+    weekGrid: (range: string) => `Emploi du temps, semaine du ${range}`,
+    timeZone: "Heures de Paris (Europe/Paris).",
+    session: {
+      close: "Fermer",
+      when: "Quand",
+      room: "Salle",
+      speakers: "Intervenants",
+      module: "Module",
+      cohort: "Pour",
+      preparation: "Préparation",
+      notes: "Notes",
+      links: "Liens",
+      openLink: (label: string) => `Ouvrir ${label}`,
+      remote: "À distance",
+      group: "Votre groupe",
+      groupNone: "Non choisi",
+      participation: "Participation",
+      attend: "J’y participe",
+      decline: "Je n’y participe pas",
+      unanswered: "Sans réponse",
+      halfPromotion: "Votre demi-promotion",
+      excluded: "Hors de votre semaine",
+      include: "Inclure",
+    },
+    cohort: "Cohorte",
+    cohorts: {
+      ALL: "Toute la promotion",
+      FI: "FI",
+      CIL: "CIL",
+      OFF: "OFF",
+    },
+    weekStartPrompt:
+      "Les dates de cet emploi du temps n’ont pas pu être lues. Choisissez son lundi :",
+    readWithDate: "Lire avec cette date",
+    retry: "Réessayer",
+    backToMoodle: "Retour à Moodle",
+    exportIcs: "Exporter .ics",
+    sync: "Synchroniser avec Calendrier",
+    synced: "Synchronisé avec Calendrier",
+    syncDone: (count: number) =>
+      `${count} ${count > 1 ? "séances" : "séance"} dans Calendrier › Emploi du temps. Les semaines enregistrées restent synchronisées.`,
+    addToCalendar: "Ajouter à Calendrier…",
+    exporting: "Exportation…",
+    exported: (filename: string) =>
+      `Enregistré dans Moodle › Calendriers\u00a0: ${filename}.`,
+    exportedCancelled: (count: number) =>
+      ` ${count} ${count > 1 ? "annulées" : "annulée"}.`,
+    openedInCalendar:
+      "Ouvert dans Calendrier. Choisissez-y un calendrier pour ajouter la semaine.",
+    exportHistoryFailed:
+      " MoodBuro n’a pas pu mémoriser cet export\u00a0: le prochain risque de ne pas annuler les séances retirées.",
+    exportHint:
+      "Un fichier exporté est un instantané. Importez à nouveau une semaine corrigée pour la mettre à jour\u00a0: les séances gardent leur identité et celles retirées sont annulées.",
+    openAsTimetable: "Ouvrir comme emploi du temps",
+    openAsTimetableLabel: (name: string) =>
+      `Ouvrir ${name} comme emploi du temps`,
+    settings: {
+      title: "Emplois du temps (InspCal)",
+      description:
+        "Les emplois du temps PDF hebdomadaires du Moodle de votre école, lus sur ce Mac et enregistrés dans l’agenda.",
+      cohort: "Cohorte par défaut",
+      cohortHint:
+        "Utilisée pour les nouvelles semaines. Chaque semaine enregistrée garde ses propres choix.",
+      prefix: "Préfixe des évènements exportés",
+      prefixHint:
+        "Ajouté devant le titre de chaque séance dans les calendriers exportés.",
+      alarm: "Alarme exportée",
+      alarmNone: "Aucune",
+      alarmMinutes: (minutes: number) => `${minutes} min avant`,
+      calendar: "Calendrier",
+      calendarOn: "Synchronisé avec «\u00a0Emploi du temps\u00a0»",
+      calendarOff: "Désactivé",
+      calendarDenied:
+        "Autorisez MoodBuro dans Réglages Système › Confidentialité et sécurité › Calendriers",
+      calendarStart: "Synchroniser…",
+      calendarStop: "Arrêter",
+      calendarHelp:
+        "MoodBuro crée un calendrier «\u00a0Emploi du temps\u00a0» dans le compte de votre calendrier par défaut (iCloud le retrouve sur vos autres appareils) et le garde identique à vos semaines enregistrées. «\u00a0Arrêter\u00a0» laisse le calendrier dans Calendrier\u00a0; supprimez-le là si vous n’en voulez plus.",
+      engine: (engine: string, rules: string) =>
+        `Lecteur d’emplois du temps ${engine} · règles ${rules}`,
+      notices: "Licences : moteur InspCal (MIT), PDFium (BSD-3-Clause).",
+    },
+    errors: {
+      UNSUPPORTED_SITE:
+        "Les emplois du temps ne sont disponibles que pour le Moodle de votre école.",
+      ACCOUNT_CHANGED:
+        "Le compte a changé. Ouvrez à nouveau l’emploi du temps.",
+      SOURCE_UNAVAILABLE: "Ce fichier n’est plus disponible.",
+      LINK_UNRESOLVED:
+        "MoodBuro n’a pas trouvé ce fichier dans vos cours. Téléchargez-le, puis utilisez « Ouvrir comme emploi du temps » dans Téléchargements.",
+      INTENT_EXPIRED:
+        "La page a changé. Faites à nouveau un clic droit sur l’emploi du temps.",
+      TOO_LARGE: "Ce PDF est trop volumineux (4 Mo maximum).",
+      NOT_PDF:
+        "Ce fichier n’est pas un PDF. Vous devez peut-être vous reconnecter.",
+      UNSUPPORTED_PDF:
+        "Ce PDF n’est pas un emploi du temps lisible par MoodBuro.",
+      WEEK_DATE_MISSING: "Les dates de la semaine n’ont pas pu être lues.",
+      NETWORK: "Moodle est injoignable. Vérifiez votre connexion et réessayez.",
+      ACCESS_DENIED: "Moodle a refusé l’accès à ce fichier.",
+      RECONNECT:
+        "Reconnectez cette organisation dans les Réglages, puis réessayez.",
+      ENGINE_UNAVAILABLE:
+        "Le lecteur d’emplois du temps n’est pas disponible ici.",
+      ENGINE_BUSY:
+        "Un autre emploi du temps est en cours de lecture. Réessayez dans un instant.",
+      ENGINE_TIMEOUT: "La lecture a pris trop de temps. Réessayez.",
+      ENGINE_INTERNAL: "Le lecteur d’emplois du temps a échoué. Réessayez.",
+      STALE_DRAFT: "Cet aperçu a expiré. Ouvrez à nouveau l’emploi du temps.",
+      WEEK_CHANGED: "Cette semaine a été modifiée ailleurs. Rouvrez-la.",
+      WEEK_MISSING: "Cette semaine n’est plus enregistrée.",
+      UID_COLLISION:
+        "Une séance de cet emploi du temps appartient déjà à une autre semaine enregistrée.",
+      INVALID_CHOICE: "L’un des choix n’est pas valable pour cette semaine.",
+      TOO_MANY_CHOICES: "Trop de choix pour une seule semaine.",
+      INVALID_PREFIX: "Le préfixe est trop long (60 caractères maximum).",
+      INVALID_ALARM: "Choisissez une alarme entre 0 et 1 440 minutes.",
+      STORAGE: "MoodBuro n’a pas pu enregistrer. Réessayez.",
+      CALENDAR_DENIED:
+        "MoodBuro n’a pas accès à Calendrier. Autorisez-le dans Réglages Système › Confidentialité et sécurité › Calendriers.",
+      CALENDAR_FAILED: "Calendrier n’a pas pu être mis à jour. Réessayez.",
+      CALENDAR_OFF: "La synchronisation avec Calendrier est désactivée.",
+      EXPORT_FAILED:
+        "Le fichier de calendrier n’a pas pu être enregistré dans Téléchargements.",
+      unknown: "Un problème est survenu avec cet emploi du temps.",
+    },
+  },
   bookmarks: {
     removeTitle: (name: string) => `Supprimer «\u00a0${name}\u00a0»\u00a0?`,
     removeBody:
@@ -1322,6 +1673,7 @@ const fr: Messages = {
       files: "Fichiers",
       notifications: "Rappels",
       assistant: "Assistant IA",
+      inspcal: "InspCal",
       organisations: "Organisations",
     },
     previewBanner:

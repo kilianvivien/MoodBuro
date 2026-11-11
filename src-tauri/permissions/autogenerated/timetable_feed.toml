@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-timetable-feed"
+description = "Enables the timetable_feed command without any pre-configured scope."
+commands.allow = ["timetable_feed"]
+
+[[permission]]
+identifier = "deny-timetable-feed"
+description = "Denies the timetable_feed command without any pre-configured scope."
+commands.deny = ["timetable_feed"]

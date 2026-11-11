@@ -1,18 +1,20 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import {
+  CalendarDays,
   Copy,
   Download as DownloadIcon,
   Eye,
-  RefreshCw,
   FolderOpen,
   LoaderCircle,
+  RefreshCw,
   SearchX,
+  Trash2,
   TriangleAlert,
   Upload,
   XCircle,
-  Trash2,
 } from "lucide-react";
+import { looksLikeTimetable } from "../lib/timetable";
 import {
   desktop,
   DOWNLOAD_PAGE_SIZE,
@@ -89,6 +91,8 @@ export function DownloadList({
   onReturn,
   onCancel,
   onConfirm,
+  timetableSites = [],
+  onTimetable,
   progress = [],
   onStop,
   onRemove,
@@ -109,6 +113,9 @@ export function DownloadList({
   onReturn?: (item: Download) => void;
   onCancel: () => void;
   onConfirm: () => void;
+  /** Organisations with timetables (the INSP Moodle). */
+  timetableSites?: readonly string[];
+  onTimetable?: (item: Download) => void;
 }) {
   const { t, date, locale } = useI18n();
   if (items.length === 0)
@@ -216,6 +223,26 @@ export function DownloadList({
                       onClick={() => onReturn(item)}
                     >
                       {t.downloads.returnToMoodle}
+                    </button>
+                  )}
+                {onTimetable &&
+                  item.state === "complete" &&
+                  timetableSites.includes(item.siteId) &&
+                  looksLikeTimetable(item.filename) && (
+                    <button
+                      className="button icon small"
+                      disabled={unavailable}
+                      title={t.timetable.openAsTimetable}
+                      aria-label={t.timetable.openAsTimetableLabel(
+                        item.filename,
+                      )}
+                      onClick={() => onTimetable(item)}
+                    >
+                      <CalendarDays
+                        size={13}
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      />
                     </button>
                   )}
                 {item.canPreview && onPreview && (
@@ -349,10 +376,14 @@ export function Downloads({
   sites,
   onReturn,
   onUpload,
+  timetableSites = [],
+  onTimetable,
 }: {
   sites: Site[];
   onReturn?: (item: Download) => void;
   onUpload?: () => void;
+  timetableSites?: readonly string[];
+  onTimetable?: (item: Download) => void;
 }) {
   const { t } = useI18n();
   const [revision, setRevision] = useState(0);
@@ -636,6 +667,8 @@ export function Downloads({
             } else void action(() => ipc.openDownload(item.id));
           }}
           onPreview={(id) => void action(() => ipc.previewDownload(id))}
+          timetableSites={timetableSites}
+          onTimetable={onTimetable}
           onReveal={(id) => void action(() => ipc.revealDownload(id))}
           onCopy={(id) =>
             void action(() => ipc.copyDownloadPath(id), t.downloads.copied)

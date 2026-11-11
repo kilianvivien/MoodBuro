@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-timetable-weeks"
+description = "Enables the timetable_weeks command without any pre-configured scope."
+commands.allow = ["timetable_weeks"]
+
+[[permission]]
+identifier = "deny-timetable-weeks"
+description = "Denies the timetable_weeks command without any pre-configured scope."
+commands.deny = ["timetable_weeks"]

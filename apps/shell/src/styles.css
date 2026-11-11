@@ -2379,6 +2379,467 @@ div.assistant-text {
   }
 }
 /* Reduce Motion: nothing moves. Entrances are skipped, spinners slow down. */
+/* ---------- Agenda › Week (timetables) ---------- */
+
+.page.page-wide {
+  width: min(1120px, calc(100% - 48px));
+}
+.timetable {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.week-toolbar {
+  align-items: center;
+}
+.week-nav {
+  display: inline-flex;
+  gap: 4px;
+}
+.week-title {
+  flex: 1;
+  min-width: 10em;
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.week-review {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-xl);
+  background: var(--elevated);
+  box-shadow: var(--shadow);
+}
+.week-review-controls {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--separator);
+}
+.week-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.week-control .field-label {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--label-2);
+  white-space: nowrap;
+}
+.week-review-controls > .button {
+  margin-left: auto;
+}
+.week-export > .button {
+  margin-left: 0;
+}
+.week-export-hint {
+  flex: 1 1 16em;
+  font-size: var(--text-caption);
+  color: var(--label-2);
+}
+.week-picker {
+  min-width: 12em;
+  max-width: 18em;
+}
+.week-review-text {
+  flex: 1;
+  min-width: 12em;
+  display: flex;
+  flex-direction: column;
+}
+.week-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.week-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.week-layout[data-details] {
+  grid-template-columns: minmax(0, 1fr) 280px;
+}
+.week-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.week-footnote {
+  margin: 0 2px;
+  font-size: var(--text-caption);
+  color: var(--label-2);
+}
+.week-calendar {
+  --week-hour: 56px;
+  --week-axis: 56px;
+  /* Opaque tints over the grid, built from tokens (Calendar-style events). */
+  --week-event:
+    linear-gradient(var(--accent-tint), var(--accent-tint)), var(--elevated);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-xl);
+  background: var(--elevated);
+  box-shadow: var(--shadow);
+  /* clip, not hidden: the day header can stay in view while scrolling. */
+  overflow: clip;
+}
+.week-head,
+.week-all-day,
+.week-body {
+  display: grid;
+  grid-template-columns: var(--week-axis) repeat(
+      var(--week-days),
+      minmax(0, 1fr)
+    );
+}
+.week-head {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  border-bottom: 1px solid var(--separator);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background: var(--elevated);
+}
+.week-day-name {
+  padding: 8px 4px;
+  text-align: center;
+  font-size: var(--text-small);
+  font-weight: 500;
+  color: var(--label-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.week-day-name[data-today] {
+  color: var(--accent);
+  font-weight: 600;
+}
+.week-all-day {
+  border-bottom: 1px solid var(--separator);
+}
+.week-all-day-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 3px;
+  border-left: 1px solid var(--separator);
+}
+.week-all-day-cell .week-session {
+  position: static;
+  flex-direction: row;
+  min-height: 20px;
+}
+.week-body {
+  position: relative;
+  /* One hour is always tall enough for a 30-minute session's line. */
+  height: calc(var(--week-hour) * var(--week-span, 10));
+}
+.week-hours {
+  position: relative;
+}
+.week-hour-label {
+  position: absolute;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: var(--text-caption);
+  color: var(--label-2);
+  font-variant-numeric: tabular-nums;
+}
+.week-all-day .week-hour-label {
+  position: static;
+  transform: none;
+  align-self: center;
+  justify-self: end;
+  padding-right: 8px;
+  text-align: right;
+}
+.week-hours .week-hour-label:first-child {
+  transform: none;
+}
+.week-column {
+  position: relative;
+  min-width: 0;
+  border-left: 1px solid var(--separator);
+}
+.week-hour-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--separator);
+}
+.week-now {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 0;
+  border-top: 2px solid var(--red);
+  pointer-events: none;
+}
+.week-now::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: -5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+}
+.week-session {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1px;
+  min-width: 0;
+  min-height: 18px;
+  padding: 3px 6px 3px 7px;
+  border: 0;
+  border-radius: var(--radius-s);
+  /* A hairline of the surface keeps side-by-side lanes apart. */
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    0 0 0 1px var(--elevated);
+  background: var(--week-event);
+  color: var(--label);
+  font: inherit;
+  font-size: var(--text-caption);
+  line-height: 1.25;
+  text-align: left;
+  overflow: hidden;
+  cursor: default;
+  transition:
+    background var(--fast) var(--ease),
+    color var(--fast) var(--ease);
+}
+.week-session:hover {
+  background: linear-gradient(var(--fill), var(--fill)), var(--week-event);
+}
+.week-session[data-pending] {
+  box-shadow:
+    inset 3px 0 0 var(--label-3),
+    0 0 0 1px var(--elevated);
+  background: linear-gradient(var(--fill-2), var(--fill-2)), var(--elevated);
+}
+.week-session[data-tentative] {
+  background: var(--elevated);
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    inset 0 0 0 1px var(--accent-tint),
+    0 0 0 1px var(--elevated);
+  color: var(--label-2);
+}
+.week-session[data-tentative] .week-session-title {
+  font-style: italic;
+}
+.week-session[aria-pressed="true"] {
+  z-index: 10 !important;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px var(--elevated);
+  color: var(--on-accent);
+}
+.week-session[aria-pressed="true"] .week-session-meta {
+  color: var(--on-accent);
+}
+.week-session:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+  z-index: 11 !important;
+}
+.week-session[data-size="compact"] {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding-block: 0;
+}
+.week-session[data-size="compact"] .week-session-title {
+  -webkit-line-clamp: 1;
+  flex: 0 0 auto;
+  max-width: 100%;
+}
+/* The title wins: the time only takes what is left. */
+.week-session[data-size="compact"] .week-session-meta {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.week-session[data-size="compact"] .week-session-place,
+.week-session[data-size="medium"] .week-session-place {
+  display: none;
+}
+.week-session-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.week-session[data-size="medium"] .week-session-title {
+  -webkit-line-clamp: 2;
+}
+.week-session-meta {
+  flex-shrink: 0;
+  color: var(--label-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+.week-list,
+.week-excluded {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.session-details {
+  min-width: 0;
+  position: sticky;
+  top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-xl);
+  background: var(--elevated);
+  box-shadow: var(--shadow);
+}
+.session-details-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.session-details-header h3 {
+  flex: 1;
+  margin: 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+.session-excluded {
+  margin: 0;
+  font-size: var(--text-small);
+  color: var(--label-2);
+}
+.session-fields {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.session-field dt {
+  font-size: var(--text-caption);
+  color: var(--label-2);
+}
+.session-field dd {
+  margin: 0;
+  font-size: var(--text-small);
+  user-select: text;
+}
+.session-notes {
+  margin: 0;
+  padding-left: 16px;
+}
+.session-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+.session-link {
+  max-width: 100%;
+  min-width: 0;
+}
+.session-link svg {
+  flex-shrink: 0;
+}
+.session-link-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.session-time {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.session-time legend {
+  padding: 0;
+  margin-bottom: 4px;
+  font-size: var(--text-caption);
+  color: var(--label-2);
+}
+@container (max-width: 640px) {
+  .week-layout[data-details] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 820px) {
+  .week-layout[data-details] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .session-details {
+    position: static;
+    order: -1;
+  }
+}
+
+/* ---------- Agenda › Week motion (tokens; opacity/transform only) ---------- */
+.week-stage {
+  animation: view-in var(--slow) var(--ease-out) both;
+}
+.week-stage[data-direction="next"] {
+  animation-name: week-from-next;
+}
+.week-stage[data-direction="previous"] {
+  animation-name: week-from-previous;
+}
+@keyframes week-from-next {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+@keyframes week-from-previous {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+.week-session {
+  animation: row-in var(--slow) var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 18ms);
+}
+.session-details {
+  animation: slide-in var(--medium) var(--ease-out) both;
+}
+.week-review,
+.week-empty {
+  animation: reveal var(--medium) var(--ease-out) both;
+}
+.week-now::before {
+  animation: pop var(--slow) var(--spring) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -2790,4 +3251,26 @@ div.assistant-text {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   user-select: text;
+}
+.session-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.session-choice .field-label {
+  margin: 0;
+  font-size: var(--text-caption);
+  font-weight: 400;
+  color: var(--label-2);
+}
+.session-choice .popup-button {
+  max-width: 100%;
+}
+.session-choice select {
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+.settings-prefix {
+  width: 12em;
 }

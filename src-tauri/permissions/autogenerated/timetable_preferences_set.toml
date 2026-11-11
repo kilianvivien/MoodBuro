@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-timetable-preferences-set"
+description = "Enables the timetable_preferences_set command without any pre-configured scope."
+commands.allow = ["timetable_preferences_set"]
+
+[[permission]]
+identifier = "deny-timetable-preferences-set"
+description = "Denies the timetable_preferences_set command without any pre-configured scope."
+commands.deny = ["timetable_preferences_set"]

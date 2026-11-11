@@ -290,4 +290,153 @@ mod native {
         let report = md_inspcal::smoke().expect("smoke");
         assert!(report.events > 0);
     }
+
+    fn typed(
+        options: &md_inspcal::request::Options,
+        choices: &md_inspcal::request::Choices,
+        parsed: Option<&Value>,
+        pdf: Option<&str>,
+    ) -> md_inspcal::request::Answer {
+        let fields = md_inspcal::request::fields(options, choices, parsed, &[]).unwrap();
+        let uploads = pdf
+            .map(|name| {
+                vec![upload(
+                    name,
+                    std::fs::read(vendored(&format!("tests/fixtures/public/{name}"))).unwrap(),
+                )]
+            })
+            .unwrap_or_default();
+        md_inspcal::request::answer(&convert(fields, uploads)).unwrap()
+    }
+
+    #[test]
+    fn typed_pipeline_projects_sessions_and_round_trips_participation() {
+        use md_inspcal::request::{Choices, Options};
+        use md_inspcal::week::{sessions, week_key};
+        let _serial = serial();
+        let options = Options::default();
+        let first = typed(
+            &options,
+            &Choices::default(),
+            None,
+            Some("Edt du 02.11.2026 au 06.11.2026.pdf"),
+        );
+        let projected = sessions(&first.selected, first.calendar.as_deref()).unwrap();
+        assert!(!projected.is_empty());
+        let questions = md_inspcal::request::review_questions(&first);
+        let optional = questions["participation"][0]["uid"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let tentative: Vec<_> = projected
+            .iter()
+            .filter(|s| s.tentative)
+            .map(|s| s.uid.clone())
+            .collect();
+        assert!(
+            tentative.contains(&optional),
+            "unanswered optional session is tentative"
+        );
+        assert!(projected
+            .iter()
+            .all(|s| s.start.is_none() || s.start_at.is_some()));
+        assert!(
+            !questions.to_string().contains("https://"),
+            "no URLs reach the shell"
+        );
+
+        let mut declined = Choices::default();
+        declined
+            .groups
+            .insert(optional.clone(), "__exclude__".into());
+        let without = typed(&options, &declined, Some(&first.parsed), None);
+        let without = sessions(&without.selected, without.calendar.as_deref()).unwrap();
+        assert!(!without.iter().any(|s| s.uid == optional));
+        let mut joined = Choices::default();
+        joined.groups.insert(optional.clone(), String::new());
+        let with = typed(&options, &joined, Some(&first.parsed), None);
+        let with = sessions(&with.selected, with.calendar.as_deref()).unwrap();
+        assert!(
+            with.iter().any(|s| s.uid == optional && !s.tentative),
+            "joining confirms it"
+        );
+
+        // A corrected PDF of the same week has the same identity.
+        let original = typed(
+            &options,
+            &Choices::default(),
+            None,
+            Some("Edt du 07.09.2026 au 11.09.2026.pdf"),
+        );
+        let corrected = typed(
+            &options,
+            &Choices::default(),
+            None,
+            Some("Edt du 07.09.2026 au 11.09.2026 corrige.pdf"),
+        );
+        assert_eq!(
+            week_key(&original.selected).unwrap(),
+            week_key(&corrected.selected).unwrap()
+        );
+        assert_ne!(
+            week_key(&original.selected).unwrap(),
+            week_key(&first.selected).unwrap()
+        );
+    }
+
+    #[test]
+    fn exports_keep_uids_and_cancel_what_a_correction_removed() {
+        use md_inspcal::request::{Choices, Options};
+        let _serial = serial();
+        let options = Options::default();
+        let original = typed(
+            &options,
+            &Choices::default(),
+            None,
+            Some("Edt du 07.09.2026 au 11.09.2026.pdf"),
+        );
+        let corrected = typed(
+            &options,
+            &Choices::default(),
+            None,
+            Some("Edt du 07.09.2026 au 11.09.2026 corrige.pdf"),
+        );
+        let first = String::from_utf8(
+            md_inspcal::week::export_calendar(&original.selected, &[], "", None).unwrap(),
+        )
+        .unwrap();
+        assert!(first.contains("BEGIN:VCALENDAR") && first.contains("TZID=Europe/Paris"));
+        assert!(!first.contains("STATUS:CANCELLED"));
+        let old: Vec<String> = md_inspcal::week::sessions(&original.selected, None)
+            .unwrap()
+            .into_iter()
+            .map(|s| s.uid)
+            .collect();
+        let new: Vec<String> = md_inspcal::week::sessions(&corrected.selected, None)
+            .unwrap()
+            .into_iter()
+            .map(|s| s.uid)
+            .collect();
+        let gone: Vec<&String> = old.iter().filter(|uid| !new.contains(uid)).collect();
+        let second = String::from_utf8(
+            md_inspcal::week::export_calendar(
+                &corrected.selected,
+                std::slice::from_ref(&original.selected),
+                "",
+                Some(15),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        for uid in &new {
+            assert!(second.contains(&format!("UID:{uid}")), "{uid} kept");
+        }
+        if !gone.is_empty() {
+            assert!(
+                second.contains("STATUS:CANCELLED"),
+                "removed sessions are cancelled"
+            );
+        }
+        assert!(second.contains("BEGIN:VALARM"));
+    }
 }

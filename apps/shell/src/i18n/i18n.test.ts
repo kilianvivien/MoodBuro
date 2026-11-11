@@ -72,6 +72,14 @@ describe("catalogues", () => {
           "English",
           "Sources",
           "Conversations",
+          "Module",
+          "Notes",
+          "Participation",
+          "InspCal",
+          // Timetable cohort codes, the same in both languages.
+          "FI",
+          "CIL",
+          "OFF",
         ].includes(text) &&
         !/^\d+ sites?$/u.test(text),
     );

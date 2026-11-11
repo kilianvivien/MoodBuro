@@ -15,6 +15,9 @@
 //! PDF bytes never leave Rust. Nothing here touches the network, SQLite or
 //! the filesystem.
 
+pub mod request;
+pub mod week;
+
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
@@ -33,6 +36,131 @@ pub const MAX_PDF_BYTES: usize = 4_000_000;
 pub const DEFAULT_WAIT: Duration = Duration::from_secs(45);
 /// Engine semantic version, from the vendored snapshot.
 pub const ENGINE_VERSION: &str = inspcal_engine::pipeline::PARSER_VERSION;
+
+/// Version of the vendored institution rules (`institution.json`).
+pub fn rules_version() -> String {
+    inspcal_engine::institution::INSTITUTION.version.clone()
+}
+
+/// The Moodle origin the vendored institution rules were written for, taken
+/// from the rules themselves (`institution.json`), so the gate moves with them.
+pub fn supported_origin() -> Option<url::Origin> {
+    let rules = url::Url::parse(&inspcal_engine::institution::INSTITUTION.rotation_url).ok()?;
+    (rules.scheme() == "https").then(|| rules.origin())
+}
+
+/// Whether the timetable feature is offered for a saved site: only the
+/// institution's own Moodle, over HTTPS. Every timetable entry point checks
+/// this in Rust; the shell only mirrors it for display.
+pub fn supports_site(wwwroot: &str) -> bool {
+    let (Some(origin), Ok(site)) = (supported_origin(), url::Url::parse(wwwroot)) else {
+        return false;
+    };
+    site.scheme() == "https"
+        && site.username().is_empty()
+        && site.password().is_none()
+        && site.origin() == origin
+}
+
+/// The engine reads a week's dates from its file name
+/// (`Edt du 09.11.2026 au 13.11.2026.pdf`). Moodle link labels often spell
+/// them out instead (`Edt du 09 novembre au 13 novembre 26`). When `filename`
+/// carries no readable week but `label` states one completely, including its
+/// year, return an engine-readable name; otherwise return `filename` as is.
+/// A year is never inferred.
+pub fn filename_with_week(filename: &str, label: &str) -> String {
+    if matches!(
+        inspcal_engine::dates::week_bounds_from_filename(filename),
+        Ok(Some(_))
+    ) {
+        return filename.to_owned();
+    }
+    match week_from_label(label) {
+        Some(((d1, m1, y1), (d2, m2, y2))) => {
+            let candidate = format!("Edt du {d1:02}.{m1:02}.{y1} au {d2:02}.{m2:02}.{y2}.pdf");
+            match inspcal_engine::dates::week_bounds_from_filename(&candidate) {
+                Ok(Some(_)) => candidate,
+                _ => filename.to_owned(),
+            }
+        }
+        None => filename.to_owned(),
+    }
+}
+
+/// Whether a link label looks like a weekly timetable, to decide if the
+/// “Open as timetable” item is offered. A hint only: the parser decides.
+pub fn looks_like_timetable(label: &str) -> bool {
+    let folded = label.to_lowercase();
+    let words: Vec<&str> = folded
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty())
+        .collect();
+    words.contains(&"edt")
+        || folded.contains("emploi du temps")
+        || week_from_label(label).is_some()
+        || matches!(
+            inspcal_engine::dates::week_bounds_from_filename(label),
+            Ok(Some(_))
+        )
+}
+
+type Day = (u32, u32, i32);
+
+fn week_from_label(label: &str) -> Option<(Day, Day)> {
+    const MONTHS: [(&str, u32); 12] = [
+        ("janv", 1),
+        ("fevr", 2),
+        ("mars", 3),
+        ("avr", 4),
+        ("mai", 5),
+        ("juin", 6),
+        ("juil", 7),
+        ("aout", 8),
+        ("sept", 9),
+        ("oct", 10),
+        ("nov", 11),
+        ("dec", 12),
+    ];
+    let folded: String = label
+        .to_lowercase()
+        .chars()
+        .map(|c| match c {
+            'é' | 'è' | 'ê' => 'e',
+            'û' | 'ù' => 'u',
+            'ô' => 'o',
+            '.' | ',' | '_' | '-' => ' ',
+            other => other,
+        })
+        .collect();
+    let words: Vec<&str> = folded.split_whitespace().collect();
+    let month = |word: &str| {
+        MONTHS
+            .iter()
+            .find(|(prefix, _)| word.starts_with(prefix))
+            .map(|(_, n)| *n)
+    };
+    let day = |word: &str| {
+        word.trim_end_matches("er")
+            .parse::<u32>()
+            .ok()
+            .filter(|d| (1..=31).contains(d))
+    };
+    let start = words.iter().position(|w| *w == "du")?;
+    let [d1, m1, au, d2, m2, year, ..] = words.get(start + 1..)? else {
+        return None;
+    };
+    if *au != "au" {
+        return None;
+    }
+    let (d1, m1, d2, m2) = (day(d1)?, month(m1)?, day(d2)?, month(m2)?);
+    let year: i32 = match year.len() {
+        2 => 2000 + year.parse::<i32>().ok()?,
+        4 => year.parse().ok()?,
+        _ => return None,
+    };
+    let start_year = if m1 > m2 { year - 1 } else { year };
+    Some(((d1, m1, start_year), (d2, m2, year)))
+}
 
 /// Stable failure codes, translated by the shell.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -277,6 +405,78 @@ mod tests {
         assert_send_sync::<Engine>();
         fn assert_send<T: Send>() {}
         assert_send::<Permit>();
+    }
+
+    #[test]
+    fn only_the_institutions_moodle_is_supported() {
+        let origin = supported_origin().expect("rules name an https Moodle");
+        let root = origin.ascii_serialization();
+        assert!(supports_site(&format!("{root}/")));
+        assert!(supports_site(&format!("{root}/some/path/")));
+        let host = root.trim_start_matches("https://");
+        for other in [
+            format!("http://{host}/"),
+            format!("https://{host}.evil.example/"),
+            format!("https://evil.example/{host}/"),
+            format!("https://user@{host}/"),
+            format!("https://{host}:8443/"),
+            "https://moodle.example.org/".into(),
+            "not a url".into(),
+        ] {
+            assert!(!supports_site(&other), "{other}");
+        }
+    }
+
+    #[test]
+    fn link_labels_give_the_engine_a_week_only_when_complete() {
+        let named = "Edt du 09.11.2026 au 13.11.2026.pdf";
+        assert_eq!(filename_with_week(named, "anything"), named);
+        assert_eq!(
+            filename_with_week("edt.pdf", "Edt du 09 novembre au 13 novembre 26"),
+            "Edt du 09.11.2026 au 13.11.2026.pdf"
+        );
+        assert_eq!(
+            filename_with_week("edt.pdf", "EDT du 29 décembre au 2 janvier 2027"),
+            "Edt du 29.12.2026 au 02.01.2027.pdf"
+        );
+        assert_eq!(
+            filename_with_week("edt.pdf", "Edt du 1er sept. au 5 sept. 26"),
+            "Edt du 01.09.2026 au 05.09.2026.pdf"
+        );
+        for vague in [
+            "Edt du 09 novembre au 13 novembre",
+            "Emploi du temps",
+            "Edt du 9 au 13 novembre 26",
+            "",
+        ] {
+            assert_eq!(filename_with_week("edt.pdf", vague), "edt.pdf", "{vague}");
+        }
+        // More than seven days is not a week: the engine's own check refuses it.
+        assert_eq!(
+            filename_with_week("edt.pdf", "du 1 novembre au 30 novembre 26"),
+            "edt.pdf"
+        );
+    }
+
+    #[test]
+    fn timetable_labels_are_recognised() {
+        for yes in [
+            "Edt du 09 novembre au 13 novembre 26",
+            "EDT semaine 45",
+            "Emploi du temps S1",
+            "Edt du 09.11.2026 au 13.11.2026.pdf",
+            "Semaine du 9 nov. au 13 nov. 2026",
+        ] {
+            assert!(looks_like_timetable(yes), "{yes}");
+        }
+        for no in [
+            "Calendrier synoptique de septembre",
+            "Calendrier mensuel prévisionnel",
+            "Credit",
+            "Règlement des études",
+        ] {
+            assert!(!looks_like_timetable(no), "{no}");
+        }
     }
 
     #[test]

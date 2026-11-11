@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
+<key>NSCalendarsFullAccessUsageDescription</key><string>MoodBuro keeps your saved timetable weeks in a calendar of their own.</string>
+<key>NSCalendarsUsageDescription</key><string>MoodBuro keeps your saved timetable weeks in a calendar of their own.</string>
 <key>CFBundleDevelopmentRegion</key><string>en</string>
 <key>CFBundleLocalizations</key><array><string>fr</string><string>en</string></array>
 <key>CFBundleURLTypes</key><array><dict>

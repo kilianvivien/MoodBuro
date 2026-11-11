@@ -95,6 +95,46 @@ pub struct Exported {
     revealed: bool,
 }
 
+/// Write `contents` to Downloads under the first free name of `names`:
+/// staged privately, synced, then published atomically with a hard link so
+/// an existing file is never replaced. A partial file never remains.
+pub fn publish(
+    app: &AppHandle,
+    names: &[String],
+    contents: &[u8],
+) -> std::io::Result<std::path::PathBuf> {
+    let folder = app.path().download_dir().map_err(std::io::Error::other)?;
+    publish_in(&folder, names, contents)
+}
+
+/// [`publish`] into a given folder.
+pub fn publish_in(
+    folder: &std::path::Path,
+    names: &[String],
+    contents: &[u8],
+) -> std::io::Result<std::path::PathBuf> {
+    let staged = folder.join(format!(".moodburo-{}.partial", uuid::Uuid::new_v4()));
+    let result = (|| {
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&staged)?;
+        file.write_all(contents)?;
+        file.sync_all()?;
+        for name in names {
+            let path = folder.join(name);
+            match std::fs::hard_link(&staged, &path) {
+                Ok(()) => return Ok(path),
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+                Err(error) => return Err(error),
+            }
+        }
+        Err(std::io::Error::from(std::io::ErrorKind::AlreadyExists))
+    })();
+    let _ = std::fs::remove_file(&staged);
+    result
+}
+
 pub fn export(
     app: &AppHandle,
     site_id: Option<&str>,
@@ -134,26 +174,9 @@ pub fn export(
         return Err("No calendar events match these filters.".into());
     }
     let contents = render(&events, &sites, now)?;
-    let folder = app
-        .path()
-        .download_dir()
-        .map_err(|_| "Download folder unavailable.")?;
     let filename = format!("MoodBuro-{}.ics", uuid::Uuid::new_v4());
-    let path = folder.join(&filename);
-    let staged = folder.join(format!(".{filename}.partial"));
-    let mut file = std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&staged)
+    let path = publish(app, std::slice::from_ref(&filename), contents.as_bytes())
         .map_err(|_| "Could not export the calendar.")?;
-    let saved = (|| -> std::io::Result<()> {
-        file.write_all(contents.as_bytes())?;
-        file.sync_all()?;
-        // Hard link publishes atomically without replacing any existing file.
-        std::fs::hard_link(&staged, &path)
-    })();
-    let _ = std::fs::remove_file(&staged);
-    saved.map_err(|_| "Could not export the calendar.")?;
     drop(store);
     let revealed = app.opener().reveal_item_in_dir(&path).is_ok();
     Ok(Exported {

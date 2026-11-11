@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-timetable-calendar"
+description = "Enables the timetable_calendar command without any pre-configured scope."
+commands.allow = ["timetable_calendar"]
+
+[[permission]]
+identifier = "deny-timetable-calendar"
+description = "Denies the timetable_calendar command without any pre-configured scope."
+commands.deny = ["timetable_calendar"]

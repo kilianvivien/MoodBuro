@@ -3,20 +3,21 @@ import { DesktopPreferences } from "../components/DesktopPreferences";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Segmented, Switch } from "../components/ui";
 import {
-  ArrowUp,
-  SlidersHorizontal,
-  Files,
-  Bell,
-  Sparkles,
-  Building2,
   ArrowDown,
+  ArrowUp,
+  Bell,
+  Building2,
+  CalendarDays,
   CircleAlert,
   CircleCheck,
+  Files,
   Languages,
   LoaderCircle,
   Monitor,
   Moon,
   Plus,
+  SlidersHorizontal,
+  Sparkles,
   Sun,
 } from "lucide-react";
 import {
@@ -44,6 +45,7 @@ export const settingsSections = [
   "files",
   "notifications",
   "assistant",
+  "inspcal",
   "organisations",
 ] as const;
 export type SettingsSection = (typeof settingsSections)[number];
@@ -52,6 +54,7 @@ const categoryIcons: Record<SettingsSection, typeof SlidersHorizontal> = {
   files: Files,
   notifications: Bell,
   assistant: Sparkles,
+  inspcal: CalendarDays,
   organisations: Building2,
 };
 
@@ -357,11 +360,14 @@ export function Settings({
   onAdd,
   reminders,
   assistant,
+  timetable,
   section,
   onSection,
 }: {
   reminders?: ReactNode;
   assistant?: ReactNode;
+  /** Settings › InspCal, only when the school's Moodle is added. */
+  timetable?: ReactNode;
   section?: SettingsSection;
   onSection?: (section: SettingsSection) => void;
   desktop: boolean;
@@ -393,7 +399,11 @@ export function Settings({
   onAdd: () => void;
 }) {
   const [localSection, setLocalSection] = useState<SettingsSection>("general");
-  const selected = section ?? localSection;
+  const sections = settingsSections.filter(
+    (id) => id !== "inspcal" || Boolean(timetable),
+  );
+  const wanted = section ?? localSection;
+  const selected = sections.includes(wanted) ? wanted : "general";
   const choose = onSection ?? setLocalSection;
   const tabs = useRef<HTMLDivElement>(null);
   const panel = (id: SettingsSection) => ({
@@ -438,19 +448,18 @@ export function Settings({
         onKeyDown={(event) => {
           const direction =
             event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
-          const index = settingsSections.indexOf(selected);
+          const index = sections.indexOf(selected);
           const next =
             event.key === "Home"
               ? 0
               : event.key === "End"
-                ? settingsSections.length - 1
+                ? sections.length - 1
                 : direction
-                  ? (index + direction + settingsSections.length) %
-                    settingsSections.length
+                  ? (index + direction + sections.length) % sections.length
                   : null;
           if (next != null) {
             event.preventDefault();
-            choose(settingsSections[next]);
+            choose(sections[next]);
             tabs.current
               ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
               .item(next)
@@ -458,7 +467,7 @@ export function Settings({
           }
         }}
       >
-        {settingsSections.map((id) => {
+        {sections.map((id) => {
           const Icon = categoryIcons[id];
           return (
             <button
@@ -616,6 +625,7 @@ export function Settings({
       </div>
       <div {...panel("notifications")}>{reminders}</div>
       <div {...panel("assistant")}>{assistant}</div>
+      {timetable && <div {...panel("inspcal")}>{timetable}</div>}
       <div {...panel("organisations")}>
         <section aria-labelledby="accounts-heading">
           <div className="section-header">

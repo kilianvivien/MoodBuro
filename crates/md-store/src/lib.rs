@@ -190,15 +190,20 @@ pub use course_sync::CourseSync;
 mod offline;
 pub use files::FileIdentity;
 mod reminders;
+mod timetable;
 pub use bookmarks::Bookmark;
 pub use offline::OfflineCopy;
 pub use reminders::{DueReminder, PickError, ReminderPick, ReminderSettings};
+pub use timetable::{
+    week_diff, CommitError, Committed, SessionWrite, StoredSession, TimetableWeek, WeekDiff,
+    WeekSummary,
+};
 pub struct Store(Connection);
 impl Store {
     pub fn open(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 18 {
+        if version > 19 {
             return Err(rusqlite::Error::InvalidQuery);
         }
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; BEGIN;
@@ -237,7 +242,18 @@ impl Store {
             CREATE TABLE IF NOT EXISTS download_details (download_id TEXT PRIMARY KEY REFERENCES downloads(id) ON DELETE CASCADE,bytes INTEGER NOT NULL,source_page TEXT NOT NULL,metadata_applied INTEGER);
             PRAGMA user_version=18; COMMIT;",
         )?;
+        connection.execute_batch(&format!(
+            "BEGIN; {} PRAGMA user_version=19; COMMIT;",
+            timetable::SCHEMA
+        ))?;
         Ok(Self(connection))
+    }
+    /// Copy a database consistently (`VACUUM INTO`) without migrating it.
+    pub fn snapshot(source: &std::path::Path, target: &std::path::Path) -> rusqlite::Result<()> {
+        let connection =
+            Connection::open_with_flags(source, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+        connection.execute("VACUUM INTO ?1", [target.to_string_lossy()])?;
+        Ok(())
     }
     /// Non-secret timing metadata only; one-use keys remain in memory.
     pub fn autologin_minted(&self, id: &str, at: i64) -> rusqlite::Result<()> {
@@ -846,7 +862,7 @@ impl Store {
     pub fn update(&self, site: &Site) -> rusqlite::Result<()> {
         let tx = self.0.unchecked_transaction()?;
         // A different account must start with a fresh, silent notification seed.
-        for table in [
+        for table in timetable::ACCOUNT_TABLES.iter().copied().chain([
             "draft_uploads",
             "calendar_handoffs",
             "course_sync",
@@ -866,7 +882,7 @@ impl Store {
             "events",
             "sync_state",
             "autologin_state",
-        ] {
+        ]) {
             tx.execute(&format!("DELETE FROM {table} WHERE site_id=?1 AND EXISTS (SELECT 1 FROM sites WHERE id=?1 AND user_id<>?2)"), params![site.id, site.user_id])?;
         }
         tx.execute(
@@ -1245,6 +1261,31 @@ mod library_tests {
         store.update(&site).unwrap();
         assert!(store.activities().unwrap().is_empty());
         assert!(store.save_activities("site", 1, 2, &[item]).is_err());
+    }
+    #[test]
+    fn a_snapshot_copies_without_migrating_the_source() {
+        let dir = std::env::temp_dir().join(format!("moodburo-snapshot-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let source = dir.join("index.db");
+        let target = dir.join("index.dev.db");
+        let _ = std::fs::remove_file(&target);
+        {
+            let old = Connection::open(&source).unwrap();
+            old.execute_batch("CREATE TABLE IF NOT EXISTS t(x); PRAGMA user_version=18;")
+                .unwrap();
+        }
+        Store::snapshot(&source, &target).unwrap();
+        let version = |path: &std::path::Path| -> u32 {
+            Connection::open(path)
+                .unwrap()
+                .query_row("PRAGMA user_version", [], |r| r.get(0))
+                .unwrap()
+        };
+        assert_eq!(version(&target), 18);
+        Store::open(&target).unwrap();
+        assert_eq!(version(&target), 19);
+        assert_eq!(version(&source), 18, "the release database is untouched");
+        std::fs::remove_dir_all(dir).unwrap();
     }
     #[test]
     fn course_contexts_are_account_bound_and_ambiguous_contexts_are_unknown() {

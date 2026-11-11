@@ -37,7 +37,56 @@ pub fn file_url(base: &Url, raw: &str) -> Option<Url> {
     }
     Some(url)
 }
+/// Why an in-memory fetch was refused. Never carries the URL or token.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FetchError {
+    /// The source is not this installation's web-service file script.
+    Source,
+    /// The answer exceeded the caller's byte limit (declared or streamed).
+    TooLarge,
+    /// HTML, JSON or a non-PDF body: usually a login or error page.
+    NotPdf,
+    /// The token was refused.
+    Denied,
+    Network,
+}
+impl FetchError {
+    pub fn code(self) -> &'static str {
+        match self {
+            Self::Source => "SOURCE",
+            Self::TooLarge => "TOO_LARGE",
+            Self::NotPdf => "NOT_PDF",
+            Self::Denied => "ACCESS_DENIED",
+            Self::Network => "NETWORK",
+        }
+    }
+}
 impl Client {
+    /// Fetch one course PDF into memory, at most `limit` bytes, for the
+    /// timetable reader: same origin, HTTPS-only, no redirects, token appended
+    /// here only. Nothing is written to disk.
+    pub async fn fetch_course_pdf(
+        &self,
+        token: &str,
+        raw: &str,
+        limit: usize,
+    ) -> Result<Vec<u8>, FetchError> {
+        let mut url = file_url(&self.base, raw).ok_or(FetchError::Source)?;
+        url.query_pairs_mut().append_pair("token", token);
+        let http = reqwest::Client::builder()
+            .https_only(true)
+            .redirect(reqwest::redirect::Policy::none())
+            .timeout(std::time::Duration::from_secs(60))
+            .user_agent(concat!("MoodBuro/", env!("CARGO_PKG_VERSION")))
+            .build()
+            .map_err(|_| FetchError::Network)?;
+        let _permit = self
+            .permits
+            .acquire()
+            .await
+            .map_err(|_| FetchError::Network)?;
+        receive_pdf(&http, url, limit).await
+    }
     pub async fn save_course_file(
         &self,
         token: &str,
@@ -62,6 +111,56 @@ impl Client {
             .map_err(|_| "Could not download this resource.")?;
         receive(&http, url, destination, &mut progress).await
     }
+}
+async fn receive_pdf(
+    http: &reqwest::Client,
+    url: Url,
+    limit: usize,
+) -> Result<Vec<u8>, FetchError> {
+    let mut response = http
+        .get(url)
+        .send()
+        .await
+        .map_err(|_| FetchError::Network)?;
+    match response.status().as_u16() {
+        200 => {}
+        401 | 403 => return Err(FetchError::Denied),
+        _ => return Err(FetchError::Network),
+    }
+    if response
+        .content_length()
+        .is_some_and(|bytes| bytes > limit as u64)
+    {
+        return Err(FetchError::TooLarge);
+    }
+    let mime = response
+        .headers()
+        .get(reqwest::header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .split(';')
+        .next()
+        .unwrap_or("")
+        .trim()
+        .to_ascii_lowercase();
+    if !matches!(
+        mime.as_str(),
+        "application/pdf" | "application/octet-stream" | "application/x-pdf" | ""
+    ) {
+        return Err(FetchError::NotPdf);
+    }
+    let mut body = Vec::new();
+    while let Some(bytes) = response.chunk().await.map_err(|_| FetchError::Network)? {
+        // Enforced while streaming: Content-Length may be absent or wrong.
+        if body.len() + bytes.len() > limit {
+            return Err(FetchError::TooLarge);
+        }
+        body.extend_from_slice(&bytes);
+    }
+    if !body.starts_with(b"%PDF-") {
+        return Err(FetchError::NotPdf);
+    }
+    Ok(body)
 }
 async fn receive(
     http: &reqwest::Client,
@@ -215,5 +314,93 @@ mod tests {
         );
         assert!(!root.join("too-large").exists());
         std::fs::remove_dir_all(root).unwrap();
+    }
+    #[tokio::test]
+    async fn in_memory_pdf_fetch_is_bounded_and_refuses_pages_and_redirects() {
+        let server = MockServer::start().await;
+        let http = reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .build()
+            .unwrap();
+        let pdf = |n: usize| {
+            let mut body = b"%PDF-1.7\n".to_vec();
+            body.resize(n, b'x');
+            body
+        };
+        for (endpoint, response) in [
+            (
+                "/exact",
+                ResponseTemplate::new(200).set_body_raw(pdf(64), "application/pdf"),
+            ),
+            (
+                "/over",
+                ResponseTemplate::new(200).set_body_raw(pdf(65), "application/pdf"),
+            ),
+            (
+                "/login",
+                ResponseTemplate::new(200).set_body_raw("<html>login</html>", "text/html"),
+            ),
+            (
+                "/disguised",
+                ResponseTemplate::new(200).set_body_raw("<html>login</html>", "application/pdf"),
+            ),
+            ("/denied", ResponseTemplate::new(403)),
+            (
+                "/redirect",
+                ResponseTemplate::new(302)
+                    .insert_header("Location", format!("{}/exact", server.uri())),
+            ),
+        ] {
+            Mock::given(path(endpoint))
+                .respond_with(response)
+                .mount(&server)
+                .await;
+        }
+        let url = |p: &str| Url::parse(&format!("{}{p}?token=test-secret", server.uri())).unwrap();
+        assert_eq!(
+            receive_pdf(&http, url("/exact"), 64).await.unwrap().len(),
+            64
+        );
+        assert_eq!(
+            receive_pdf(&http, url("/over"), 64).await.unwrap_err(),
+            FetchError::TooLarge
+        );
+        assert_eq!(
+            receive_pdf(&http, url("/login"), 64).await.unwrap_err(),
+            FetchError::NotPdf
+        );
+        assert_eq!(
+            receive_pdf(&http, url("/disguised"), 64).await.unwrap_err(),
+            FetchError::NotPdf
+        );
+        assert_eq!(
+            receive_pdf(&http, url("/denied"), 64).await.unwrap_err(),
+            FetchError::Denied
+        );
+        assert_eq!(
+            receive_pdf(&http, url("/redirect"), 64).await.unwrap_err(),
+            FetchError::Network
+        );
+    }
+    #[tokio::test]
+    async fn in_memory_fetch_enforces_the_limit_without_content_length() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut request = [0_u8; 1024];
+            let _ = socket.read(&mut request).await;
+            // HTTP/1.0 style: no Content-Length, body ends at close.
+            let mut answer = b"HTTP/1.1 200 OK\r\nContent-Type: application/pdf\r\nConnection: close\r\n\r\n%PDF-".to_vec();
+            answer.extend(std::iter::repeat_n(b'x', 200));
+            let _ = socket.write_all(&answer).await;
+        });
+        let http = reqwest::Client::new();
+        let url = Url::parse(&format!("http://{address}/stream")).unwrap();
+        assert_eq!(
+            receive_pdf(&http, url, 100).await.unwrap_err(),
+            FetchError::TooLarge
+        );
     }
 }
