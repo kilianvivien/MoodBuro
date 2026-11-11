@@ -305,6 +305,21 @@ const french: Record<string, string> = {
   "Use up to 4 letters or numbers for the short label.":
     "Utilisez au maximum 4 lettres ou chiffres pour l’abréviation.",
 
+  "Could not update offline freshness.":
+    "Impossible de mettre à jour la date d’actualisation hors connexion.",
+
+  "Could not remove this offline copy. The file was kept; try again.":
+    "Impossible de retirer cette copie hors connexion. Le fichier a été conservé ; réessayez.",
+  "Could not remove the offline entry. Any archived file remains in ~/Moodle/.trash; reload and try again.":
+    "Impossible de retirer l’entrée hors connexion. Tout fichier archivé reste dans ~/Moodle/.trash ; rechargez la liste et réessayez.",
+
+  "Course sync was stopped.": "L’actualisation du cours a été arrêtée.",
+  "Could not read course sync settings.":
+    "Impossible de lire les préférences d’actualisation des cours.",
+  "Could not save course sync settings. Reopen the course files.":
+    "Impossible d’enregistrer les préférences d’actualisation. Rouvrez les fichiers du cours.",
+  "Could not change course sync. Reopen the course files.":
+    "Impossible de modifier l’actualisation. Rouvrez les fichiers du cours.",
   // Browser preview (ipc.ts)
   "Open the desktop app with pnpm tauri dev to manage sign-in.":
     "Ouvrez l’app de bureau avec pnpm tauri dev pour gérer les connexions.",

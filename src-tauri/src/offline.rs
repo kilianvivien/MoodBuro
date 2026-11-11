@@ -348,13 +348,16 @@ pub async fn save(
         let result = match files.items.iter().find(|f| f.key == key) {
             Some(resource) => {
                 save_one(
-                    app,
-                    &client,
-                    &token,
-                    &saved_site,
-                    &course,
+                    &SaveContext {
+                        app,
+                        client: &client,
+                        token: &token,
+                        site: &saved_site,
+                        course_info: &course,
+                        folder: &folder,
+                        job: None,
+                    },
                     resource,
-                    &folder,
                 )
                 .await
             }
@@ -377,15 +380,76 @@ pub async fn save(
     }
     Ok(outcomes)
 }
-async fn save_one(
-    app: &AppHandle,
-    client: &md_moodle::Client,
-    token: &str,
-    site: &md_store::Site,
-    course_info: &md_store::Course,
-    resource: &Resource,
-    folder: &Path,
-) -> Result<bool, String> {
+/// Scheduled work uses the same guarded downloader and durable per-resource checkpoints.
+pub async fn sync_course(app: &AppHandle, job: &md_store::CourseSync) -> Result<(), String> {
+    let state = app.state::<AppState>();
+    let _lock = state
+        .offline_job
+        .try_lock()
+        .map_err(|_| "Another offline transfer is running. Wait for it to finish.")?;
+    let course_info = course(app, &job.site_id, job.course_id, job.user_id)?;
+    let (site, client, token) = library::session(app, &job.site_id)?;
+    if site.user_id != job.user_id {
+        return Err("Course sync was stopped.".into());
+    }
+    let files = resources(app, &job.site_id, job.course_id, job.user_id).await?;
+    let keys = state
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?
+        .sync_pending(job)
+        .map_err(|_| "Could not read offline files.")?;
+    let folder = crate::downloads::folder(app, &site, Some(&course_info))?;
+    for key in keys {
+        let resource = files.items.iter().find(|f| f.key == key);
+        let error = if let Some(resource) = resource {
+            save_one(
+                &SaveContext {
+                    app,
+                    client: &client,
+                    token: &token,
+                    site: &site,
+                    course_info: &course_info,
+                    folder: &folder,
+                    job: Some(job),
+                },
+                resource,
+            )
+            .await
+            .err()
+        } else {
+            None
+        };
+        state
+            .store
+            .lock()
+            .map_err(|_| "Site storage unavailable.")?
+            .sync_checkpoint(job, &key, error.as_deref(), resource.is_none())
+            .map_err(|_| "Course sync was stopped.")?;
+        crate::course_sync::changed(app);
+    }
+    Ok(())
+}
+
+struct SaveContext<'a> {
+    app: &'a AppHandle,
+    client: &'a md_moodle::Client,
+    token: &'a str,
+    site: &'a md_store::Site,
+    course_info: &'a md_store::Course,
+    folder: &'a Path,
+    job: Option<&'a md_store::CourseSync>,
+}
+async fn save_one(context: &SaveContext<'_>, resource: &Resource) -> Result<bool, String> {
+    let SaveContext {
+        app,
+        client,
+        token,
+        site,
+        course_info,
+        folder,
+        job,
+    } = *context;
     course(app, &site.id, course_info.id, site.user_id)?;
     if resource
         .bytes
@@ -454,6 +518,14 @@ async fn save_one(
             "This offline selection belongs to another account. Reopen the course files.".into(),
         );
     }
+    if let Some(job) = job {
+        if !store
+            .sync_current(job)
+            .map_err(|_| "Could not read offline files.")?
+        {
+            return Err("Course sync was stopped.".into());
+        }
+    }
     let previous = store
         .offline_copies(&site.id, course_info.id)
         .map_err(|_| "Could not read offline files.")?;
@@ -462,14 +534,32 @@ async fn save_one(
     if let Some(old) = previous.iter().find(|old| old.resource_key == resource.key) {
         let path = Path::new(&old.local_path);
         if disk::unchanged(&managed, path, &old.sha256, &hash) {
+            store
+                .offline_refreshed(&old.id, &site.id, site.user_id, now())
+                .map_err(|_| "Could not update offline freshness.")?;
             return Ok(true);
         }
     }
     disk::managed_path(&managed, &destination)
         .map_err(|_| "Could not safely publish this offline file.")?;
     quarantine(&destination)?;
-    let published = policy::publish(&destination, &section, &resource.filename)
-        .map_err(|_| "Could not safely publish this offline file.")?;
+    let candidates = store
+        .shared_files(&md_store::FileIdentity {
+            site: &site.id,
+            user: site.user_id,
+            course: course_info.id,
+            filename: &resource.filename,
+            sha256: &hash,
+        })
+        .map_err(|_| "Could not read offline files.")?;
+    let reused = disk::reusable(&managed, &candidates, &hash);
+    let shared = reused.is_some();
+    let published = match reused {
+        Some(path) => path,
+        None => policy::publish(&destination, &section, &resource.filename)
+            .map_err(|_| "Could not safely publish this offline file.")?,
+    };
+    let refreshed_at = now();
     let copy = md_store::OfflineCopy {
         id: uuid::Uuid::new_v4().to_string(),
         site_id: site.id.clone(),
@@ -485,13 +575,14 @@ async fn save_one(
         local_path: published.to_string_lossy().into_owned(),
         sha256: hash,
         bytes,
-        saved_at: now(),
+        saved_at: refreshed_at,
+        refreshed_at,
     };
     if store.save_offline_copy(&copy, site.user_id).is_err() {
         // Leave the published file intact; do not erase a file the user may have opened.
         return Err("The file was saved, but its offline index could not be updated. Find it in the course folder.".into());
     }
-    Ok(false)
+    Ok(shared)
 }
 pub fn open(
     app: &AppHandle,
@@ -526,6 +617,64 @@ pub fn open(
         app.opener().open_path(path.to_string_lossy(), None::<&str>)
     }
     .map_err(|_| "Could not open this offline file.".into())
+}
+
+/// Remove one version, never every version of a resource. The store lock binds
+/// filesystem handling and metadata removal to the currently connected account.
+pub fn remove(
+    app: &AppHandle,
+    site: &str,
+    id: i64,
+    user: i64,
+    copy_id: &str,
+) -> Result<&'static str, String> {
+    course(app, site, id, user)?;
+    let state = app.state::<AppState>();
+    let _job = state
+        .offline_job
+        .try_lock()
+        .map_err(|_| "Another offline transfer is running. Wait for it to finish.")?;
+    let store = state
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?;
+    if !store
+        .sites()
+        .map_err(|_| "Could not read sites.")?
+        .iter()
+        .any(|s| s.id == site && s.user_id == user)
+    {
+        return Err(
+            "This offline selection belongs to another account. Reopen the course files.".into(),
+        );
+    }
+    let copy = store
+        .offline_copies(site, id)
+        .map_err(|_| "Could not read offline files.")?
+        .into_iter()
+        .find(|c| c.id == copy_id)
+        .ok_or("This offline file is unavailable. Save a fresh copy from the course.")?;
+    let shared = store
+        .file_referenced(&copy.local_path, copy_id)
+        .map_err(|_| "Could not read offline files.")?;
+    let result = if shared {
+        disk::Removal::Kept
+    } else {
+        disk::remove_copy(
+            &root(app)?,
+            Path::new(&copy.local_path),
+            &copy.sha256,
+            &uuid::Uuid::new_v4().to_string(),
+        )
+        .map_err(|_| "Could not remove this offline copy. The file was kept; try again.")?
+    };
+    store.remove_offline_copy(copy_id, site, id, user)
+        .map_err(|_| "Could not remove the offline entry. Any archived file remains in ~/Moodle/.trash; reload and try again.")?;
+    Ok(match result {
+        disk::Removal::Archived => "archived",
+        disk::Removal::Kept => "kept",
+        disk::Removal::Missing => "missing",
+    })
 }
 
 #[cfg(test)]

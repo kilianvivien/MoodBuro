@@ -102,9 +102,222 @@ pub fn unchanged(root: &Path, path: &Path, snapshot: &str, incoming: &str) -> bo
         && hash(path).is_ok_and(|local| local == snapshot)
 }
 
+/// At startup only, discard incomplete payloads in private staging folders.
+/// Never traverse symlinks or archives and never delete a published document.
+pub fn clean_staging(root: &Path) -> usize {
+    fn walk(root: &Path, folder: &Path, depth: usize, budget: &mut usize) -> usize {
+        if depth > 3 || *budget == 0 {
+            return 0;
+        }
+        let Ok(meta) = std::fs::symlink_metadata(folder) else {
+            return 0;
+        };
+        if !meta.is_dir() || meta.file_type().is_symlink() {
+            return 0;
+        }
+        let Ok(entries) = std::fs::read_dir(folder) else {
+            return 0;
+        };
+        let mut removed = 0;
+        for entry in entries.flatten() {
+            if *budget == 0 {
+                break;
+            }
+            *budget -= 1;
+            let path = entry.path();
+            let name = entry.file_name();
+            if name == ".trash" {
+                continue;
+            }
+            let Ok(meta) = std::fs::symlink_metadata(&path) else {
+                continue;
+            };
+            if !meta.is_dir() || meta.file_type().is_symlink() {
+                continue;
+            }
+            if name == ".moodburo-staging" {
+                let Ok(staged) = std::fs::read_dir(&path) else {
+                    continue;
+                };
+                for item in staged.flatten() {
+                    if *budget == 0 {
+                        break;
+                    }
+                    *budget -= 1;
+                    let id = item.file_name().to_string_lossy().into_owned();
+                    if id.len() != 36 || !id.bytes().all(|b| b.is_ascii_hexdigit() || b == b'-') {
+                        continue;
+                    }
+                    let payload = item.path().join("payload");
+                    if managed_path(root, &payload).is_ok()
+                        && std::fs::remove_file(&payload).is_ok()
+                    {
+                        removed += 1;
+                        let _ = std::fs::remove_dir(item.path());
+                    }
+                }
+            } else {
+                removed += walk(root, &path, depth + 1, budget);
+            }
+        }
+        removed
+    }
+    walk(root, root, 0, &mut 10000)
+}
+
+/// Candidates must come from the account-scoped index; bytes are checked again.
+pub fn reusable(root: &Path, paths: &[String], incoming: &str) -> Option<std::path::PathBuf> {
+    paths
+        .iter()
+        .map(std::path::PathBuf::from)
+        .find(|path| unchanged(root, path, incoming, incoming))
+}
+
+/// Removal is reversible: intact copies are archived, edited/unsafe paths stay put.
+#[derive(Debug, PartialEq, Eq)]
+pub enum Removal {
+    Archived,
+    Kept,
+    Missing,
+}
+pub fn remove_copy(
+    root: &Path,
+    path: &Path,
+    snapshot: &str,
+    archive_id: &str,
+) -> io::Result<Removal> {
+    // Never use a caller-supplied path component without validating it.
+    if archive_id.is_empty()
+        || !archive_id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-')
+    {
+        return Err(io::Error::other("Invalid archive identity"));
+    }
+    if let Err(error) = std::fs::symlink_metadata(path) {
+        return if error.kind() == io::ErrorKind::NotFound {
+            Ok(Removal::Missing)
+        } else {
+            Err(error)
+        };
+    }
+    if managed_path(root, path).is_err() {
+        return Ok(Removal::Kept);
+    }
+    if hash(path)? != snapshot {
+        return Ok(Removal::Kept);
+    }
+    let trash = root.join(".trash");
+    crate::downloads::directory(&trash)?;
+    // A fresh directory prevents replacing an earlier archived version.
+    let destination = trash.join(archive_id);
+    std::fs::create_dir(&destination)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&destination, std::fs::Permissions::from_mode(0o700))?;
+    }
+    // Revalidate after creating the archive directory. No file contents are deleted.
+    if !unchanged(root, path, snapshot, snapshot) {
+        let _ = std::fs::remove_dir(&destination);
+        return Ok(Removal::Kept);
+    }
+    let target = destination.join(
+        path.file_name()
+            .ok_or_else(|| io::Error::other("Invalid file"))?,
+    );
+    std::fs::rename(path, target)?;
+    Ok(Removal::Archived)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn startup_cleanup_removes_only_partial_payloads_not_archives_documents_or_symlinks() {
+        let root =
+            std::env::temp_dir().join(format!("moodburo-staging-clean-{}", std::process::id()));
+        let id = "12345678-1234-1234-1234-123456789abc";
+        let stage = root.join("site/course/section/.moodburo-staging").join(id);
+        let archive = root.join(".trash").join(".moodburo-staging").join(id);
+        std::fs::create_dir_all(&stage).unwrap();
+        std::fs::create_dir_all(&archive).unwrap();
+        std::fs::write(stage.join("payload"), b"partial").unwrap();
+        std::fs::write(archive.join("payload"), b"archived").unwrap();
+        let document = root.join("site/course/notes.pdf");
+        std::fs::write(&document, b"published").unwrap();
+        assert_eq!(clean_staging(&root), 1);
+        assert!(document.exists());
+        assert!(archive.join("payload").exists());
+        assert_eq!(clean_staging(&root), 0);
+        std::fs::create_dir_all(&stage).unwrap();
+        #[cfg(unix)]
+        {
+            std::os::unix::fs::symlink(&document, stage.join("payload")).unwrap();
+            assert_eq!(clean_staging(&root), 0);
+        }
+        assert_eq!(std::fs::read(document).unwrap(), b"published");
+        std::fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn removal_archives_only_intact_copies_and_never_replaces_an_archive() {
+        let root = std::env::temp_dir().join(format!("moodburo-removal-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let file = root.join("notes.txt");
+        std::fs::write(&file, "original").unwrap();
+        let snapshot = hash(&file).unwrap();
+        assert_eq!(
+            remove_copy(&root, &file, &snapshot, "first").unwrap(),
+            Removal::Archived
+        );
+        assert!(!file.exists());
+        assert_eq!(
+            std::fs::read_to_string(root.join(".trash/first/notes.txt")).unwrap(),
+            "original"
+        );
+        std::fs::write(&file, "original").unwrap();
+        assert!(remove_copy(&root, &file, &snapshot, "first").is_err());
+        assert!(file.exists());
+        std::fs::write(&file, "local edits").unwrap();
+        assert_eq!(
+            remove_copy(&root, &file, &snapshot, "second").unwrap(),
+            Removal::Kept
+        );
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "local edits");
+        assert_eq!(
+            remove_copy(&root, &root.join("missing"), &snapshot, "third").unwrap(),
+            Removal::Missing
+        );
+        assert!(remove_copy(&root, &file, &snapshot, "../escape").is_err());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    #[cfg(unix)]
+    fn removal_refuses_symlinks_outside_paths_and_unsafe_archive_folders() {
+        let root =
+            std::env::temp_dir().join(format!("moodburo-removal-links-{}", std::process::id()));
+        let managed = root.join("managed");
+        std::fs::create_dir_all(&managed).unwrap();
+        let outside = root.join("outside.txt");
+        std::fs::write(&outside, "kept").unwrap();
+        let snapshot = hash(&outside).unwrap();
+        assert_eq!(
+            remove_copy(&managed, &outside, &snapshot, "outside").unwrap(),
+            Removal::Kept
+        );
+        std::os::unix::fs::symlink(&outside, managed.join("linked")).unwrap();
+        assert_eq!(
+            remove_copy(&managed, &managed.join("linked"), &snapshot, "linked").unwrap(),
+            Removal::Kept
+        );
+        std::os::unix::fs::symlink(&root, managed.join(".trash")).unwrap();
+        let file = managed.join("notes.txt");
+        std::fs::write(&file, "kept").unwrap();
+        assert!(remove_copy(&managed, &file, &snapshot, "unsafe").is_err());
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "kept");
+        assert_eq!(std::fs::read_to_string(&outside).unwrap(), "kept");
+        std::fs::remove_dir_all(root).unwrap();
+    }
     #[test]
     fn refresh_preserves_local_edits_and_server_versions_and_missing_copies() {
         let root = std::env::temp_dir().join(format!("moodburo-snapshot-{}", std::process::id()));

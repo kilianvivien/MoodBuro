@@ -63,13 +63,64 @@ const en = {
     footnote:
       "MoodBuro keeps the latest 100 notification subjects per organisation on this Mac. Opening one shows that organisation’s notifications page in Moodle.",
   },
+  sync: {
+    title: "Automatic Offline Refresh",
+    selected: "Selected for automatic refresh",
+    hint: "Opt in for selected files in this course. Refresh runs only while MoodBuro is open, one file at a time, with retry backoff. Saved copies remain usable after failures. Unfinished files restart after cancellation or quit; completed files are kept. Remote deletions and renames never remove local files.",
+    schedule: "Refresh",
+    paused: "Paused",
+    hourly: "Every Hour",
+    daily: "Every Day",
+    cancel: "Cancel Current Refresh",
+    now: "Refresh Now",
+    enable: "Refresh Selected Files Daily",
+    replaceSelection: "Use Selected Files for Automatic Refresh",
+    selectionHint:
+      "Select 1–50 files from the Moodle list below. Applying a new selection replaces this course’s schedule selection and stops any current attempt. Files no longer selected stay on the Mac. Browser demo records preferences but does not run background transfers.",
+    count: (total: number, pending: number) =>
+      `${total} selected · ${pending} remaining`,
+    next: (date: string) => `Next attempt while the app is open: ${date}`,
+    missing: (count: number) =>
+      `${count} selected files are no longer returned by Moodle. They may have been renamed, moved or removed, or access may have changed. Saved copies are kept. Load the file list to review the selection.`,
+    states: {
+      paused: "Paused",
+      waiting: "Waiting to refresh",
+      running: "Refreshing selected files…",
+      idle: "Refresh complete",
+      error: "Refresh failed; unfinished files will retry",
+      cancelled:
+        "Current refresh cancelled; the next scheduled refresh remains enabled",
+      interrupted: "Recovering unfinished files after restart",
+    },
+  },
   offline: {
     files: "Files…",
     filesLabel: (name: string) => `Offline files for ${name}`,
     title: "Course files",
     back: "Back to Courses",
     openCourse: "Open Course in Moodle",
-    hint: "Save selected plain files from Moodle resources and folders. Saved copies open without a connection. Loading and refreshing need a connection and permission to download files. Refresh is manual and one-way: changed files are saved alongside existing copies, local edits are kept, and Moodle deletions never delete local files. Account removal keeps files in the course’s Finder folder but clears this list. This is not a complete offline course.",
+    hint: "Save selected plain files from Moodle resources and folders. Saved copies open without a connection. Loading and refreshing need a connection and permission to download files. Refresh is one-way: changed files are saved alongside existing copies, local edits are kept, and Moodle deletions never delete local files. Account removal keeps files in the course’s Finder folder but clears this list. This is not a complete offline course.",
+    remove: "Remove Copy…",
+    confirmRemove: "Remove Copy",
+    removeLabel: (name: string) => `Remove saved copy of ${name}`,
+    removeTitle: (name: string, site: string) =>
+      `Remove “${name}” from ${site}?`,
+    removeBody:
+      "Only this saved version will leave the offline list. An unchanged file moves to ~/Moodle/.trash, where it stays until you remove it in Finder. A locally edited file stays in its current folder. A file shared with another saved entry or download also stays in place. Other versions and Moodle files are kept. This does not free disk space immediately. An automatic refresh selection may save this file again; pause or change the selection to prevent that.",
+    removed: {
+      archived:
+        "Copy removed. The unchanged file is recoverable in ~/Moodle/.trash (Finder → Go → Go to Folder). No automatic cleanup is applied.",
+      kept: "Entry removed. The file was edited, shared with another saved entry or download, or could not be safely moved, so it was kept in its current folder.",
+      missing: "Unavailable copy removed from the list. No file was moved.",
+    },
+    available: "Available offline",
+    notSaved: "Not saved on this Mac",
+    copyMissing: "Saved copy unavailable",
+    lastRefreshed: (date: string) => `Last successful refresh: ${date}`,
+    freshnessHint:
+      "Refresh manually or enable a schedule for selected files. Moodle files may have changed since the last successful refresh. Local edits and previous versions are kept.",
+    refreshFailed:
+      "Refresh failed. You can still open this saved copy; it may differ from Moodle.",
     savedTitle: "Saved on This Mac",
     availableTitle: "Available from Moodle",
     load: "Load File List",
@@ -632,13 +683,67 @@ const fr: Messages = {
     footnote:
       "MoodBuro conserve sur ce Mac les objets des 100 dernières notifications de chaque organisation. En ouvrir une affiche la page des notifications de cette organisation dans Moodle.",
   },
+  sync: {
+    title: "Actualisation hors connexion automatique",
+    selected: "Choisi pour l’actualisation automatique",
+    hint: "Activez-la pour les fichiers choisis dans ce cours. Elle fonctionne uniquement lorsque MoodBuro est ouvert, un fichier à la fois, avec un délai croissant entre les échecs. Les copies restent consultables en cas d’échec. Après annulation ou fermeture, les fichiers partiels redémarrent\u00a0; les fichiers terminés sont conservés. Les suppressions et changements de nom distants ne suppriment aucun fichier local.",
+    schedule: "Actualisation",
+    paused: "En pause",
+    hourly: "Toutes les heures",
+    daily: "Chaque jour",
+    cancel: "Annuler l’actualisation en cours",
+    now: "Actualiser maintenant",
+    enable: "Actualiser chaque jour les fichiers choisis",
+    replaceSelection: "Utiliser la sélection pour l’actualisation automatique",
+    selectionHint:
+      "Choisissez 1 à 50 fichiers dans la liste Moodle ci-dessous. Appliquer une nouvelle sélection remplace celle du cours et arrête la tentative en cours. Les fichiers désélectionnés restent sur le Mac. La démonstration enregistre les préférences sans transfert en arrière-plan.",
+    count: (total: number, pending: number) =>
+      `${total} sélectionnés · ${pending} restants`,
+    next: (date: string) =>
+      `Prochaine tentative si l’app est ouverte\u00a0: ${date}`,
+    missing: (count: number) =>
+      `${count} fichiers choisis ne sont plus renvoyés par Moodle. Leur nom, emplacement ou accès a pu changer, ou ils ont été supprimés. Les copies sont conservées. Chargez la liste pour revoir la sélection.`,
+    states: {
+      paused: "En pause",
+      waiting: "En attente d’actualisation",
+      running: "Actualisation des fichiers choisis…",
+      idle: "Actualisation terminée",
+      error: "Échec\u00a0; les fichiers restants seront réessayés",
+      cancelled:
+        "Tentative annulée\u00a0; la prochaine actualisation reste active",
+      interrupted: "Reprise des fichiers restants après redémarrage",
+    },
+  },
   offline: {
     files: "Fichiers…",
     filesLabel: (name: string) => `Fichiers hors connexion de ${name}`,
     title: "Fichiers du cours",
     back: "Retour aux cours",
     openCourse: "Ouvrir le cours dans Moodle",
-    hint: "Enregistrez des fichiers choisis dans les ressources et dossiers Moodle. Les copies s’ouvrent sans connexion. Le chargement et l’actualisation nécessitent une connexion et l’autorisation de télécharger. L’actualisation est manuelle et à sens unique\u00a0: les fichiers modifiés sont enregistrés à côté des copies existantes, les modifications locales sont conservées et les suppressions Moodle ne suppriment aucun fichier local. Retirer un compte conserve les fichiers dans le dossier du cours du Finder mais efface cette liste. Il ne s’agit pas d’un cours hors connexion complet.",
+    hint: "Enregistrez des fichiers choisis dans les ressources et dossiers Moodle. Les copies s’ouvrent sans connexion. Le chargement et l’actualisation nécessitent une connexion et l’autorisation de télécharger. L’actualisation est à sens unique\u00a0: les fichiers modifiés sont enregistrés à côté des copies existantes, les modifications locales sont conservées et les suppressions Moodle ne suppriment aucun fichier local. Retirer un compte conserve les fichiers dans le dossier du cours du Finder mais efface cette liste. Il ne s’agit pas d’un cours hors connexion complet.",
+    remove: "Retirer la copie…",
+    confirmRemove: "Retirer la copie",
+    removeLabel: (name: string) => `Retirer la copie enregistrée de ${name}`,
+    removeTitle: (name: string, site: string) =>
+      `Retirer « ${name} » de ${site}\u00a0?`,
+    removeBody:
+      "Seule cette version quitte la liste hors connexion. Un fichier inchangé est déplacé dans ~/Moodle/.trash, où il reste jusqu’à son retrait dans le Finder. Un fichier modifié localement reste dans son dossier actuel, tout comme un fichier partagé avec une autre entrée ou un téléchargement. Les autres versions et les fichiers Moodle sont conservés. L’espace disque n’est pas libéré immédiatement. Une sélection d’actualisation automatique peut enregistrer à nouveau ce fichier\u00a0; mettez-la en pause ou modifiez-la pour l’éviter.",
+    removed: {
+      archived:
+        "Copie retirée. Le fichier inchangé reste récupérable dans ~/Moodle/.trash (Finder → Aller → Aller au dossier). Aucun nettoyage automatique n’est appliqué.",
+      kept: "Entrée retirée. Le fichier a été modifié, est partagé avec une autre entrée ou un téléchargement, ou n’a pas pu être déplacé en toute sécurité ; il reste dans son dossier actuel.",
+      missing:
+        "Copie indisponible retirée de la liste. Aucun fichier n’a été déplacé.",
+    },
+    available: "Disponible hors connexion",
+    notSaved: "Non enregistré sur ce Mac",
+    copyMissing: "Copie enregistrée indisponible",
+    lastRefreshed: (date: string) =>
+      `Dernière actualisation réussie\u00a0: ${date}`,
+    freshnessHint:
+      "Actualisez manuellement ou activez une fréquence pour les fichiers choisis. Les fichiers Moodle peuvent avoir changé depuis la dernière actualisation réussie. Les modifications locales et les versions précédentes sont conservées.",
+    refreshFailed:
+      "Échec de l’actualisation. Cette copie reste consultable ; elle peut différer de Moodle.",
     savedTitle: "Enregistrés sur ce Mac",
     availableTitle: "Disponibles dans Moodle",
     load: "Charger la liste des fichiers",

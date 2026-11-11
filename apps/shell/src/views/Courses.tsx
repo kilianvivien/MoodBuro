@@ -216,6 +216,7 @@ export function Courses({
         <CourseFiles
           key={`${site.id}:${site.userId}:${selectedCourse.id}`}
           course={selectedCourse}
+          siteName={site.name}
           userId={site.userId}
           onBack={() => setSelectedCourse(null)}
           onOpen={() => onOpenCourse(site.id, selectedCourse.id)}

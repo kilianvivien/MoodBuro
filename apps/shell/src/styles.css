@@ -2402,3 +2402,15 @@ div.assistant-text {
   flex-wrap: wrap;
   font-size: var(--text-small);
 }
+
+/* Offline-copy actions wrap beneath metadata in narrow content areas. */
+.offline-saved .list-row {
+  flex-wrap: wrap;
+}
+.offline-saved .row-text {
+  flex-basis: 200px;
+}
+.offline-saved .row-actions {
+  max-width: 100%;
+  flex-wrap: wrap;
+}

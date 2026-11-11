@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-course-sync-configure"
+description = "Enables the course_sync_configure command without any pre-configured scope."
+commands.allow = ["course_sync_configure"]
+
+[[permission]]
+identifier = "deny-course-sync-configure"
+description = "Denies the course_sync_configure command without any pre-configured scope."
+commands.deny = ["course_sync_configure"]

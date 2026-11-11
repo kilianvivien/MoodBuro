@@ -87,15 +87,33 @@ The PRD retains M3 as the macOS v1.0 gate, but its embedded roadmap does not sup
 
 ### B1 — course sync and shared file identity
 
-- [ ] Add a “Make available offline” workflow for selected Moodle resources, building on A3 saved files. Define supported resource types (downloadable documents first; assess Moodle pages/books separately) and let users consult saved copies without a connection or during poor connectivity.
-- [ ] Show offline availability, last successful refresh and stale/missing-copy states; offer saved copies when the network is unreliable, retain the last usable copy after a failed refresh and allow users to remove offline copies explicitly.
-- [ ] Spike the existing A3 index/downloader against OS-6/OS-7 and DL-2/DL-3; define stable file identity, shared sync/download lookup and schema migration before adding another transfer path.
-- [ ] Add explicit per-course sync selection, scheduled refresh, bounded concurrency/backoff and visible status/cancellation.
-- [ ] Define and implement restart/resume, server rename/deletion, local-edit conflicts and `.trash/` retention semantics. Preview destructive effects and protect local edits; A3 currently saves alongside existing files.
-- [ ] Reuse unchanged local files for browsing downloads and refresh changed versions under the agreed policy; retain safe endpoint, quarantine and account-isolation boundaries.
+**Selected batch — 11 November 2026:** offline availability and freshness, building on A3 rather than creating another downloader.
+
+- [x] Distinguish available offline, missing saved copy and not saved in the resource chooser.
+- [x] Persist/display the last successful refresh separately from the original save time, including unchanged-file reuse (schema 13).
+- [x] Keep existing copies visible and openable after failed refreshes, with FR/EN feedback.
+- [ ] Qualify the slice against live Moodle and an installed Mac app; see [offline QA](offline-files-qa.md).
+
+**Second batch — 11 November 2026:**
+
+- [x] Remove a single saved version with account/course-bound IPC and inline FR/EN confirmation naming the file and organisation.
+- [x] Archive intact copies in `~/Moodle/.trash`; retain edited/unsafe files in place and remove missing entries without touching files.
+- [x] Retain archives indefinitely with no automatic purge; explain Finder recovery and that removal does not immediately free disk space.
+- [ ] Qualify removal, recovery, narrow layouts and VoiceOver in the installed app.
+
+**Third batch — 11 November 2026:** shared byte-verified local lookup, schema 14/15, persistent per-course resource selections, hourly/daily/paused schedules, capped retry backoff, cancellation, checkpoint recovery and stale partial-payload cleanup are implemented. [ADR 0002](adr/0002-selected-file-sync.md) defines identity, safe rename/deletion/local-edit handling and retention. Shared lookup avoids duplicate publication after transfer; it does not yet eliminate repeated network traffic. Resource-level recovery restarts unfinished files, without HTTP Range resume. Full OS-6 mirroring and pre-transfer DL-3 optimization remain open requirements.
+
+Implementation checks below are for this bounded selected-resource policy; the original B1 exit/qualification gate remains open.
+
+- [x] Add a “Make available offline” workflow for selected Moodle resources, building on A3 saved files. Define supported resource types (downloadable documents first; assess Moodle pages/books separately) and let users consult saved copies without a connection or during poor connectivity.
+- [x] Show offline availability, last successful refresh and stale/missing-copy states; offer saved copies when the network is unreliable, retain the last usable copy after a failed refresh and allow users to remove offline copies explicitly.
+- [x] Spike the existing A3 index/downloader against OS-6/OS-7 and DL-2/DL-3; define stable file identity, shared sync/download lookup and schema migration before adding another transfer path.
+- [x] Add explicit per-course sync selection, scheduled refresh, bounded concurrency/backoff and visible status/cancellation.
+- [x] Define and implement restart/resume, server rename/deletion, local-edit conflicts and `.trash/` retention semantics. Preview destructive effects and protect local edits; A3 currently saves alongside existing files.
+- [x] Reuse unchanged local files for browsing downloads and refresh changed versions under the agreed policy; retain safe endpoint, quarantine and account-isolation boundaries.
 - [ ] Verify offline restart and resource consultation with no connection, slow/intermittent connectivity and failed refreshes, alongside interrupted transfers, permission loss, disk pressure, account replacement and Spotlight discovery on installed builds.
 
-**Dependencies:** existing course/offline caches; qualify file contracts while building. **Exit:** selected resources remain readable offline or on a poor connection, with clear freshness information; selected courses refresh predictably without duplicate transfers or local data loss, including recovery across restart. Full sync must not be marked done based on manual A3 refresh.
+**Dependencies:** existing course/offline caches; qualify file contracts while building. **Exit:** selected resources remain readable offline or on a poor connection, with clear freshness information; selected courses refresh predictably without duplicate transfers or local data loss, including recovery across restart. **Gate remains open:** current reuse prevents duplicate published files; eliminating duplicate network transfers and the installed/live qualification still need evidence. Full sync must not be marked done based on manual A3 refresh.
 
 ### B2 — live calendar integration
 

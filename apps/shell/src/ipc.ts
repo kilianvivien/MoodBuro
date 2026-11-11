@@ -85,6 +85,7 @@ export interface OfflineCopy {
   sectionName: string;
   bytes: number;
   savedAt: number;
+  refreshedAt: number;
   available: boolean;
   needsConfirmation: boolean;
 }
@@ -92,6 +93,28 @@ export interface OfflineOutcome {
   key: string;
   reused: boolean;
   error: string | null;
+}
+export interface CourseSync {
+  siteId: string;
+  userId: number;
+  courseId: number;
+  generation: number;
+  interval: number;
+  state:
+    | "paused"
+    | "waiting"
+    | "running"
+    | "idle"
+    | "error"
+    | "cancelled"
+    | "interrupted";
+  nextRun: number;
+  refreshedAt: number;
+  failures: number;
+  error: string | null;
+  keys: string[];
+  pending: number;
+  missing: number;
 }
 export interface OfflineProgress {
   siteId: string;
@@ -542,6 +565,7 @@ const assistantWidth = (width: number) =>
 const demoReminders = new Map<string, ReminderSettings>();
 let demoPicks: ReminderPick[] = [];
 const demoOfflineCopies: OfflineCopy[] = [];
+const demoCourseSyncs: CourseSync[] = [];
 const demoResources: OfflineResource[] = [
   {
     key: "a".repeat(64),
@@ -929,13 +953,15 @@ export const ipc = {
           error:
             "This resource is no longer available. Reload the course file list.",
         };
-      const reused = demoOfflineCopies.some(
+      const existing = demoOfflineCopies.find(
         (c) =>
           c.resourceKey === key &&
           c.siteId === course.siteId &&
           c.courseId === course.courseId,
       );
-      if (!reused)
+      const refreshedAt = Math.floor(Date.now() / 1000);
+      if (existing) existing.refreshedAt = refreshedAt;
+      else
         demoOfflineCopies.push({
           id: crypto.randomUUID(),
           siteId: course.siteId,
@@ -945,12 +971,75 @@ export const ipc = {
           filename: resource.filename,
           sectionName: resource.sectionName,
           bytes: resource.bytes ?? 1024,
-          savedAt: Math.floor(Date.now() / 1000),
+          savedAt: refreshedAt,
+          refreshedAt,
           available: true,
           needsConfirmation: false,
         });
-      return { key, reused, error: null };
+      return { key, reused: !!existing, error: null };
     });
+  },
+  courseSyncList: () =>
+    desktop
+      ? invoke<CourseSync[]>("course_sync_list")
+      : Promise.resolve(
+          demoCourseSyncs.map((job) => ({ ...job, keys: [...job.keys] })),
+        ),
+  courseSyncConfigure: async (
+    target: OfflineCourse,
+    keys: string[],
+    interval: number,
+  ): Promise<void> => {
+    if (desktop)
+      return invoke("course_sync_configure", { target, keys, interval });
+    if (!demo) return desktopFeature();
+    const old = demoCourseSyncs.findIndex(
+      (job) => job.siteId === target.siteId && job.courseId === target.courseId,
+    );
+    if (old >= 0) demoCourseSyncs.splice(old, 1);
+    demoCourseSyncs.push({
+      ...target,
+      generation: 1,
+      interval,
+      state: interval ? "waiting" : "paused",
+      nextRun: Math.floor(Date.now() / 1000),
+      refreshedAt: 0,
+      failures: 0,
+      error: null,
+      keys: [...keys],
+      pending: keys.length,
+      missing: 0,
+    });
+  },
+  courseSyncControl: async (
+    target: OfflineCourse,
+    cancel: boolean,
+  ): Promise<void> => {
+    if (desktop) return invoke("course_sync_control", { target, cancel });
+    if (!demo) return desktopFeature();
+    const job = demoCourseSyncs.find(
+      (job) => job.siteId === target.siteId && job.courseId === target.courseId,
+    );
+    if (job) job.state = cancel ? "cancelled" : "waiting";
+  },
+  offlineRemove: async (
+    target: OfflineCourse,
+    copyId: string,
+  ): Promise<"archived" | "kept" | "missing"> => {
+    if (desktop) return invoke("offline_remove", { target, copyId });
+    if (!demo) return desktopFeature();
+    const index = demoOfflineCopies.findIndex(
+      (copy) =>
+        copy.id === copyId &&
+        copy.siteId === target.siteId &&
+        copy.courseId === target.courseId,
+    );
+    if (index < 0)
+      throw new Error(
+        "This offline file is unavailable. Save a fresh copy from the course.",
+      );
+    demoOfflineCopies.splice(index, 1);
+    return "archived";
   },
   offlineOpen: (
     course: OfflineCourse,

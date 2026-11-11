@@ -79,6 +79,50 @@ pub(crate) fn folder(
     policy::directory(&folder).map_err(|_| "Download folder unavailable.")?;
     Ok(folder)
 }
+/// Completion and lookup share the account lock with offline publication/removal.
+fn complete(
+    store: &md_store::Store,
+    root: &Path,
+    site: &str,
+    transfer: &Transfer,
+) -> Option<PathBuf> {
+    let item = store.download(&transfer.id).ok()??;
+    if item.site_id != site
+        || !store
+            .sites()
+            .ok()?
+            .iter()
+            .any(|s| s.id == site && s.user_id == transfer.user_id)
+    {
+        return None;
+    }
+    md_os::offline::managed_path(root, &transfer.staged).ok()?;
+    // Hashing is bounded to the offline limit. Larger and unidentified downloads retain their normal path.
+    let hash = item
+        .course_id
+        .and_then(|_| md_os::offline::hash(&transfer.staged).ok());
+    let reused = hash.as_ref().and_then(|hash| {
+        let files = store
+            .shared_files(&md_store::FileIdentity {
+                site,
+                user: transfer.user_id,
+                course: item.course_id?,
+                filename: &transfer.filename,
+                sha256: hash,
+            })
+            .ok()?;
+        md_os::offline::reusable(root, &files, hash)
+    });
+    let path = reused
+        .or_else(|| policy::publish(&transfer.staged, &transfer.folder, &transfer.filename).ok())?;
+    store
+        .download_finish(&transfer.id, &path.to_string_lossy(), "complete")
+        .ok()?;
+    if let Some(hash) = hash {
+        let _ = store.fingerprint_download(&transfer.id, transfer.user_id, &hash);
+    }
+    Some(path)
+}
 fn changed(app: &AppHandle) {
     let _ = app.emit_to("shell", "downloads://changed", ());
     let _ = crate::tray::refresh(app, &crate::notifications::statuses(app));
@@ -239,88 +283,95 @@ pub fn handle_for_user(
             };
             changed(app);
             if let Some(transfer) = transfer {
-                // Account removal deletes its rows; never recreate them from a late callback.
-                let saved = state
-                    .store
-                    .lock()
-                    .expect("store")
-                    .sites()
-                    .unwrap_or_default()
-                    .iter()
-                    .any(|s| s.id == site_id && s.user_id == transfer.user_id);
-                let completed = if success && saved {
-                    policy::publish(&transfer.staged, &transfer.folder, &transfer.filename).ok()
-                } else {
-                    None
-                };
-                let path = completed
-                    .as_deref()
-                    .unwrap_or(&transfer.staged)
-                    .to_string_lossy();
-                let _ = state.store.lock().expect("store").download_finish(
-                    &transfer.id,
-                    &path,
-                    if completed.is_some() {
-                        "complete"
-                    } else {
-                        "failed"
-                    },
-                );
-                let _ = std::fs::remove_file(&transfer.staged);
-                if let Some(parent) = transfer.staged.parent() {
-                    let _ = std::fs::remove_dir(parent);
-                }
-                // The preference covers PDFs and images only. The path is revalidated and
-                // the risky-type gate still applies, so nothing else ever opens by itself.
-                if completed.is_some() && transfer.open_after && saved {
-                    if let Ok(path) = self::path(app, &transfer.id, false, true) {
-                        if policy::opens_after_save(&path) {
-                            use tauri_plugin_opener::OpenerExt;
-                            let _ = app.opener().open_path(path.to_string_lossy(), None::<&str>);
-                        }
-                    }
-                }
-                if saved {
-                    let filename = completed
-                        .as_deref()
-                        .and_then(|p| p.file_name())
-                        .and_then(|n| n.to_str())
-                        .unwrap_or(&transfer.filename)
-                        .to_owned();
-                    let _ = app.emit_to(
-                        "shell",
-                        "downloads://feedback",
-                        Feedback {
-                            site_id: site_id.into(),
-                            user_id: transfer.user_id,
-                            filename,
-                            state: if completed.is_some() {
-                                "complete"
-                            } else {
-                                "failed"
-                            },
-                        },
-                    );
-                    let fr = crate::menus::french(app);
-                    let body = match (completed.is_some(), fr) {
-                        (true, false) => "Download complete. Open Downloads in MoodBuro to view it.",
-                        (true, true) => "Téléchargement terminé. Ouvrez Téléchargements dans MoodBuro pour le consulter.",
-                        (false, false) => "Download failed. Please try again from Moodle.",
-                        (false, true) => "Échec du téléchargement. Réessayez depuis Moodle.",
-                    };
-                    let _ = app
-                        .notification()
-                        .builder()
-                        .title("MoodBuro")
-                        .body(body)
-                        .show();
-                }
-                changed(app);
+                let handle = app.clone();
+                let site = site_id.to_owned();
+                tauri::async_runtime::spawn_blocking(move || {
+                    finished(&handle, &site, transfer, success)
+                });
             }
             true
         }
         _ => false,
     }
+}
+
+// Hashing completed payloads can be substantial. Keep it off WebKit's callback thread.
+fn finished(app: &AppHandle, site_id: &str, transfer: Transfer, success: bool) {
+    let state = app.state::<AppState>();
+    // Account removal deletes its rows; never recreate them from a late callback.
+    let (saved, completed) = {
+        let store = state.store.lock().expect("store");
+        let saved = store
+            .sites()
+            .unwrap_or_default()
+            .iter()
+            .any(|s| s.id == site_id && s.user_id == transfer.user_id);
+        let completed = if success && saved {
+            app.path()
+                .home_dir()
+                .ok()
+                .and_then(|home| complete(&store, &home.join("Moodle"), site_id, &transfer))
+        } else {
+            None
+        };
+        if completed.is_none() {
+            let _ =
+                store.download_finish(&transfer.id, &transfer.staged.to_string_lossy(), "failed");
+        }
+        (saved, completed)
+    };
+    let _ = std::fs::remove_file(&transfer.staged);
+    if let Some(parent) = transfer.staged.parent() {
+        let _ = std::fs::remove_dir(parent);
+    }
+    // The preference covers PDFs and images only. The path is revalidated and
+    // the risky-type gate still applies, so nothing else ever opens by itself.
+    if completed.is_some() && transfer.open_after && saved {
+        if let Ok(path) = self::path(app, &transfer.id, false, true) {
+            if policy::opens_after_save(&path) {
+                use tauri_plugin_opener::OpenerExt;
+                let _ = app.opener().open_path(path.to_string_lossy(), None::<&str>);
+            }
+        }
+    }
+    if saved {
+        let filename = completed
+            .as_deref()
+            .and_then(|p| p.file_name())
+            .and_then(|n| n.to_str())
+            .unwrap_or(&transfer.filename)
+            .to_owned();
+        let _ = app.emit_to(
+            "shell",
+            "downloads://feedback",
+            Feedback {
+                site_id: site_id.into(),
+                user_id: transfer.user_id,
+                filename,
+                state: if completed.is_some() {
+                    "complete"
+                } else {
+                    "failed"
+                },
+            },
+        );
+        let fr = crate::menus::french(app);
+        let body = match (completed.is_some(), fr) {
+            (true, false) => "Download complete. Open Downloads in MoodBuro to view it.",
+            (true, true) => {
+                "Téléchargement terminé. Ouvrez Téléchargements dans MoodBuro pour le consulter."
+            }
+            (false, false) => "Download failed. Please try again from Moodle.",
+            (false, true) => "Échec du téléchargement. Réessayez depuis Moodle.",
+        };
+        let _ = app
+            .notification()
+            .builder()
+            .title("MoodBuro")
+            .body(body)
+            .show();
+    }
+    changed(app);
 }
 
 #[derive(serde::Serialize)]
@@ -463,6 +514,83 @@ pub fn path(app: &AppHandle, id: &str, confirmed: bool, opening: bool) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn completed_download_reuses_verified_offline_bytes_but_preserves_local_edits() {
+        let root =
+            std::env::temp_dir().join(format!("moodburo-shared-download-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let existing = root.join("notes.pdf");
+        let staged = root.join("payload");
+        std::fs::write(&existing, b"same bytes").unwrap();
+        std::fs::write(&staged, b"same bytes").unwrap();
+        let store = md_store::Store::open(":memory:").unwrap();
+        let mut site = md_store::Site {
+            id: "s".into(),
+            wwwroot: "https://example.org/".into(),
+            name: "Example".into(),
+            user_id: 7,
+            full_name: "Learner".into(),
+        };
+        store.insert(&site).unwrap();
+        let hash = md_os::offline::hash(&existing).unwrap();
+        store
+            .save_offline_copy(
+                &md_store::OfflineCopy {
+                    id: "c".into(),
+                    site_id: "s".into(),
+                    course_id: 2,
+                    resource_key: "a".repeat(64),
+                    module_id: 42,
+                    filename: "notes.pdf".into(),
+                    section_name: "Week 1".into(),
+                    local_path: existing.to_string_lossy().into_owned(),
+                    sha256: hash.clone(),
+                    bytes: 10,
+                    saved_at: 1,
+                    refreshed_at: 1,
+                },
+                7,
+            )
+            .unwrap();
+        let mut transfer = Transfer {
+            id: "one".into(),
+            staged: staged.clone(),
+            folder: root.clone(),
+            filename: "notes.pdf".into(),
+            ambiguous: false,
+            finished: false,
+            user_id: 7,
+            open_after: false,
+        };
+        let mut row = md_store::Download {
+            id: "one".into(),
+            site_id: "s".into(),
+            filename: "notes.pdf".into(),
+            local_path: staged.to_string_lossy().into_owned(),
+            state: "downloading".into(),
+            started_at: 2,
+            course_id: Some(2),
+            course_name: None,
+        };
+        store.download_insert(&row).unwrap();
+        assert_eq!(complete(&store, &root, "s", &transfer).unwrap(), existing);
+        assert!(store
+            .file_referenced(&existing.to_string_lossy(), "c")
+            .unwrap());
+        assert!(!root.join("notes (2).pdf").exists());
+        std::fs::write(&existing, b"my edits").unwrap();
+        row.id = "two".into();
+        transfer.id = "two".into();
+        store.download_insert(&row).unwrap();
+        let published = complete(&store, &root, "s", &transfer).unwrap();
+        assert_ne!(published, existing);
+        assert_eq!(std::fs::read(&existing).unwrap(), b"my edits");
+        assert_eq!(std::fs::read(published).unwrap(), b"same bytes");
+        site.user_id = 8;
+        store.update(&site).unwrap();
+        assert!(complete(&store, &root, "s", &transfer).is_none());
+        std::fs::remove_dir_all(root).unwrap();
+    }
     #[test]
     fn duplicate_failure_cannot_finish_original_or_a_later_transfer() {
         let key = ("site".into(), "https://example.org/file".into());

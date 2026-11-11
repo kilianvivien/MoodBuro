@@ -3,6 +3,7 @@ mod auth_log;
 mod bookmarks;
 mod calendar;
 mod commands;
+mod course_sync;
 mod documents;
 mod downloads;
 #[cfg(target_os = "macos")]
@@ -90,6 +91,10 @@ pub fn run() {
                     .into_iter()
                     .map(|site| site.id),
             );
+            // Before windows/IPC and workers start: no active transfer can be removed.
+            if let Ok(home) = app.path().home_dir() {
+                md_os::offline::clean_staging(&home.join("Moodle"));
+            }
             assistant::install(app.handle());
             window_state::install(app.handle());
             windows::create_shell(app.handle())?;
@@ -99,6 +104,7 @@ pub fn run() {
             // A shortcut that cannot be registered must never stop the app from starting.
             shortcut::restore(app.handle());
             reminders::install(app.handle());
+            course_sync::install(app.handle());
             let sites = app
                 .state::<AppState>()
                 .store
@@ -192,6 +198,10 @@ pub fn run() {
             commands::offline_saved,
             commands::offline_save,
             commands::offline_open,
+            commands::offline_remove,
+            commands::course_sync_list,
+            commands::course_sync_configure,
+            commands::course_sync_control,
             commands::sites_list,
             commands::site_move,
             commands::agenda_export,

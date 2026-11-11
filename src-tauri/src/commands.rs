@@ -990,6 +990,27 @@ pub fn offline_open(
     )
 }
 
+#[tauri::command]
+pub async fn offline_remove(
+    webview: tauri::Webview,
+    app: AppHandle,
+    target: OfflineTarget,
+    copy_id: String,
+) -> Result<&'static str, String> {
+    shell(&webview)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::offline::remove(
+            &app,
+            &target.site_id,
+            target.course_id,
+            target.user_id,
+            &copy_id,
+        )
+    })
+    .await
+    .map_err(|_| "Could not remove this offline copy. The file was kept; try again.".to_string())?
+}
+
 /// A file source chip in an answer: shows the saved copy if there is one. `false`
 /// means nothing is saved and the shell opens the activity in Moodle instead.
 #[tauri::command]
@@ -1217,4 +1238,47 @@ pub async fn bookmark_open(
 pub fn bookmark_menu(webview: tauri::Webview, app: AppHandle) -> Result<(), String> {
     shell(&webview)?;
     crate::bookmarks::menu(&app)
+}
+
+#[tauri::command]
+pub fn course_sync_list(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Vec<md_store::CourseSync>, String> {
+    shell(&webview)?;
+    crate::course_sync::list(&app)
+}
+#[tauri::command]
+pub fn course_sync_configure(
+    webview: tauri::Webview,
+    app: AppHandle,
+    target: OfflineTarget,
+    keys: Vec<String>,
+    interval: i64,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::course_sync::configure(
+        &app,
+        &target.site_id,
+        target.user_id,
+        target.course_id,
+        keys,
+        interval,
+    )
+}
+#[tauri::command]
+pub fn course_sync_control(
+    webview: tauri::Webview,
+    app: AppHandle,
+    target: OfflineTarget,
+    cancel: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::course_sync::control(
+        &app,
+        &target.site_id,
+        target.user_id,
+        target.course_id,
+        cancel,
+    )
 }

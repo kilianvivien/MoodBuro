@@ -177,7 +177,11 @@ pub struct Activity {
 }
 mod assistant;
 mod bookmarks;
+mod course_sync;
+mod files;
+pub use course_sync::CourseSync;
 mod offline;
+pub use files::FileIdentity;
 mod reminders;
 pub use bookmarks::Bookmark;
 pub use offline::OfflineCopy;
@@ -187,7 +191,7 @@ impl Store {
     pub fn open(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Self> {
         let connection = Connection::open(path)?;
         let version: u32 = connection.query_row("PRAGMA user_version", [], |row| row.get(0))?;
-        if version > 12 {
+        if version > 15 {
             return Err(rusqlite::Error::InvalidQuery);
         }
         connection.execute_batch("PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON; BEGIN;
@@ -217,7 +221,11 @@ impl Store {
             CREATE TABLE IF NOT EXISTS autologin_state (site_id TEXT PRIMARY KEY REFERENCES sites(id) ON DELETE CASCADE, minted_at INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS reminder_picks (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, user_id INTEGER NOT NULL, event_id INTEGER NOT NULL, offset INTEGER NOT NULL, due INTEGER NOT NULL, name TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(site_id,event_id,offset));
             CREATE TABLE IF NOT EXISTS bookmarks (id TEXT PRIMARY KEY, site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE, user_id INTEGER NOT NULL, name TEXT NOT NULL, path TEXT NOT NULL, icon TEXT NOT NULL);
-            PRAGMA user_version=12; COMMIT;",
+            CREATE TABLE IF NOT EXISTS offline_refreshes (copy_id TEXT PRIMARY KEY REFERENCES offline_copies(id) ON DELETE CASCADE, refreshed_at INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS download_hashes (download_id TEXT PRIMARY KEY REFERENCES downloads(id) ON DELETE CASCADE, sha256 TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS course_sync (site_id TEXT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,course_id INTEGER NOT NULL,generation INTEGER NOT NULL,interval INTEGER NOT NULL,state TEXT NOT NULL,next_run INTEGER NOT NULL,refreshed_at INTEGER NOT NULL,failures INTEGER NOT NULL,error TEXT,PRIMARY KEY(site_id,course_id));
+            CREATE TABLE IF NOT EXISTS sync_selection (site_id TEXT NOT NULL,course_id INTEGER NOT NULL,resource_key TEXT NOT NULL,pending INTEGER NOT NULL,missing INTEGER NOT NULL,PRIMARY KEY(site_id,course_id,resource_key),FOREIGN KEY(site_id,course_id) REFERENCES course_sync(site_id,course_id) ON DELETE CASCADE);
+            PRAGMA user_version=15; COMMIT;",
         )?;
         Ok(Self(connection))
     }
@@ -418,6 +426,7 @@ impl Store {
             )?;
         }
         tx.execute("DELETE FROM course_contexts WHERE site_id=?1 AND course_id NOT IN (SELECT course_id FROM courses WHERE site_id=?1)", [site_id])?;
+        tx.execute("UPDATE course_sync SET interval=0,state='paused',generation=generation+1,error='This course is no longer in your list. Refresh your courses.' WHERE site_id=?1 AND course_id NOT IN (SELECT course_id FROM courses WHERE site_id=?1)", [site_id])?;
         tx.execute("DELETE FROM activities WHERE site_id=?1 AND course_id NOT IN (SELECT course_id FROM courses WHERE site_id=?1)", [site_id])?;
         tx.execute("DELETE FROM course_pins WHERE site_id=?1 AND course_id NOT IN (SELECT course_id FROM courses WHERE site_id=?1)", [site_id])?;
         tx.execute("INSERT INTO sync_state VALUES (?1,'courses',?2) ON CONFLICT(site_id,kind) DO UPDATE SET refreshed_at=excluded.refreshed_at", params![site_id, now])?;
@@ -828,6 +837,7 @@ impl Store {
         let tx = self.0.unchecked_transaction()?;
         // A different account must start with a fresh, silent notification seed.
         for table in [
+            "course_sync",
             "bookmarks",
             "notifications",
             "notification_state",
