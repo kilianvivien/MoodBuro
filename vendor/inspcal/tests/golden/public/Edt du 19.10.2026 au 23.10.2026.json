@@ -1,0 +1,278 @@
+{
+  "source": {
+    "file": "Edt du 19.10.2026 au 23.10.2026.pdf",
+    "sha256": "77ffa945425d5089f65f561eb337d24c803419fbe41db34b3b0fede5f01d5f17",
+    "week_start": "2026-10-19",
+    "week_end": "2026-10-23",
+    "promotion": "2026-2028",
+    "revision": "2026-10-15T09:00:00+00:00",
+    "parsed_at": "2026-10-15T17:23:27+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-b8e1646498c0014b",
+      "date": "2026-10-19",
+      "start": "15:00",
+      "end": "17:00",
+      "title": "Mise en situation",
+      "description": null,
+      "module": "Parcours crise",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Groupes 1 et 2 / Groupes 3 et 4 / Groupes 5 et 6 / Groupes 7 et 8 Groupes 9 et 10 / Groupes 11 et 12 / Groupes 13 et 14 / Groupes 15 et 16",
+      "groups": {
+        "multi": true,
+        "count": 8,
+        "time_ranges": [
+          "15:00-17:00"
+        ]
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": null,
+      "location_note": "Selon le groupe",
+      "preparation": "Constitution des groupes",
+      "notes": [
+        "Groupes 1 et 2 : 15:00-17:00 ; Salle : C002 ; Mme Alice EXEMPLE",
+        "Groupes 3 et 4 : 15:00-17:00 ; Salle : C003 ; Mme Alice EXEMPLE",
+        "Groupes 5 et 6 : 15:00-17:00 ; Salle : C006 ; Mme Alice EXEMPLE",
+        "Groupes 7 et 8 : 15:00-17:00 ; Salle : C007 ; Mme Alice EXEMPLE",
+        "Groupes 9 et 10 : 15:00-17:00 ; Salle : C102 ; Mme Alice EXEMPLE",
+        "Groupes 11 et 12 : 15:00-17:00 ; Salle : C103 ; Mme Alice EXEMPLE",
+        "Groupes 13 et 14 : 15:00-17:00 ; Salle : C104 ; Mme Alice EXEMPLE",
+        "Groupes 15 et 16 : 15:00-17:00 ; Salle : C105 ; Mme Alice EXEMPLE"
+      ],
+      "links": [
+        {
+          "label": "Constitution des groupes",
+          "url": "https://example.org/groupes-crise",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "group_details": [
+          {
+            "start": "15h00",
+            "end": "17h00",
+            "location": "C002",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupes 1 et 2"
+          },
+          {
+            "start": "15h00",
+            "end": "17h00",
+            "location": "C003",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupes 3 et 4"
+          },
+          {
+            "start": "15h00",
+            "end": "17h00",
+            "location": "C006",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupes 5 et 6"
+          },
+          {
+            "start": "15h00",
+            "end": "17h00",
+            "location": "C007",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupes 7 et 8"
+          },
+          {
+            "start": "15h00",
+            "end": "17h00",
+            "location": "C102",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupes 9 et 10"
+          },
+          {
+            "start": "15h00",
+            "end": "17h00",
+            "location": "C103",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupes 11 et 12"
+          },
+          {
+            "start": "15h00",
+            "end": "17h00",
+            "location": "C104",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupes 13 et 14"
+          },
+          {
+            "start": "15h00",
+            "end": "17h00",
+            "location": "C105",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupes 15 et 16"
+          }
+        ],
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          390.0
+        ],
+        "time_ranges": [
+          "15h00-17h00"
+        ],
+        "group_labels": [
+          "Groupes 1 et 2",
+          "Groupes 3 et 4",
+          "Groupes 5 et 6",
+          "Groupes 7 et 8 Groupes 9 et 10",
+          "Groupes 11 et 12",
+          "Groupes 13 et 14",
+          "Groupes 15 et 16"
+        ],
+        "rooms": [
+          "C002",
+          "C003",
+          "C006",
+          "C007 / C102",
+          "C103",
+          "C104",
+          "C105"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-c7c91d9002129482",
+      "date": "2026-10-21",
+      "start": "17:45",
+      "end": "20:15",
+      "title": "Diagnostic condition physique Groupe 1",
+      "description": null,
+      "module": "Sport",
+      "module_color": null,
+      "cohorts": [
+        "FI"
+      ],
+      "cohort_label": "FI 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "M. Bob EXEMPLE"
+      ],
+      "location": "Gymnase",
+      "location_note": null,
+      "preparation": "Groupes diagnostic condition physique",
+      "notes": [],
+      "links": [
+        {
+          "label": "Groupes diagnostic condition physique",
+          "url": "https://example.org/groupes-diagnostic",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 2,
+        "bbox": [
+          170.0,
+          30.0,
+          370.0,
+          70.0
+        ],
+        "time_ranges": [
+          "17h45-20h15"
+        ],
+        "group_labels": [
+          "FI 2026-2028"
+        ],
+        "rooms": [
+          "Gymnase"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "M. Bob EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-cd904cd33917fb0e",
+      "date": "2026-10-22",
+      "start": "17:45",
+      "end": "20:15",
+      "title": "Diagnostic condition physique Groupe 2",
+      "description": null,
+      "module": "Sport",
+      "module_color": null,
+      "cohorts": [
+        "FI"
+      ],
+      "cohort_label": "FI 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "M. Bob EXEMPLE"
+      ],
+      "location": "Gymnase",
+      "location_note": null,
+      "preparation": "Groupes diagnostic condition physique",
+      "notes": [],
+      "links": [
+        {
+          "label": "Groupes diagnostic condition physique",
+          "url": "https://example.org/groupes-diagnostic",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 2,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [
+          "17h45-20h15"
+        ],
+        "group_labels": [
+          "FI 2026-2028"
+        ],
+        "rooms": [
+          "Gymnase"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "M. Bob EXEMPLE"
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-b8e1646498c0014b",
+      "message": "« Mise en situation » n'indique aucune cohorte FI/CIL/OFF (séance en 8 groupes) — conservée pour tout le monde"
+    },
+    {
+      "code": "AMBIGUOUS_LOCATION",
+      "event_uid": "edt-insp-b8e1646498c0014b",
+      "message": "« Mise en situation » : salle selon le groupe"
+    },
+    {
+      "code": "SPORT_CHOICE",
+      "event_uid": null,
+      "message": "2 créneaux de sport cette semaine (21/10 à 17:45, 22/10 à 17:45) — une seule séance est obligatoire : choisissez celle que vous suivez."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "_comment": "PDFium for the native InspCal engine. Statically linked on macOS (see the md-inspcal crate). Prepared by scripts/prepare-inspcal-pdfium.py; never fetched during Cargo compilation.",
+  "release": "8046d",
+  "chromium_branch": "chromium/8046",
+  "distribution": "paulocoutinhox/pdfium-lib",
+  "same_release_as_upstream_wasm": true,
+  "archive": {
+    "url": "https://github.com/paulocoutinhox/pdfium-lib/releases/download/8046d/macos.zip",
+    "sha256": "1f718f8aeee279c8021de5d61ea9a604613fbfa2d83d79172d9086d711778554",
+    "size": 13751605
+  },
+  "member": "release/lib/libpdfium.a",
+  "library": {
+    "sha256": "d77bab92473a7572eab592e14bbf156c3c68c939a07d8fe79c60bf7a0ba295c9",
+    "architectures": ["arm64", "x86_64"],
+    "slices_sha256": {
+      "arm64": "5e92455fcfebbcf53a76ea36611d0be24edc56283c6e04821c49603564412fdb",
+      "x86_64": "8eb3f9bfc4acffac902ac6b89e1ce7040ab8d6ecfce46920bf6b1245fe71ad2f"
+    },
+    "minimum_macos": "11.0",
+    "linkage": "static archive; exported symbols are private_extern, so a dylib cannot be derived from it"
+  },
+  "system_link": ["c++", "framework=CoreGraphics", "framework=CoreFoundation"],
+  "notices": ["licenses/PDFium-LICENSE.txt"],
+  "notices_pending": "Transitive third-party notices (FreeType, libjpeg-turbo, libpng, zlib, Little-CMS, OpenJPEG, Abseil and others in the 8046 build) must be added before distribution (milestone M5)."
+}

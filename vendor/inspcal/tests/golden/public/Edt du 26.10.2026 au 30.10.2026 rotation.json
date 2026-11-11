@@ -1,0 +1,282 @@
+{
+  "source": {
+    "file": "Edt du 26.10.2026 au 30.10.2026 rotation.pdf",
+    "sha256": "a89457df28967e9aba5d33461083b93642f47f24eecc9c2a855a67a3c5593a1a",
+    "week_start": "2026-10-26",
+    "week_end": "2026-10-30",
+    "promotion": null,
+    "revision": "2026-10-23T07:00:00+00:00",
+    "parsed_at": "2026-10-23T07:24:51+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-0307769bdf1fcb83",
+      "date": "2026-10-30",
+      "start": "09:00",
+      "end": "16:35",
+      "title": "Comprendre, prévenir et agir contre les LGBT phobies en milieu professionnel",
+      "description": null,
+      "module": "Management",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Ateliers sous forme de roulement",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "C301-C302",
+      "location_note": null,
+      "preparation": "Composition des groupes et roulement des ateliers",
+      "notes": [],
+      "links": [
+        {
+          "label": "Composition des groupes et roulement des ateliers",
+          "url": "https://example.org/rotation-management",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [
+          "09h00-16h35"
+        ],
+        "group_labels": [
+          "Ateliers sous forme de roulement"
+        ],
+        "rooms": [
+          "C301-C302"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-5987945643294a06",
+      "date": "2026-10-30",
+      "start": "09:00",
+      "end": "16:35",
+      "title": "Favoriser les collectifs de travail soutenants et performants",
+      "description": null,
+      "module": "Management",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Ateliers sous forme de roulement",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "A201",
+      "location_note": null,
+      "preparation": "Composition des groupes et roulement des ateliers",
+      "notes": [],
+      "links": [
+        {
+          "label": "Composition des groupes et roulement des ateliers",
+          "url": "https://example.org/rotation-management",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          110.0,
+          370.0,
+          150.0
+        ],
+        "time_ranges": [
+          "09h00-16h35"
+        ],
+        "group_labels": [
+          "Ateliers sous forme de roulement"
+        ],
+        "rooms": [
+          "A201"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-2f97a566d0d8b7a0",
+      "date": "2026-10-30",
+      "start": "09:00",
+      "end": "16:35",
+      "title": "Piloter et valoriser les dynamiques inclusives",
+      "description": null,
+      "module": "Management",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Ateliers sous forme de roulement",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Salle Louise Weiss",
+      "location_note": null,
+      "preparation": "Composition des groupes et roulement des ateliers",
+      "notes": [],
+      "links": [
+        {
+          "label": "Composition des groupes et roulement des ateliers",
+          "url": "https://example.org/rotation-management",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          150.0,
+          370.0,
+          190.0
+        ],
+        "time_ranges": [
+          "09h00-16h35"
+        ],
+        "group_labels": [
+          "Ateliers sous forme de roulement"
+        ],
+        "rooms": [
+          "Salle Louise Weiss"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-ab41f13f6e474585",
+      "date": "2026-10-30",
+      "start": "09:00",
+      "end": "16:35",
+      "title": "Concevoir des services et environnements de travail accessibles à toutes et à tous",
+      "description": null,
+      "module": "Management",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Ateliers sous forme de roulement",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Salle de réception",
+      "location_note": null,
+      "preparation": "Composition des groupes et roulement des ateliers",
+      "notes": [],
+      "links": [
+        {
+          "label": "Composition des groupes et roulement des ateliers",
+          "url": "https://example.org/rotation-management",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          190.0,
+          370.0,
+          230.0
+        ],
+        "time_ranges": [
+          "09h00-16h35"
+        ],
+        "group_labels": [
+          "Ateliers sous forme de roulement"
+        ],
+        "rooms": [
+          "Salle de réception"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-0307769bdf1fcb83",
+      "message": "« Comprendre, prévenir et agir contre les LGBT phobies en milieu professionnel » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-5987945643294a06",
+      "message": "« Favoriser les collectifs de travail soutenants et performants » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-2f97a566d0d8b7a0",
+      "message": "« Piloter et valoriser les dynamiques inclusives » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-ab41f13f6e474585",
+      "message": "« Concevoir des services et environnements de travail accessibles à toutes et à tous » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-0307769bdf1fcb83",
+      "message": "« Comprendre, prévenir et agir contre les LGBT phobies en milieu professionnel » et « Favoriser les collectifs de travail soutenants et performants » se chevauchent le 2026-10-30"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-0307769bdf1fcb83",
+      "message": "« Comprendre, prévenir et agir contre les LGBT phobies en milieu professionnel » et « Piloter et valoriser les dynamiques inclusives » se chevauchent le 2026-10-30"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-0307769bdf1fcb83",
+      "message": "« Comprendre, prévenir et agir contre les LGBT phobies en milieu professionnel » et « Concevoir des services et environnements de travail accessibles à toutes et à tous » se chevauchent le 2026-10-30"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-5987945643294a06",
+      "message": "« Favoriser les collectifs de travail soutenants et performants » et « Piloter et valoriser les dynamiques inclusives » se chevauchent le 2026-10-30"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-5987945643294a06",
+      "message": "« Favoriser les collectifs de travail soutenants et performants » et « Concevoir des services et environnements de travail accessibles à toutes et à tous » se chevauchent le 2026-10-30"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-2f97a566d0d8b7a0",
+      "message": "« Piloter et valoriser les dynamiques inclusives » et « Concevoir des services et environnements de travail accessibles à toutes et à tous » se chevauchent le 2026-10-30"
+    }
+  ]
+}

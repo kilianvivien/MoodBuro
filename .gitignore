@@ -15,3 +15,6 @@ docs/
 
 __pycache__/
 *.pyc
+
+# Prepared native PDFium (scripts/prepare-inspcal-pdfium.py)
+.inspcal-pdfium/

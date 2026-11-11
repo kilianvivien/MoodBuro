@@ -1,0 +1,206 @@
+{
+  "source": {
+    "file": "Edt du 07.09.2026 au 11.09.2026.pdf",
+    "sha256": "2e99385b451fc4ad750737078d2f7ed5314a69be49323126c5337d8d7505bc43",
+    "week_start": "2026-09-07",
+    "week_end": "2026-09-11",
+    "promotion": "2026-2028",
+    "revision": "2026-09-01T09:00:00+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-e1c080b2028ba435",
+      "date": "2026-09-07",
+      "start": "09:00",
+      "end": "10:00",
+      "title": "Introduction au service public",
+      "description": null,
+      "module": "Parcours public",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Salle A",
+      "location_note": null,
+      "preparation": "Lire le guide puis la fiche",
+      "notes": [],
+      "links": [
+        {
+          "label": "Lire le guide puis la fiche",
+          "url": "https://example.org/preparation",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [
+          "09h00-10h00"
+        ],
+        "group_labels": [
+          "FI-CIL-OFF 2026-2028"
+        ],
+        "rooms": [
+          "Salle A"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-b5335e3d56cdc5dc",
+      "date": "2026-09-07",
+      "start": "10:30",
+      "end": "12:30",
+      "title": "Atelier collectif",
+      "description": null,
+      "module": "Parcours public",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Groupes 1-2",
+      "groups": {
+        "multi": true,
+        "count": 2,
+        "time_ranges": [
+          "10:30-12:00",
+          "11:00-12:30"
+        ]
+      },
+      "speakers": [
+        "M. Bob EXEMPLE"
+      ],
+      "location": null,
+      "location_note": "Selon le groupe",
+      "preparation": null,
+      "notes": [
+        "Groupe 1 : 10:30-12:00 ; Salle : Salle B ; M. Bob EXEMPLE",
+        "Groupe 2 : 11:00-12:30 ; Salle : Salle C ; M. Bob EXEMPLE"
+      ],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "group_details": [
+          {
+            "start": "10h30",
+            "end": "12h00",
+            "location": "Salle B",
+            "speakers": "M. Bob EXEMPLE",
+            "label": "Groupe 1"
+          },
+          {
+            "start": "11h00",
+            "end": "12h30",
+            "location": "Salle C",
+            "speakers": "M. Bob EXEMPLE",
+            "label": "Groupe 2"
+          }
+        ],
+        "page": 1,
+        "bbox": [
+          170.0,
+          110.0,
+          370.0,
+          190.0
+        ],
+        "time_ranges": [
+          "10h30-12h00",
+          "11h00-12h30"
+        ],
+        "group_labels": [
+          "Groupe 1",
+          "Groupe 2"
+        ],
+        "rooms": [
+          "Salle B",
+          "Salle C"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "M. Bob EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-d1ccc8e06eb3dce6",
+      "date": "2026-09-08",
+      "start": "09:00",
+      "end": "11:00",
+      "title": "Exercice individuel",
+      "description": null,
+      "module": "Parcours langues",
+      "module_color": null,
+      "cohorts": [
+        "CIL"
+      ],
+      "cohort_label": "CIL 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Claire EXEMPLE"
+      ],
+      "location": "Salle D",
+      "location_note": null,
+      "preparation": null,
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          190.0,
+          370.0,
+          230.0
+        ],
+        "time_ranges": [
+          "09h00-11h00"
+        ],
+        "group_labels": [
+          "CIL 2026-2028"
+        ],
+        "rooms": [
+          "Salle D"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Claire EXEMPLE"
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-b5335e3d56cdc5dc",
+      "message": "« Atelier collectif » n'indique aucune cohorte FI/CIL/OFF (séance en 2 groupes) — conservée pour tout le monde"
+    },
+    {
+      "code": "AMBIGUOUS_LOCATION",
+      "event_uid": "edt-insp-b5335e3d56cdc5dc",
+      "message": "« Atelier collectif » : salle selon le groupe"
+    }
+  ]
+}

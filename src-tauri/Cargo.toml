@@ -26,6 +26,7 @@ md-secrets = { path = "../crates/md-secrets" }
 md-assistant = { path = "../crates/md-assistant" }
 serde_json.workspace = true
 md-store = { path = "../crates/md-store" }
+md-inspcal = { path = "../crates/md-inspcal" }
 tauri-plugin-dialog = "2"
 tauri-plugin-autostart = "2"
 tauri-plugin-updater = "2"

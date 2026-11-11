@@ -1,0 +1,122 @@
+{
+  "source": {
+    "file": "Edt du 07.09.2026 au 11.09.2026 corrige.pdf",
+    "sha256": "fbafc13f210f0b19e32247d134545d58636fd16424ced66bc5e31405a7d5c062",
+    "week_start": "2026-09-07",
+    "week_end": "2026-09-11",
+    "promotion": "2026-2028",
+    "revision": "2026-09-02T09:00:00+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-e1c080b2028ba435",
+      "date": "2026-09-07",
+      "start": "09:30",
+      "end": "10:30",
+      "title": "Introduction au service public",
+      "description": null,
+      "module": "Parcours public",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Salle E",
+      "location_note": null,
+      "preparation": "Lire le guide puis la fiche",
+      "notes": [],
+      "links": [
+        {
+          "label": "Lire le guide puis la fiche",
+          "url": "https://example.org/preparation",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [
+          "09h30-10h30"
+        ],
+        "group_labels": [
+          "FI-CIL-OFF 2026-2028"
+        ],
+        "rooms": [
+          "Salle E"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-d1ccc8e06eb3dce6",
+      "date": "2026-09-08",
+      "start": "09:00",
+      "end": "11:00",
+      "title": "Exercice individuel",
+      "description": null,
+      "module": "Parcours langues",
+      "module_color": null,
+      "cohorts": [
+        "CIL"
+      ],
+      "cohort_label": "CIL 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Claire EXEMPLE"
+      ],
+      "location": "Salle D",
+      "location_note": null,
+      "preparation": null,
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          110.0,
+          370.0,
+          150.0
+        ],
+        "time_ranges": [
+          "09h00-11h00"
+        ],
+        "group_labels": [
+          "CIL 2026-2028"
+        ],
+        "rooms": [
+          "Salle D"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Claire EXEMPLE"
+        ]
+      }
+    }
+  ],
+  "warnings": []
+}

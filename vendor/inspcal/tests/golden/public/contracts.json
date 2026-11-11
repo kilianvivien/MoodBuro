@@ -1,0 +1,562 @@
+{
+  "parser_version": "0.2.0",
+  "reference": "Reviewed Python engine before stage 4 retirement",
+  "fixtures": {
+    "Edt du 05.10.2026 au 09.10.2026.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-32675ef07c53ec70",
+          "edt-insp-31b8e4b262acfa1e",
+          "edt-insp-472b9acea2d66be4",
+          "edt-insp-40fa9260cc0fd86b"
+        ],
+        "calendar_sha256": "a2a0fe8e5180a70d0240ddb2f1c7f0ec778c948b9a1ea48d814bb95bde4d3995"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-32675ef07c53ec70",
+          "edt-insp-31b8e4b262acfa1e",
+          "edt-insp-472b9acea2d66be4",
+          "edt-insp-40fa9260cc0fd86b"
+        ],
+        "calendar_sha256": "a2a0fe8e5180a70d0240ddb2f1c7f0ec778c948b9a1ea48d814bb95bde4d3995"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-32675ef07c53ec70",
+          "edt-insp-31b8e4b262acfa1e",
+          "edt-insp-472b9acea2d66be4",
+          "edt-insp-40fa9260cc0fd86b"
+        ],
+        "calendar_sha256": "a2a0fe8e5180a70d0240ddb2f1c7f0ec778c948b9a1ea48d814bb95bde4d3995"
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-32675ef07c53ec70",
+          "edt-insp-31b8e4b262acfa1e",
+          "edt-insp-472b9acea2d66be4",
+          "edt-insp-40fa9260cc0fd86b"
+        ],
+        "calendar_sha256": "a2a0fe8e5180a70d0240ddb2f1c7f0ec778c948b9a1ea48d814bb95bde4d3995"
+      }
+    },
+    "Edt du 07.09.2026 au 11.09.2026 corrige.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-e1c080b2028ba435",
+          "edt-insp-d1ccc8e06eb3dce6"
+        ],
+        "calendar_sha256": "aba6c398028298ca7b57e21cf4eb3ad793a461b387d17fd63a8ca372ec091251"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-e1c080b2028ba435"
+        ],
+        "calendar_sha256": "1b2af276cb3064a3f2c76f7850d41ae6ee685b13ec127072ff26c669c291e514"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-e1c080b2028ba435",
+          "edt-insp-d1ccc8e06eb3dce6"
+        ],
+        "calendar_sha256": "aba6c398028298ca7b57e21cf4eb3ad793a461b387d17fd63a8ca372ec091251"
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-e1c080b2028ba435"
+        ],
+        "calendar_sha256": "1b2af276cb3064a3f2c76f7850d41ae6ee685b13ec127072ff26c669c291e514"
+      }
+    },
+    "Edt du 07.09.2026 au 11.09.2026.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-e1c080b2028ba435",
+          "edt-insp-b5335e3d56cdc5dc",
+          "edt-insp-d1ccc8e06eb3dce6"
+        ],
+        "calendar_sha256": "4b7771fe81f95f8e275d98a778663a4eae687927968ed0e4f2e0b3a529be1303"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-e1c080b2028ba435",
+          "edt-insp-b5335e3d56cdc5dc"
+        ],
+        "calendar_sha256": "a7ba66616cd1418a6f515b9f6d815fd3f123279f4598254899ea7d4af9e686ae"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-e1c080b2028ba435",
+          "edt-insp-b5335e3d56cdc5dc",
+          "edt-insp-d1ccc8e06eb3dce6"
+        ],
+        "calendar_sha256": "4b7771fe81f95f8e275d98a778663a4eae687927968ed0e4f2e0b3a529be1303"
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-e1c080b2028ba435",
+          "edt-insp-b5335e3d56cdc5dc"
+        ],
+        "calendar_sha256": "a7ba66616cd1418a6f515b9f6d815fd3f123279f4598254899ea7d4af9e686ae"
+      }
+    },
+    "Edt du 14.09.2026 au 18.09.2026.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-6d4f0434bd1a6646",
+          "edt-insp-a97ff7a771e4c6ae"
+        ],
+        "calendar_sha256": "eb9026550bcfd0e8125e35136daa8bdd7d2484626ec0887b4285d95e02131903"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-6d4f0434bd1a6646",
+          "edt-insp-a97ff7a771e4c6ae"
+        ],
+        "calendar_sha256": "eb9026550bcfd0e8125e35136daa8bdd7d2484626ec0887b4285d95e02131903"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": []
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": []
+      }
+    },
+    "Edt du 21.09.2026 au 25.09.2026 groupes.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-8a88701d49dbac72",
+          "edt-insp-03b6835090f7c8c2"
+        ],
+        "calendar_sha256": "1b3333e096f8ed16dd88a93f69a77604a2c69bdc53a063ff4493b62ef67a1f2c"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-8a88701d49dbac72",
+          "edt-insp-03b6835090f7c8c2"
+        ],
+        "calendar_sha256": "1b3333e096f8ed16dd88a93f69a77604a2c69bdc53a063ff4493b62ef67a1f2c"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-8a88701d49dbac72",
+          "edt-insp-03b6835090f7c8c2"
+        ],
+        "calendar_sha256": "1b3333e096f8ed16dd88a93f69a77604a2c69bdc53a063ff4493b62ef67a1f2c"
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-8a88701d49dbac72",
+          "edt-insp-03b6835090f7c8c2"
+        ],
+        "calendar_sha256": "1b3333e096f8ed16dd88a93f69a77604a2c69bdc53a063ff4493b62ef67a1f2c"
+      }
+    },
+    "Edt du 21.09.2026 au 25.09.2026.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-9b40ba7fca1d0ba0",
+          "edt-insp-0a367c3ac746fbd0",
+          "edt-insp-d686c1c13158803f",
+          "edt-insp-1790d2a0a500c343"
+        ],
+        "calendar_sha256": "8a4cf203f75e96be756a56fb5502f4f510ad7d2ff2cd924667253caf5cc03072"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-9b40ba7fca1d0ba0",
+          "edt-insp-0a367c3ac746fbd0",
+          "edt-insp-d686c1c13158803f",
+          "edt-insp-1790d2a0a500c343"
+        ],
+        "calendar_sha256": "8a4cf203f75e96be756a56fb5502f4f510ad7d2ff2cd924667253caf5cc03072"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-9b40ba7fca1d0ba0",
+          "edt-insp-0a367c3ac746fbd0",
+          "edt-insp-d686c1c13158803f",
+          "edt-insp-1790d2a0a500c343"
+        ],
+        "calendar_sha256": "8a4cf203f75e96be756a56fb5502f4f510ad7d2ff2cd924667253caf5cc03072"
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-9b40ba7fca1d0ba0",
+          "edt-insp-0a367c3ac746fbd0",
+          "edt-insp-d686c1c13158803f",
+          "edt-insp-1790d2a0a500c343"
+        ],
+        "calendar_sha256": "8a4cf203f75e96be756a56fb5502f4f510ad7d2ff2cd924667253caf5cc03072"
+      }
+    },
+    "Edt du 28.09.2026 au 02.10.2026.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-c0e6802f50c948bc",
+          "edt-insp-415c947af7a3b47f",
+          "edt-insp-daf1f2d1cf77f56b",
+          "edt-insp-ef7db5312c251e6b",
+          "edt-insp-4e6f5f91aab53135"
+        ],
+        "calendar_sha256": "bdbe4c779140c775973d340ea01ce8d3361acaf927e951bc05e19de529eaae7f"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-c0e6802f50c948bc",
+          "edt-insp-415c947af7a3b47f",
+          "edt-insp-daf1f2d1cf77f56b",
+          "edt-insp-4e6f5f91aab53135"
+        ],
+        "calendar_sha256": "85253df84def8ccb4895181d8d2cbb8c92d8972014598753cc2f67f4f9361ee5"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-c0e6802f50c948bc",
+          "edt-insp-415c947af7a3b47f",
+          "edt-insp-ef7db5312c251e6b",
+          "edt-insp-4e6f5f91aab53135"
+        ],
+        "calendar_sha256": "90e8bb979b6e183413c9d4bd5e060f7c4532f1e60d00d7770665c4954d923a0c"
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-c0e6802f50c948bc",
+          "edt-insp-415c947af7a3b47f",
+          "edt-insp-4e6f5f91aab53135"
+        ],
+        "calendar_sha256": "017eaeba7c830c8c73b30a9ff9eef9e9d295a5b21eb38b5363536c4ca43dbda7"
+      }
+    },
+    "Edt du 19.10.2026 au 23.10.2026.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-b8e1646498c0014b",
+          "edt-insp-c7c91d9002129482",
+          "edt-insp-cd904cd33917fb0e"
+        ],
+        "calendar_sha256": "878fd721cb3d7d3f4c2af739b8780ca7b769e0194434066a65c053771b3af78f"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-b8e1646498c0014b",
+          "edt-insp-c7c91d9002129482",
+          "edt-insp-cd904cd33917fb0e"
+        ],
+        "calendar_sha256": "878fd721cb3d7d3f4c2af739b8780ca7b769e0194434066a65c053771b3af78f"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-b8e1646498c0014b"
+        ],
+        "calendar_sha256": "a045e0c149c17c10febd6ee2623bec4b609c5ad5a34509a879e2c0c269a66513"
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-b8e1646498c0014b"
+        ],
+        "calendar_sha256": "a045e0c149c17c10febd6ee2623bec4b609c5ad5a34509a879e2c0c269a66513"
+      }
+    },
+    "Edt du 19.10.2026 au 23.10.2026 ANR.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-3b0d9e5f8066e21b"
+        ],
+        "calendar_sha256": "183f33d457b1cae5323ae14ae77e114b8db572b0f4ed786fb6cbced01a143ca0"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-3b0d9e5f8066e21b"
+        ],
+        "calendar_sha256": "183f33d457b1cae5323ae14ae77e114b8db572b0f4ed786fb6cbced01a143ca0"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": []
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": []
+      }
+    },
+    "Edt du 26.10.2026 au 30.10.2026.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-14bcca3f5a20d6fb",
+          "edt-insp-325373937f1dbe14",
+          "edt-insp-a40df469e92ed12f",
+          "edt-insp-5129fd2ab11530a5",
+          "edt-insp-d4654c7799fe5aa1",
+          "edt-insp-13f8454e2515740a",
+          "edt-insp-c1f7a99f2e3b6639",
+          "edt-insp-7baa93249823f427",
+          "edt-insp-2bc70b7a7b5e77ff"
+        ],
+        "calendar_sha256": "cc46e57d288e1d44696f3c86d54a826eeb04b548fd9bc6da91aa48dbdc9edbb3"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-14bcca3f5a20d6fb",
+          "edt-insp-325373937f1dbe14",
+          "edt-insp-a40df469e92ed12f",
+          "edt-insp-5129fd2ab11530a5",
+          "edt-insp-d4654c7799fe5aa1",
+          "edt-insp-13f8454e2515740a",
+          "edt-insp-c1f7a99f2e3b6639",
+          "edt-insp-7baa93249823f427",
+          "edt-insp-2bc70b7a7b5e77ff"
+        ],
+        "calendar_sha256": "cc46e57d288e1d44696f3c86d54a826eeb04b548fd9bc6da91aa48dbdc9edbb3"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-14bcca3f5a20d6fb",
+          "edt-insp-325373937f1dbe14",
+          "edt-insp-a40df469e92ed12f",
+          "edt-insp-5129fd2ab11530a5",
+          "edt-insp-d4654c7799fe5aa1",
+          "edt-insp-13f8454e2515740a",
+          "edt-insp-c1f7a99f2e3b6639",
+          "edt-insp-7baa93249823f427",
+          "edt-insp-2bc70b7a7b5e77ff"
+        ],
+        "calendar_sha256": "cc46e57d288e1d44696f3c86d54a826eeb04b548fd9bc6da91aa48dbdc9edbb3"
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-14bcca3f5a20d6fb",
+          "edt-insp-325373937f1dbe14",
+          "edt-insp-a40df469e92ed12f",
+          "edt-insp-5129fd2ab11530a5",
+          "edt-insp-d4654c7799fe5aa1",
+          "edt-insp-13f8454e2515740a",
+          "edt-insp-c1f7a99f2e3b6639",
+          "edt-insp-7baa93249823f427",
+          "edt-insp-2bc70b7a7b5e77ff"
+        ],
+        "calendar_sha256": "cc46e57d288e1d44696f3c86d54a826eeb04b548fd9bc6da91aa48dbdc9edbb3"
+      }
+    },
+    "Edt du 26.10.2026 au 30.10.2026 rotation.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-0307769bdf1fcb83",
+          "edt-insp-5987945643294a06",
+          "edt-insp-2f97a566d0d8b7a0",
+          "edt-insp-ab41f13f6e474585"
+        ],
+        "calendar_sha256": "e063aad3fbb042c18b3230595538e5086895e18e9e60282e8c76af9527551024"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-0307769bdf1fcb83",
+          "edt-insp-5987945643294a06",
+          "edt-insp-2f97a566d0d8b7a0",
+          "edt-insp-ab41f13f6e474585"
+        ],
+        "calendar_sha256": "e063aad3fbb042c18b3230595538e5086895e18e9e60282e8c76af9527551024"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-0307769bdf1fcb83",
+          "edt-insp-5987945643294a06",
+          "edt-insp-2f97a566d0d8b7a0",
+          "edt-insp-ab41f13f6e474585"
+        ],
+        "calendar_sha256": "e063aad3fbb042c18b3230595538e5086895e18e9e60282e8c76af9527551024"
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-0307769bdf1fcb83",
+          "edt-insp-5987945643294a06",
+          "edt-insp-2f97a566d0d8b7a0",
+          "edt-insp-ab41f13f6e474585"
+        ],
+        "calendar_sha256": "e063aad3fbb042c18b3230595538e5086895e18e9e60282e8c76af9527551024"
+      }
+    },
+    "Edt du 26.10.2026 au 30.10.2026 Orient.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-13d5445213486122",
+          "edt-insp-e2f72b88b2c42641"
+        ],
+        "calendar_sha256": "a73c761041ce19c80aadd35ff81b10f65cc24c41b8aa30e5bc3d82ce2a54c426"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-13d5445213486122",
+          "edt-insp-e2f72b88b2c42641"
+        ],
+        "calendar_sha256": "a73c761041ce19c80aadd35ff81b10f65cc24c41b8aa30e5bc3d82ce2a54c426"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-e2f72b88b2c42641"
+        ],
+        "calendar_sha256": "b38bf01d7fc2a3fbcf956a397b19c05d4575f9099786a4c05fd62ac1bfb7cea5"
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-e2f72b88b2c42641"
+        ],
+        "calendar_sha256": "b38bf01d7fc2a3fbcf956a397b19c05d4575f9099786a4c05fd62ac1bfb7cea5"
+      }
+    },
+    "Edt du 02.11.2026 au 06.11.2026.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-808cc9015042fe24",
+          "edt-insp-87cb3c5d7e319933",
+          "edt-insp-24b1b6eae9dc57b9",
+          "edt-insp-7ea69475d72b2991",
+          "edt-insp-23a0dff6f1b39f51",
+          "edt-insp-00bec605634a0df8"
+        ],
+        "calendar_sha256": "829ec317676f9bc7d9bf0889979b9859f0a27dfb4bd0cb9351379380a92fd17a"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-808cc9015042fe24",
+          "edt-insp-87cb3c5d7e319933",
+          "edt-insp-24b1b6eae9dc57b9",
+          "edt-insp-7ea69475d72b2991",
+          "edt-insp-23a0dff6f1b39f51",
+          "edt-insp-00bec605634a0df8"
+        ],
+        "calendar_sha256": "829ec317676f9bc7d9bf0889979b9859f0a27dfb4bd0cb9351379380a92fd17a"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-808cc9015042fe24",
+          "edt-insp-87cb3c5d7e319933",
+          "edt-insp-24b1b6eae9dc57b9",
+          "edt-insp-7ea69475d72b2991",
+          "edt-insp-23a0dff6f1b39f51",
+          "edt-insp-00bec605634a0df8"
+        ],
+        "calendar_sha256": "829ec317676f9bc7d9bf0889979b9859f0a27dfb4bd0cb9351379380a92fd17a"
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-808cc9015042fe24",
+          "edt-insp-87cb3c5d7e319933",
+          "edt-insp-24b1b6eae9dc57b9",
+          "edt-insp-7ea69475d72b2991",
+          "edt-insp-23a0dff6f1b39f51",
+          "edt-insp-00bec605634a0df8"
+        ],
+        "calendar_sha256": "829ec317676f9bc7d9bf0889979b9859f0a27dfb4bd0cb9351379380a92fd17a"
+      }
+    },
+    "Edt du 09.11.2026 au 13.11.2026.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-2b381bd707ca38ca",
+          "edt-insp-8874ef66d3d60c23",
+          "edt-insp-6d0600459d26c3df",
+          "edt-insp-77ae7a54cf83c070",
+          "edt-insp-f8948493c7171627",
+          "edt-insp-999e48362ed34845",
+          "edt-insp-15ab9034a2060ac1",
+          "edt-insp-8b9c4a487b925b70"
+        ],
+        "calendar_sha256": "7bb87d4940e8026530e237ee900f6d88dce0972dcab4918ad70048ca9a74343a"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-2b381bd707ca38ca",
+          "edt-insp-8874ef66d3d60c23",
+          "edt-insp-6d0600459d26c3df",
+          "edt-insp-77ae7a54cf83c070",
+          "edt-insp-f8948493c7171627",
+          "edt-insp-999e48362ed34845",
+          "edt-insp-15ab9034a2060ac1",
+          "edt-insp-8b9c4a487b925b70"
+        ],
+        "calendar_sha256": "7bb87d4940e8026530e237ee900f6d88dce0972dcab4918ad70048ca9a74343a"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-2b381bd707ca38ca",
+          "edt-insp-8874ef66d3d60c23",
+          "edt-insp-6d0600459d26c3df",
+          "edt-insp-77ae7a54cf83c070",
+          "edt-insp-f8948493c7171627",
+          "edt-insp-999e48362ed34845",
+          "edt-insp-15ab9034a2060ac1",
+          "edt-insp-8b9c4a487b925b70"
+        ],
+        "calendar_sha256": "7bb87d4940e8026530e237ee900f6d88dce0972dcab4918ad70048ca9a74343a"
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-2b381bd707ca38ca",
+          "edt-insp-8874ef66d3d60c23",
+          "edt-insp-6d0600459d26c3df",
+          "edt-insp-77ae7a54cf83c070",
+          "edt-insp-f8948493c7171627",
+          "edt-insp-999e48362ed34845",
+          "edt-insp-15ab9034a2060ac1",
+          "edt-insp-8b9c4a487b925b70"
+        ],
+        "calendar_sha256": "7bb87d4940e8026530e237ee900f6d88dce0972dcab4918ad70048ca9a74343a"
+      }
+    }
+  }
+}

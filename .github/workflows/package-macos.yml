@@ -67,6 +67,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint && pnpm format:check && pnpm test
+      - run: python3 scripts/vendor-inspcal-engine.py --check && python3 scripts/prepare-inspcal-pdfium.py
       - run: cargo fmt --all --check && cargo test --workspace --locked
       - run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - run: python3 scripts/check-security.py
@@ -91,6 +92,7 @@ jobs:
           codesign --verify --deep --strict "$bundle/macos/MoodBuro.app"
           archs=$(lipo -archs "$bundle/macos/MoodBuro.app/Contents/MacOS/moodburo")
           [[ " $archs " == *" arm64 "* && " $archs " == *" x86_64 "* ]]
+          "$bundle/macos/MoodBuro.app/Contents/MacOS/moodburo" --inspcal-self-check
           mkdir -p artifacts
           cp "$bundle"/dmg/*.dmg artifacts/
           for installer in artifacts/*.dmg; do hdiutil verify "$installer"; done

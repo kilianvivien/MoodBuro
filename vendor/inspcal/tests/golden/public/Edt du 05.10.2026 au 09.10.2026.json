@@ -1,0 +1,277 @@
+{
+  "source": {
+    "file": "Edt du 05.10.2026 au 09.10.2026.pdf",
+    "sha256": "8327f61b60356e863efa58a5660981e4fda2edfbe2fa6953bc56f072555b500f",
+    "week_start": "2026-10-05",
+    "week_end": "2026-10-09",
+    "promotion": "2026-2028",
+    "revision": "2026-10-01T09:00:00+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-32675ef07c53ec70",
+      "date": "2026-10-07",
+      "start": "10:30",
+      "end": "13:00",
+      "title": "Conférences de méthode",
+      "description": null,
+      "module": "Parcours droit",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": "Lire le dossier",
+      "notes": [],
+      "links": [
+        {
+          "label": "Lire le dossier",
+          "url": "https://example.org/dossier",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [
+          "10h30-13h00"
+        ],
+        "group_labels": [
+          "FI-CIL-OFF 2026-2028"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-31b8e4b262acfa1e",
+      "date": "2026-10-07",
+      "start": "14:00",
+      "end": "17:30",
+      "title": "Conférences de méthode",
+      "description": null,
+      "module": "Parcours droit",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": "Lire le dossier",
+      "notes": [],
+      "links": [
+        {
+          "label": "Lire le dossier",
+          "url": "https://example.org/dossier",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          110.0,
+          370.0,
+          150.0
+        ],
+        "time_ranges": [
+          "14h00-17h30"
+        ],
+        "group_labels": [
+          "FI-CIL-OFF 2026-2028"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-472b9acea2d66be4",
+      "date": "2026-10-07",
+      "start": "17:30",
+      "end": "22:00",
+      "title": "Soirée associative",
+      "description": null,
+      "module": "Autres activités",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": null,
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": "Evènement facultatif",
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          150.0,
+          370.0,
+          190.0
+        ],
+        "time_ranges": [
+          "17h30-22h00"
+        ],
+        "group_labels": [],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": []
+      }
+    },
+    {
+      "uid": "edt-insp-40fa9260cc0fd86b",
+      "date": "2026-10-08",
+      "start": "08:00",
+      "end": "13:00",
+      "title": "Ateliers documentaires",
+      "description": null,
+      "module": "Parcours droit",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Groupes 1-3",
+      "groups": {
+        "multi": true,
+        "count": 3,
+        "time_ranges": [
+          "08:00-09:30",
+          "09:45-11:15",
+          "11:30-13:00"
+        ]
+      },
+      "speakers": [
+        "M. Bob EXEMPLE"
+      ],
+      "location": "C202",
+      "location_note": null,
+      "preparation": "Composition des groupes",
+      "notes": [
+        "Groupe 1 : 08:00-09:30 ; Salle : C202 ; M. Bob EXEMPLE",
+        "Groupe 2 : 09:45-11:15 ; Salle : C202 ; M. Bob EXEMPLE",
+        "Groupe 3 : 11:30-13:00 ; Salle : C202 ; M. Bob EXEMPLE"
+      ],
+      "links": [
+        {
+          "label": "Composition des groupes",
+          "url": "https://example.org/groupes",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "group_details": [
+          {
+            "start": "08h00",
+            "end": "09h30",
+            "location": "C202",
+            "speakers": "M. Bob EXEMPLE",
+            "label": "Groupe 1"
+          },
+          {
+            "start": "09h45",
+            "end": "11h15",
+            "location": "C202",
+            "speakers": "M. Bob EXEMPLE",
+            "label": "Groupe 2"
+          },
+          {
+            "start": "11h30",
+            "end": "13h00",
+            "location": "C202",
+            "speakers": "M. Bob EXEMPLE",
+            "label": "Groupe 3"
+          }
+        ],
+        "page": 1,
+        "bbox": [
+          170.0,
+          190.0,
+          370.0,
+          310.0
+        ],
+        "time_ranges": [
+          "08h00-09h30",
+          "09h45-11h15",
+          "11h30-13h00"
+        ],
+        "group_labels": [
+          "Groupe 1",
+          "Groupe 2",
+          "Groupe 3"
+        ],
+        "rooms": [
+          "C202"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "M. Bob EXEMPLE"
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-472b9acea2d66be4",
+      "message": "« Soirée associative » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "IMPLAUSIBLE_TIME",
+      "event_uid": "edt-insp-472b9acea2d66be4",
+      "message": "« Soirée associative » se déroule de 17:30 à 22:00"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-40fa9260cc0fd86b",
+      "message": "« Ateliers documentaires » n'indique aucune cohorte FI/CIL/OFF (séance en 3 groupes) — conservée pour tout le monde"
+    }
+  ]
+}

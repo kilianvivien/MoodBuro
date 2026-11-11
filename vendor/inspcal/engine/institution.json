@@ -1,0 +1,49 @@
+{
+  "version": "2026-09-30",
+  "school": "INSP",
+  "_comment": [
+    "Facts about the school, not about parsing. Every value here is something",
+    "the INSP can change without telling anyone, and each one used to be a",
+    "constant in the code: a new LV1 room, a renamed column or a different",
+    "sport keyword meant a parser release. It is now a data change.",
+    "",
+    "Bump `version` whenever anything below changes. It is reported by",
+    "/api/health and written into every calendar as X-INSPCAL-RULES, so the",
+    "rules a given export was produced under can be read off the file.",
+    "",
+    "Anything that is a *parsing* decision — geometry ratios, how speakers are",
+    "split, how a title is folded — stays in the code. This file is only for",
+    "what the institution decides."
+  ],
+
+  "rotation_url": "https://moodle.insp.gouv.fr/mod/folder/view.php?id=55060",
+  "group_composition_url": "https://moodle.insp.gouv.fr/mod/folder/view.php?id=55060",
+
+  "lv1_rooms": [
+    "B201", "B202",
+    "C102", "C103", "C104", "C105", "C203", "C301", "C303",
+    "D101", "D102", "D103", "D104",
+    "Salle de réception"
+  ],
+
+  "cohort_tokens": ["FI", "CIL", "OFF"],
+
+  "sport_keyword": "APSA",
+
+  "half_day_slots": {
+    "matin": ["09:00", "12:30"],
+    "après-midi": ["14:00", "17:30"]
+  },
+
+  "header_aliases": {
+    "date": ["date", "jour"],
+    "start": ["debut"],
+    "end": ["fin"],
+    "theme": ["theme de la seance", "intitule de la seance", "theme", "themes", "intitule"],
+    "speakers": ["intervenants", "intervenant", "intervenantes", "intervenante"],
+    "cohort": ["cohorte concernee", "cohorte", "cohortes", "public concerne"],
+    "location": ["salle", "salles", "lieu", "lieux"],
+    "preparation": ["preparation de la session", "preparation"],
+    "module": ["module", "modules"]
+  }
+}

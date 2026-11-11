@@ -1,0 +1,5 @@
+# One compiler for everyone and for CI, so a new lint does not redden the build.
+[toolchain]
+channel = "1.91.1"
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]

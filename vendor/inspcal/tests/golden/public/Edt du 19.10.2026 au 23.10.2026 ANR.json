@@ -1,0 +1,71 @@
+{
+  "source": {
+    "file": "Edt du 19.10.2026 au 23.10.2026 ANR.pdf",
+    "sha256": "13a17872d6ca0f74a291701a99fb143135eb81044107d392c3d902fcd14f1e06",
+    "week_start": "2026-10-19",
+    "week_end": "2026-10-23",
+    "promotion": "2026-2028",
+    "revision": "2026-10-15T09:00:00+00:00",
+    "parsed_at": "2026-10-15T17:35:59+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-3b0d9e5f8066e21b",
+      "date": "2026-10-20",
+      "start": "13:00",
+      "end": "18:00",
+      "title": "Expérimentation ANR",
+      "description": null,
+      "module": "Science",
+      "module_color": null,
+      "cohorts": [
+        "FI"
+      ],
+      "cohort_label": "FI 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "C301",
+      "location_note": null,
+      "preparation": "Composition des groupes",
+      "notes": [],
+      "links": [
+        {
+          "label": "Composition des groupes",
+          "url": "https://example.org/groupes-anr",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [
+          "13h00-18h00"
+        ],
+        "group_labels": [
+          "FI 2026-2028"
+        ],
+        "rooms": [
+          "C301"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    }
+  ],
+  "warnings": []
+}

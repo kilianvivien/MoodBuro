@@ -1,0 +1,566 @@
+{
+  "source": {
+    "file": "Edt du 09.11.2026 au 13.11.2026.pdf",
+    "sha256": "fb9abe151b9ad271080344634a50e6d3503fdbfd62273d7c3c6ace76243911c7",
+    "week_start": "2026-11-09",
+    "week_end": "2026-11-13",
+    "promotion": "2026-2028",
+    "revision": "2026-11-05T07:00:00+00:00",
+    "parsed_at": "2026-11-05T17:56:32+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-2b381bd707ca38ca",
+      "date": "2026-11-09",
+      "start": "14:15",
+      "end": "15:45",
+      "title": "Regards croisés",
+      "description": null,
+      "module": "Autres activités",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "M. Bob EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": null,
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [
+          "14h15-15h45"
+        ],
+        "group_labels": [
+          "FI-CIL-OFF 2026-2028"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "M. Bob EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-8874ef66d3d60c23",
+      "date": "2026-11-10",
+      "start": "08:45",
+      "end": "10:45",
+      "title": "Conférence exemple",
+      "description": null,
+      "module": "Parcours public",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": "Lire la note",
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          110.0,
+          370.0,
+          150.0
+        ],
+        "time_ranges": [
+          "08h45-10h45"
+        ],
+        "group_labels": [
+          "FI-CIL-OFF 2026-2028"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-6d0600459d26c3df",
+      "date": "2026-11-11",
+      "start": null,
+      "end": null,
+      "title": "Férié",
+      "description": null,
+      "module": null,
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": null,
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [],
+      "location": null,
+      "location_note": null,
+      "preparation": null,
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "schedule_label": "horaires non précisés",
+        "page": 1,
+        "bbox": [
+          80.0,
+          150.0,
+          852.0,
+          190.0
+        ],
+        "time_ranges": [],
+        "group_labels": [],
+        "rooms": [],
+        "red_notes": [],
+        "group_speakers": []
+      }
+    },
+    {
+      "uid": "edt-insp-77ae7a54cf83c070",
+      "date": "2026-11-12",
+      "start": "09:30",
+      "end": "13:00",
+      "title": "Atelier exemple (1/2 promo B)",
+      "description": null,
+      "module": "Parcours com",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Groupe B1 / Groupe B2 / Groupe B3",
+      "groups": {
+        "multi": true,
+        "count": 3,
+        "time_ranges": [
+          "09:30-13:00"
+        ]
+      },
+      "speakers": [
+        "Mme Exemple B1",
+        "Mme Exemple B2",
+        "Mme Exemple B3"
+      ],
+      "location": null,
+      "location_note": "Selon le groupe",
+      "preparation": "Groupes",
+      "notes": [
+        "Groupe B1 : 09:30-13:00 ; Salle : C203 ; Mme Exemple B1",
+        "Groupe B2 : 09:30-13:00 ; Salle : C204 ; Mme Exemple B2",
+        "Groupe B3 : 09:30-13:00 ; Salle : C205 ; Mme Exemple B3"
+      ],
+      "links": [
+        {
+          "label": "Groupes",
+          "url": "https://example.org/groupes-b",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "B",
+        "group_details": [
+          {
+            "start": "09H30",
+            "end": "13H00",
+            "location": "C203",
+            "speakers": "Mme Exemple B1",
+            "label": "Groupe B1"
+          },
+          {
+            "start": "09H30",
+            "end": "13H00",
+            "location": "C204",
+            "speakers": "Mme Exemple B2",
+            "label": "Groupe B2"
+          },
+          {
+            "start": "09H30",
+            "end": "13H00",
+            "location": "C205",
+            "speakers": "Mme Exemple B3",
+            "label": "Groupe B3"
+          }
+        ],
+        "page": 2,
+        "bbox": [
+          170.0,
+          30.0,
+          370.0,
+          150.0
+        ],
+        "time_ranges": [
+          "09H30-13H00"
+        ],
+        "group_labels": [
+          "Groupe B1",
+          "Groupe B2",
+          "Groupe B3"
+        ],
+        "rooms": [
+          "C203",
+          "C204",
+          "C205"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Exemple B1",
+          "Mme Exemple B2",
+          "Mme Exemple B3"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-f8948493c7171627",
+      "date": "2026-11-13",
+      "start": "09:00",
+      "end": "12:30",
+      "title": "Atelier exemple (1/2 promo A)",
+      "description": null,
+      "module": "Parcours com",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Groupe A1 / Groupe A2 / Groupe A3",
+      "groups": {
+        "multi": true,
+        "count": 3,
+        "time_ranges": [
+          "09:00-12:30"
+        ]
+      },
+      "speakers": [
+        "Mme Exemple A1",
+        "Mme Exemple A2",
+        "Mme Exemple A3"
+      ],
+      "location": null,
+      "location_note": "Selon le groupe",
+      "preparation": "Groupes",
+      "notes": [
+        "Groupe A1 : 09:00-12:30 ; Salle : C301 ; Mme Exemple A1",
+        "Groupe A2 : 09:00-12:30 ; Salle : C302 ; Mme Exemple A2",
+        "Groupe A3 : 09:00-12:30 ; Salle : C303 ; Mme Exemple A3"
+      ],
+      "links": [
+        {
+          "label": "Groupes",
+          "url": "https://example.org/groupes-a",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "A",
+        "group_details": [
+          {
+            "start": "09h00",
+            "end": "12h30",
+            "location": "C301",
+            "speakers": "Mme Exemple A1",
+            "label": "Groupe A1"
+          },
+          {
+            "start": "09h00",
+            "end": "12h30",
+            "location": "C302",
+            "speakers": "Mme Exemple A2",
+            "label": "Groupe A2"
+          },
+          {
+            "start": "09h00",
+            "end": "12h30",
+            "location": "C303",
+            "speakers": "Mme Exemple A3",
+            "label": "Groupe A3"
+          }
+        ],
+        "page": 2,
+        "bbox": [
+          170.0,
+          150.0,
+          370.0,
+          270.0
+        ],
+        "time_ranges": [
+          "09h00-12h30"
+        ],
+        "group_labels": [
+          "Groupe A1",
+          "Groupe A2",
+          "Groupe A3"
+        ],
+        "rooms": [
+          "C301",
+          "C302",
+          "C303"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Exemple A1",
+          "Mme Exemple A2",
+          "Mme Exemple A3"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-999e48362ed34845",
+      "date": "2026-11-13",
+      "start": "09:00",
+      "end": "10:00",
+      "title": "Apports (1/2 promo B)",
+      "description": null,
+      "module": "Parcours RH",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "½ promo B",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": "½ promos",
+      "notes": [],
+      "links": [
+        {
+          "label": "½ promos",
+          "url": "https://example.org/demi-promos",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "B",
+        "page": 2,
+        "bbox": [
+          170.0,
+          270.0,
+          370.0,
+          310.0
+        ],
+        "time_ranges": [
+          "09h00-10h00"
+        ],
+        "group_labels": [
+          "½ promo B"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-15ab9034a2060ac1",
+      "date": "2026-11-13",
+      "start": "10:30",
+      "end": "11:45",
+      "title": "Mises en situation (1/2 promo B)",
+      "description": null,
+      "module": "Parcours RH",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Groupes 7 et 8",
+      "groups": {
+        "multi": true,
+        "count": 1,
+        "time_ranges": [
+          "10:30-11:45"
+        ]
+      },
+      "speakers": [
+        "M. Bob EXEMPLE"
+      ],
+      "location": "D102",
+      "location_note": null,
+      "preparation": "½ promos",
+      "notes": [
+        "Groupes 7 et 8 : 10:30-11:45 ; Salle : D102 ; M. Bob EXEMPLE"
+      ],
+      "links": [
+        {
+          "label": "½ promos",
+          "url": "https://example.org/demi-promos",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "group_details": [
+          {
+            "start": "10h30",
+            "end": "11h45",
+            "location": "D102",
+            "speakers": "M. Bob EXEMPLE",
+            "label": "Groupes 7 et 8"
+          }
+        ],
+        "page": 2,
+        "bbox": [
+          170.0,
+          310.0,
+          370.0,
+          350.0
+        ],
+        "time_ranges": [
+          "10h30-11h45"
+        ],
+        "group_labels": [
+          "Groupes 7 et 8"
+        ],
+        "rooms": [
+          "D102"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "M. Bob EXEMPLE"
+        ],
+        "half_promotion": "B"
+      }
+    },
+    {
+      "uid": "edt-insp-8b9c4a487b925b70",
+      "date": "2026-11-13",
+      "start": "16:00",
+      "end": "17:00",
+      "title": "Bilan (1/2 promo B)",
+      "description": null,
+      "module": "Parcours RH",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "½ promo B",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": "½ promos",
+      "notes": [],
+      "links": [
+        {
+          "label": "½ promos",
+          "url": "https://example.org/demi-promos",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "B",
+        "page": 2,
+        "bbox": [
+          170.0,
+          350.0,
+          370.0,
+          390.0
+        ],
+        "time_ranges": [
+          "16h00-17h00"
+        ],
+        "group_labels": [
+          "½ promo B"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-77ae7a54cf83c070",
+      "message": "« Atelier exemple (1/2 promo B) » n'indique aucune cohorte FI/CIL/OFF (séance en 3 groupes) — conservée pour tout le monde"
+    },
+    {
+      "code": "AMBIGUOUS_LOCATION",
+      "event_uid": "edt-insp-77ae7a54cf83c070",
+      "message": "« Atelier exemple (1/2 promo B) » : salle selon le groupe"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-f8948493c7171627",
+      "message": "« Atelier exemple (1/2 promo A) » n'indique aucune cohorte FI/CIL/OFF (séance en 3 groupes) — conservée pour tout le monde"
+    },
+    {
+      "code": "AMBIGUOUS_LOCATION",
+      "event_uid": "edt-insp-f8948493c7171627",
+      "message": "« Atelier exemple (1/2 promo A) » : salle selon le groupe"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-999e48362ed34845",
+      "message": "« Apports (1/2 promo B) » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-15ab9034a2060ac1",
+      "message": "« Mises en situation (1/2 promo B) » n'indique aucune cohorte FI/CIL/OFF (séance en 1 groupes) — conservée pour tout le monde"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-8b9c4a487b925b70",
+      "message": "« Bilan (1/2 promo B) » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-f8948493c7171627",
+      "message": "« Atelier exemple (1/2 promo A) » et « Apports (1/2 promo B) » se chevauchent le 2026-11-13"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-f8948493c7171627",
+      "message": "« Atelier exemple (1/2 promo A) » et « Mises en situation (1/2 promo B) » se chevauchent le 2026-11-13"
+    }
+  ]
+}

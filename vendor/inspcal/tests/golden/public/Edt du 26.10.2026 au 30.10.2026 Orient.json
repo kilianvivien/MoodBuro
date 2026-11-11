@@ -1,0 +1,124 @@
+{
+  "source": {
+    "file": "Edt du 26.10.2026 au 30.10.2026 Orient.pdf",
+    "sha256": "5b117f2e5cc958cfd0cae592f3a81e6f75f3306da71d5cac6acd04fedb7e4ac3",
+    "week_start": "2026-10-26",
+    "week_end": "2026-10-30",
+    "promotion": "2026-2028",
+    "revision": "2026-10-23T07:00:00+00:00",
+    "parsed_at": "2026-10-23T10:11:24+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-13d5445213486122",
+      "date": "2026-10-28",
+      "start": "10:00",
+      "end": "11:15",
+      "title": "La diplomatie multilatérale",
+      "description": null,
+      "module": "Stage international",
+      "module_color": null,
+      "cohorts": [
+        "FI"
+      ],
+      "cohort_label": "FI 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": null,
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [
+          "10h00-11h15"
+        ],
+        "group_labels": [
+          "FI 2026-2028"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-e2f72b88b2c42641",
+      "date": "2026-10-28",
+      "start": "10:15",
+      "end": "11:15",
+      "title": "Moment d'échange DGAM – élèves voie Orient",
+      "description": null,
+      "module": "Stage international",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Elèves de la voie Orient",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "M. Bob EXEMPLE"
+      ],
+      "location": "C106",
+      "location_note": null,
+      "preparation": null,
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          110.0,
+          370.0,
+          150.0
+        ],
+        "time_ranges": [
+          "10h15-11h15"
+        ],
+        "group_labels": [
+          "Elèves de la voie Orient"
+        ],
+        "rooms": [
+          "C106"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "M. Bob EXEMPLE"
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-e2f72b88b2c42641",
+      "message": "« Moment d'échange DGAM – élèves voie Orient » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-13d5445213486122",
+      "message": "« La diplomatie multilatérale » et « Moment d'échange DGAM – élèves voie Orient » se chevauchent le 2026-10-28"
+    }
+  ]
+}

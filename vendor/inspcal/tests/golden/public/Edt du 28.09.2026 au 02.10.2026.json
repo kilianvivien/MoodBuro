@@ -1,0 +1,330 @@
+{
+  "source": {
+    "file": "Edt du 28.09.2026 au 02.10.2026.pdf",
+    "sha256": "99110bfa543117ae0a39ff7e9587fbfa5d0735dd9301000aa13c68fa5280bc1e",
+    "week_start": "2026-09-28",
+    "week_end": "2026-10-02",
+    "promotion": "2026-2028",
+    "revision": "2026-09-22T09:00:00+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-c0e6802f50c948bc",
+      "date": "2026-09-28",
+      "start": "09:00",
+      "end": "10:30",
+      "title": "Séminaire d'ouverture",
+      "description": null,
+      "module": "Parcours public",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": "Lire la note",
+      "notes": [],
+      "links": [
+        {
+          "label": "Lire la note",
+          "url": "https://example.org/note-de-cadrage",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [
+          "09h00-10h30"
+        ],
+        "group_labels": [
+          "FI-CIL-OFF 2026-2028"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-415c947af7a3b47f",
+      "date": "2026-09-28",
+      "start": "10:45",
+      "end": "12:15",
+      "title": "Atelier de déontologie",
+      "description": null,
+      "module": "Parcours public",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Groupes 1-2",
+      "groups": {
+        "multi": true,
+        "count": 2,
+        "time_ranges": [
+          "10:45-12:15"
+        ]
+      },
+      "speakers": [
+        "M. Bob EXEMPLE"
+      ],
+      "location": null,
+      "location_note": "Selon le groupe",
+      "preparation": null,
+      "notes": [
+        "Groupe 1 : 10:45-12:15 ; Salle : C101 ; M. Bob EXEMPLE",
+        "Groupe 2 : 10:45-12:15 ; Salle : C102 ; M. Bob EXEMPLE"
+      ],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "group_details": [
+          {
+            "start": "10h45",
+            "end": "12h15",
+            "location": "C101",
+            "speakers": "M. Bob EXEMPLE",
+            "label": "Groupe 1"
+          },
+          {
+            "start": "10h45",
+            "end": "12h15",
+            "location": "C102",
+            "speakers": "M. Bob EXEMPLE",
+            "label": "Groupe 2"
+          }
+        ],
+        "page": 1,
+        "bbox": [
+          170.0,
+          110.0,
+          370.0,
+          190.0
+        ],
+        "time_ranges": [
+          "10h45-12h15",
+          "10h45-12h15"
+        ],
+        "group_labels": [
+          "Groupe 1",
+          "Groupe 2"
+        ],
+        "rooms": [
+          "C101",
+          "C102"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "M. Bob EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-daf1f2d1cf77f56b",
+      "date": "2026-09-29",
+      "start": "09:00",
+      "end": "10:30",
+      "title": "LV1 – Anglais",
+      "description": null,
+      "module": "Parcours langues",
+      "module_color": null,
+      "cohorts": [
+        "FI"
+      ],
+      "cohort_label": "FI 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Diane EXEMPLE"
+      ],
+      "location": null,
+      "location_note": "Selon la rotation LV1 sur Moodle",
+      "preparation": null,
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "lv1_room": true,
+        "page": 1,
+        "bbox": [
+          170.0,
+          190.0,
+          370.0,
+          230.0
+        ],
+        "time_ranges": [
+          "09h00-10h30"
+        ],
+        "group_labels": [
+          "FI 2026-2028"
+        ],
+        "rooms": [],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Diane EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-ef7db5312c251e6b",
+      "date": "2026-09-30",
+      "start": "14:00",
+      "end": "16:00",
+      "title": "Table ronde",
+      "description": null,
+      "module": "Parcours public",
+      "module_color": null,
+      "cohorts": [
+        "CIL"
+      ],
+      "cohort_label": "CIL 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Dr. Claire EXEMPLE",
+        "Pr. Denis EXEMPLE"
+      ],
+      "location": "Salle D",
+      "location_note": null,
+      "preparation": null,
+      "notes": [
+        "Ordinateur requis"
+      ],
+      "links": [
+        {
+          "label": "Ordinateur requis",
+          "url": "https://example.org/consigne",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 2,
+        "bbox": [
+          170.0,
+          30.0,
+          370.0,
+          70.0
+        ],
+        "time_ranges": [
+          "14h00-16h00"
+        ],
+        "group_labels": [
+          "CIL 2026-2028"
+        ],
+        "rooms": [
+          "Salle D"
+        ],
+        "red_notes": [
+          "Ordinateur requis"
+        ],
+        "group_speakers": [
+          "Dr. Claire EXEMPLE Pr. Denis EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-4e6f5f91aab53135",
+      "date": "2026-10-01",
+      "start": "18:00",
+      "end": null,
+      "title": "APSA",
+      "description": null,
+      "module": "Parcours sport",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [],
+      "location": "Gymnase",
+      "location_note": null,
+      "preparation": null,
+      "notes": [
+        "A partir de 18h00"
+      ],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "schedule_label": "A partir de 18h00 (fin non précisée)",
+        "pdf_start": true,
+        "page": 2,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [],
+        "group_labels": [
+          "FI-CIL-OFF 2026-2028"
+        ],
+        "rooms": [
+          "Gymnase"
+        ],
+        "red_notes": [],
+        "group_speakers": []
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-415c947af7a3b47f",
+      "message": "« Atelier de déontologie » n'indique aucune cohorte FI/CIL/OFF (séance en 2 groupes) — conservée pour tout le monde"
+    },
+    {
+      "code": "AMBIGUOUS_LOCATION",
+      "event_uid": "edt-insp-415c947af7a3b47f",
+      "message": "« Atelier de déontologie » : salle selon le groupe"
+    },
+    {
+      "code": "ROOM_ROTATION",
+      "event_uid": "edt-insp-daf1f2d1cf77f56b",
+      "message": "« LV1 – Anglais » : la salle dépend de la rotation LV1 — à relever sur Moodle (https://moodle.insp.gouv.fr/mod/folder/view.php?id=55060)"
+    },
+    {
+      "code": "RED_TEXT",
+      "event_uid": "edt-insp-ef7db5312c251e6b",
+      "message": "« Table ronde » : Ordinateur requis"
+    },
+    {
+      "code": "UNSCHEDULED_SESSION",
+      "event_uid": "edt-insp-4e6f5f91aab53135",
+      "message": "01/10 — « APSA » : A partir de 18h00 (fin non précisée). Conservée comme rappel sans bloquer votre disponibilité ; horaires à vérifier."
+    }
+  ]
+}

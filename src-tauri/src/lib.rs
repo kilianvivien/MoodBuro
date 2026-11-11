@@ -52,6 +52,27 @@ pub struct AppState {
     shortcut_unavailable: std::sync::atomic::AtomicBool,
 }
 
+/// Run the native timetable engine's self-check; returns the exit status.
+pub fn inspcal_self_check() -> i32 {
+    match md_inspcal::smoke() {
+        Ok(report) => {
+            println!(
+                "inspcal self-check ok: engine {} contract {} events {} calendar {} in {} ms",
+                md_inspcal::ENGINE_VERSION,
+                md_inspcal::ADAPTER_CONTRACT,
+                report.events,
+                report.calendar_sha256,
+                report.elapsed_ms
+            );
+            0
+        }
+        Err(error) => {
+            eprintln!("inspcal self-check failed: {error}");
+            1
+        }
+    }
+}
+
 pub fn run() {
     tauri::Builder::default()
         .manage(Mutex::new(links::Inbox::default()))

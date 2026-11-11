@@ -1,5 +1,8 @@
 [workspace]
 members = ["src-tauri", "crates/*"]
+# The vendored InspCal engine is a path dependency of md-inspcal, not a member:
+# its own binaries and WebAssembly settings are never MoodBuro targets.
+exclude = ["vendor/inspcal/engine"]
 resolver = "2"
 
 [workspace.package]

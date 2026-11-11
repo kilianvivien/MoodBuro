@@ -1,0 +1,12 @@
+[package]
+name = "menuprobe"
+version = "0.0.0"
+edition = "2021"
+[dependencies]
+objc2 = "=0.6.5"
+block2 = "=0.6.2"
+objc2-foundation = "=0.3.2"
+objc2-app-kit = "=0.3.2"
+objc2-web-kit = "=0.3.2"
+[workspace]
+# Standalone: not a MoodBuro workspace member. Run: cargo run --manifest-path test-rigs/inspcal-menu-probe/Cargo.toml

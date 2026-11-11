@@ -1,0 +1,47 @@
+[package]
+name = "inspcal-engine"
+version = "0.2.0"
+edition = "2021"
+rust-version = "1.82"
+license = "MIT"
+description = "InspCal's engine: a timetable PDF in, calendar events out, for the browser."
+publish = false
+
+[lib]
+name = "inspcal_engine"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "inspcal-extract"
+path = "src/bin/inspcal-extract.rs"
+
+[[bin]]
+name = "inspcal-convert"
+path = "src/bin/inspcal-convert.rs"
+
+[[bin]]
+name = "inspcal-maintain"
+path = "src/bin/inspcal-maintain.rs"
+
+[dependencies]
+# PDFium itself is not part of this crate: it is bound at run time (a dynamic
+# library natively, a separate WebAssembly module in the browser).
+pdfium-render = { version = "=0.9.4", default-features = false, features = ["pdfium_latest"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+sha1 = "0.10"
+sha2 = "0.10"
+# Python's `re`, `unicodedata` and `str.casefold`, as far as the parser uses them.
+regex = { version = "1", default-features = false, features = ["std", "perf", "unicode-perl", "unicode-case", "unicode-gencat"] }
+unicode-normalization = "0.1"
+caseless = "0.2"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = "=0.2.129"
+js-sys = "0.3"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"

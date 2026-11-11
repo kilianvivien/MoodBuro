@@ -1,0 +1,4 @@
+# pdfium-render's build script links the static PDFium prepared by
+# scripts/prepare-inspcal-pdfium.py (macOS only; see crates/md-inspcal).
+[env]
+PDFIUM_STATIC_LIB_PATH = { value = ".inspcal-pdfium/lib", relative = true }

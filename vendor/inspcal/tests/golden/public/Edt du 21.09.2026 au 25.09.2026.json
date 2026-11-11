@@ -1,0 +1,235 @@
+{
+  "source": {
+    "file": "Edt du 21.09.2026 au 25.09.2026.pdf",
+    "sha256": "1afcc205925eef847c58bd84ca162eca2ca73198145572b15b11bf0281148ffb",
+    "week_start": "2026-09-21",
+    "week_end": "2026-09-25",
+    "promotion": "2026-2028",
+    "revision": "2026-09-15T09:00:00+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-9b40ba7fca1d0ba0",
+      "date": "2026-09-21",
+      "start": "09:00",
+      "end": "12:00",
+      "title": "Conférence de rentrée",
+      "description": null,
+      "module": "Parcours public",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Salle A",
+      "location_note": null,
+      "preparation": null,
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [
+          "09h00-12h00"
+        ],
+        "group_labels": [
+          "FI-CIL-OFF 2026-2028"
+        ],
+        "rooms": [
+          "Salle A"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-0a367c3ac746fbd0",
+      "date": "2026-09-21",
+      "start": "18:00",
+      "end": null,
+      "title": "APSA",
+      "description": null,
+      "module": "Parcours sport",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [],
+      "location": "Gymnase",
+      "location_note": null,
+      "preparation": null,
+      "notes": [
+        "A partir de 18h00"
+      ],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "schedule_label": "A partir de 18h00 (fin non précisée)",
+        "pdf_start": true,
+        "page": 1,
+        "bbox": [
+          170.0,
+          110.0,
+          370.0,
+          150.0
+        ],
+        "time_ranges": [],
+        "group_labels": [
+          "FI-CIL-OFF 2026-2028"
+        ],
+        "rooms": [
+          "Gymnase"
+        ],
+        "red_notes": [],
+        "group_speakers": []
+      }
+    },
+    {
+      "uid": "edt-insp-d686c1c13158803f",
+      "date": "2026-09-23",
+      "start": "17:45",
+      "end": null,
+      "title": "APSA",
+      "description": null,
+      "module": "Parcours sport",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [],
+      "location": "Gymnase",
+      "location_note": null,
+      "preparation": null,
+      "notes": [
+        "A partir de 17h45"
+      ],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "schedule_label": "A partir de 17h45 (fin non précisée)",
+        "pdf_start": true,
+        "page": 1,
+        "bbox": [
+          170.0,
+          150.0,
+          370.0,
+          190.0
+        ],
+        "time_ranges": [],
+        "group_labels": [
+          "FI-CIL-OFF 2026-2028"
+        ],
+        "rooms": [
+          "Gymnase"
+        ],
+        "red_notes": [],
+        "group_speakers": []
+      }
+    },
+    {
+      "uid": "edt-insp-1790d2a0a500c343",
+      "date": "2026-09-24",
+      "start": "14:00",
+      "end": "17:30",
+      "title": "E-learning : Exemple",
+      "description": null,
+      "module": "Parcours public",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [],
+      "location": null,
+      "location_note": null,
+      "preparation": null,
+      "notes": [
+        "Après-midi"
+      ],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "schedule_label": "Après-midi",
+        "default_times": true,
+        "page": 1,
+        "bbox": [
+          170.0,
+          190.0,
+          370.0,
+          230.0
+        ],
+        "time_ranges": [],
+        "group_labels": [
+          "FI-CIL-OFF 2026-2028"
+        ],
+        "rooms": [],
+        "red_notes": [],
+        "group_speakers": []
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "UNSCHEDULED_SESSION",
+      "event_uid": "edt-insp-0a367c3ac746fbd0",
+      "message": "21/09 — « APSA » : A partir de 18h00 (fin non précisée). Conservée comme rappel sans bloquer votre disponibilité ; horaires à vérifier."
+    },
+    {
+      "code": "UNSCHEDULED_SESSION",
+      "event_uid": "edt-insp-d686c1c13158803f",
+      "message": "23/09 — « APSA » : A partir de 17h45 (fin non précisée). Conservée comme rappel sans bloquer votre disponibilité ; horaires à vérifier."
+    },
+    {
+      "code": "DEFAULT_SCHEDULE",
+      "event_uid": "edt-insp-1790d2a0a500c343",
+      "message": "24/09 — « E-learning : Exemple » : le PDF indique « Après-midi ». Horaire fixé par défaut de 14:00 à 17:30 — corrigez-le si vous connaissez le vrai créneau."
+    },
+    {
+      "code": "SPORT_CHOICE",
+      "event_uid": null,
+      "message": "2 créneaux APSA cette semaine (21/09 à 18:00, 23/09 à 17:45) — une seule séance est obligatoire : choisissez celle que vous suivez."
+    }
+  ]
+}

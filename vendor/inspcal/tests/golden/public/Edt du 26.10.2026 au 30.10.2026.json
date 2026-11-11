@@ -1,0 +1,778 @@
+{
+  "source": {
+    "file": "Edt du 26.10.2026 au 30.10.2026.pdf",
+    "sha256": "0ff48215a4361e1e97696537a767d37993dbc357913cb2686b7a8ca28e1abf69",
+    "week_start": "2026-10-26",
+    "week_end": "2026-10-30",
+    "promotion": null,
+    "revision": "2026-10-23T07:00:00+00:00",
+    "parsed_at": "2026-10-23T07:10:47+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-14bcca3f5a20d6fb",
+      "date": "2026-10-29",
+      "start": "09:00",
+      "end": "10:00",
+      "title": "Déléguer - conférence (Demi-promo A)",
+      "description": null,
+      "module": "Management",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "½ promo A",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": "Composition des groupes",
+      "notes": [],
+      "links": [
+        {
+          "label": "Composition des groupes",
+          "url": "https://example.org/management",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "A",
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [
+          "09h00-10h00"
+        ],
+        "group_labels": [
+          "½ promo A"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-325373937f1dbe14",
+      "date": "2026-10-29",
+      "start": "09:00",
+      "end": "13:00",
+      "title": "Communication en préfecture (Demi-promo B)",
+      "description": null,
+      "module": "Communication",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Groupe F / Groupe G / Groupe H / Groupe I / Groupe J",
+      "groups": {
+        "multi": true,
+        "count": 5,
+        "time_ranges": [
+          "09:00-13:00"
+        ]
+      },
+      "speakers": [
+        "Equipe EXEMPLE"
+      ],
+      "location": null,
+      "location_note": "Selon le groupe",
+      "preparation": "Composition des groupes",
+      "notes": [
+        "Groupe F : 09:00-13:00 ; Salle : C201 ; Equipe EXEMPLE",
+        "Groupe G : 09:00-13:00 ; Salle : C202 ; Equipe EXEMPLE",
+        "Groupe H : 09:00-13:00 ; Salle : C203 ; Equipe EXEMPLE",
+        "Groupe I : 09:00-13:00 ; Salle : C204 ; Equipe EXEMPLE",
+        "Groupe J : 09:00-13:00 ; Salle : C205 ; Equipe EXEMPLE"
+      ],
+      "links": [
+        {
+          "label": "Composition des groupes",
+          "url": "https://example.org/communication-matin",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "B",
+        "group_details": [
+          {
+            "start": "09h00",
+            "end": "13h00",
+            "location": "C201",
+            "speakers": "Equipe EXEMPLE",
+            "label": "Groupe F"
+          },
+          {
+            "start": "09h00",
+            "end": "13h00",
+            "location": "C202",
+            "speakers": "Equipe EXEMPLE",
+            "label": "Groupe G"
+          },
+          {
+            "start": "09h00",
+            "end": "13h00",
+            "location": "C203",
+            "speakers": "Equipe EXEMPLE",
+            "label": "Groupe H"
+          },
+          {
+            "start": "09h00",
+            "end": "13h00",
+            "location": "C204",
+            "speakers": "Equipe EXEMPLE",
+            "label": "Groupe I"
+          },
+          {
+            "start": "09h00",
+            "end": "13h00",
+            "location": "C205",
+            "speakers": "Equipe EXEMPLE",
+            "label": "Groupe J"
+          }
+        ],
+        "page": 1,
+        "bbox": [
+          170.0,
+          270.0,
+          370.0,
+          470.0
+        ],
+        "time_ranges": [
+          "09h00-13h00"
+        ],
+        "group_labels": [
+          "Groupe F",
+          "Groupe G",
+          "Groupe H",
+          "Groupe I",
+          "Groupe J"
+        ],
+        "rooms": [
+          "C201",
+          "C202",
+          "C203",
+          "C204",
+          "C205"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Equipe EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-a40df469e92ed12f",
+      "date": "2026-10-29",
+      "start": "10:15",
+      "end": "12:15",
+      "title": "Déléguer - ateliers (Demi-promo A)",
+      "description": null,
+      "module": "Management",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Groupes 1-3",
+      "groups": {
+        "multi": true,
+        "count": 3,
+        "time_ranges": [
+          "10:15-12:15"
+        ]
+      },
+      "speakers": [
+        "Mme Exemple 0",
+        "Mme Exemple 1",
+        "Mme Exemple 2"
+      ],
+      "location": null,
+      "location_note": "Selon le groupe",
+      "preparation": "Composition des groupes",
+      "notes": [
+        "Groupe 1 : 10:15-12:15 ; Salle : C101 ; Mme Exemple 0",
+        "Groupe 2 : 10:15-12:15 ; Salle : C102 ; Mme Exemple 1",
+        "Groupe 3 : 10:15-12:15 ; Salle : C103 ; Mme Exemple 2"
+      ],
+      "links": [
+        {
+          "label": "Composition des groupes",
+          "url": "https://example.org/management",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "A",
+        "group_details": [
+          {
+            "start": "10h15 10h15 10h15",
+            "end": "12h15 12h15 12h15",
+            "location": "C101",
+            "speakers": "Mme Exemple 0",
+            "label": "Groupe 1"
+          },
+          {
+            "start": "10h15 10h15 10h15",
+            "end": "12h15 12h15 12h15",
+            "location": "C102",
+            "speakers": "Mme Exemple 1",
+            "label": "Groupe 2"
+          },
+          {
+            "start": "10h15 10h15 10h15",
+            "end": "12h15 12h15 12h15",
+            "location": "C103",
+            "speakers": "Mme Exemple 2",
+            "label": "Groupe 3"
+          }
+        ],
+        "page": 1,
+        "bbox": [
+          170.0,
+          110.0,
+          370.0,
+          230.0
+        ],
+        "time_ranges": [
+          "10h15 10h15 10h15-12h15 12h15 12h15"
+        ],
+        "group_labels": [
+          "Groupe 1",
+          "Groupe 2",
+          "Groupe 3"
+        ],
+        "rooms": [
+          "C101",
+          "C102",
+          "C103"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Exemple 0",
+          "Mme Exemple 1",
+          "Mme Exemple 2"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-5129fd2ab11530a5",
+      "date": "2026-10-29",
+      "start": "12:15",
+      "end": "12:30",
+      "title": "Déléguer - bilan (Demi-promo A)",
+      "description": null,
+      "module": "Management",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "½ promo A",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": "Composition des groupes",
+      "notes": [],
+      "links": [
+        {
+          "label": "Composition des groupes",
+          "url": "https://example.org/management",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "A",
+        "page": 1,
+        "bbox": [
+          170.0,
+          230.0,
+          370.0,
+          270.0
+        ],
+        "time_ranges": [
+          "12h15-12h30"
+        ],
+        "group_labels": [
+          "½ promo A"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-d4654c7799fe5aa1",
+      "date": "2026-10-29",
+      "start": "13:45",
+      "end": "17:45",
+      "title": "Communication en préfecture (Demi-promo A)",
+      "description": null,
+      "module": "Communication",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Groupe A / Groupe B / Groupe C / Groupe D / Groupe E",
+      "groups": {
+        "multi": true,
+        "count": 5,
+        "time_ranges": [
+          "13:45-17:45"
+        ]
+      },
+      "speakers": [
+        "Equipe EXEMPLE"
+      ],
+      "location": null,
+      "location_note": "Selon le groupe",
+      "preparation": "Composition des groupes",
+      "notes": [
+        "Groupe A : 13:45-17:45 ; Salle : C201 ; Equipe EXEMPLE",
+        "Groupe B : 13:45-17:45 ; Salle : C202 ; Equipe EXEMPLE",
+        "Groupe C : 13:45-17:45 ; Salle : C203 ; Equipe EXEMPLE",
+        "Groupe D : 13:45-17:45 ; Salle : C204 ; Equipe EXEMPLE",
+        "Groupe E : 13:45-17:45 ; Salle : C205 ; Equipe EXEMPLE"
+      ],
+      "links": [
+        {
+          "label": "Composition des groupes",
+          "url": "https://example.org/communication-apres-midi",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "A",
+        "group_details": [
+          {
+            "start": "13h45",
+            "end": "17h45",
+            "location": "C201",
+            "speakers": "Equipe EXEMPLE",
+            "label": "Groupe A"
+          },
+          {
+            "start": "13h45",
+            "end": "17h45",
+            "location": "C202",
+            "speakers": "Equipe EXEMPLE",
+            "label": "Groupe B"
+          },
+          {
+            "start": "13h45",
+            "end": "17h45",
+            "location": "C203",
+            "speakers": "Equipe EXEMPLE",
+            "label": "Groupe C"
+          },
+          {
+            "start": "13h45",
+            "end": "17h45",
+            "location": "C204",
+            "speakers": "Equipe EXEMPLE",
+            "label": "Groupe D"
+          },
+          {
+            "start": "13h45",
+            "end": "17h45",
+            "location": "C205",
+            "speakers": "Equipe EXEMPLE",
+            "label": "Groupe E"
+          }
+        ],
+        "page": 2,
+        "bbox": [
+          170.0,
+          30.0,
+          370.0,
+          230.0
+        ],
+        "time_ranges": [
+          "13h45-17h45"
+        ],
+        "group_labels": [
+          "Groupe A",
+          "Groupe B",
+          "Groupe C",
+          "Groupe D",
+          "Groupe E"
+        ],
+        "rooms": [
+          "C201",
+          "C202",
+          "C203",
+          "C204",
+          "C205"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Equipe EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-13f8454e2515740a",
+      "date": "2026-10-29",
+      "start": "14:00",
+      "end": "15:00",
+      "title": "Déléguer - conférence (Demi-promo B)",
+      "description": null,
+      "module": "Management",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "½ promo B",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": "Composition des groupes",
+      "notes": [],
+      "links": [
+        {
+          "label": "Composition des groupes",
+          "url": "https://example.org/management",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "B",
+        "page": 2,
+        "bbox": [
+          170.0,
+          230.0,
+          370.0,
+          270.0
+        ],
+        "time_ranges": [
+          "14h00-15h00"
+        ],
+        "group_labels": [
+          "½ promo B"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-c1f7a99f2e3b6639",
+      "date": "2026-10-29",
+      "start": "15:15",
+      "end": "17:15",
+      "title": "Déléguer - ateliers (Demi-promo B)",
+      "description": null,
+      "module": "Management",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Groupes 4-6",
+      "groups": {
+        "multi": true,
+        "count": 3,
+        "time_ranges": [
+          "15:15-17:15"
+        ]
+      },
+      "speakers": [
+        "Mme Exemple 0",
+        "Mme Exemple 1",
+        "Mme Exemple 2"
+      ],
+      "location": null,
+      "location_note": "Selon le groupe",
+      "preparation": "Composition des groupes",
+      "notes": [
+        "Groupe 4 : 15:15-17:15 ; Salle : C101 ; Mme Exemple 0",
+        "Groupe 5 : 15:15-17:15 ; Salle : C102 ; Mme Exemple 1",
+        "Groupe 6 : 15:15-17:15 ; Salle : C103 ; Mme Exemple 2"
+      ],
+      "links": [
+        {
+          "label": "Composition des groupes",
+          "url": "https://example.org/management",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "B",
+        "group_details": [
+          {
+            "start": "15h15 15h15 15h15",
+            "end": "17h15 17h15 17h15",
+            "location": "C101",
+            "speakers": "Mme Exemple 0",
+            "label": "Groupe 4"
+          },
+          {
+            "start": "15h15 15h15 15h15",
+            "end": "17h15 17h15 17h15",
+            "location": "C102",
+            "speakers": "Mme Exemple 1",
+            "label": "Groupe 5"
+          },
+          {
+            "start": "15h15 15h15 15h15",
+            "end": "17h15 17h15 17h15",
+            "location": "C103",
+            "speakers": "Mme Exemple 2",
+            "label": "Groupe 6"
+          }
+        ],
+        "page": 2,
+        "bbox": [
+          170.0,
+          270.0,
+          370.0,
+          390.0
+        ],
+        "time_ranges": [
+          "15h15 15h15 15h15-17h15 17h15 17h15"
+        ],
+        "group_labels": [
+          "Groupe 4",
+          "Groupe 5",
+          "Groupe 6"
+        ],
+        "rooms": [
+          "C101",
+          "C102",
+          "C103"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Exemple 0",
+          "Mme Exemple 1",
+          "Mme Exemple 2"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-7baa93249823f427",
+      "date": "2026-10-29",
+      "start": "17:15",
+      "end": "17:30",
+      "title": "Déléguer - bilan (Demi-promo B)",
+      "description": null,
+      "module": "Management",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "½ promo B",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": "Composition des groupes",
+      "notes": [],
+      "links": [
+        {
+          "label": "Composition des groupes",
+          "url": "https://example.org/management",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "B",
+        "page": 2,
+        "bbox": [
+          170.0,
+          390.0,
+          370.0,
+          430.0
+        ],
+        "time_ranges": [
+          "17h15-17h30"
+        ],
+        "group_labels": [
+          "½ promo B"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-2bc70b7a7b5e77ff",
+      "date": "2026-10-30",
+      "start": "09:00",
+      "end": "10:00",
+      "title": "Séance commune",
+      "description": null,
+      "module": "Management",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": null,
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "page": 2,
+        "bbox": [
+          170.0,
+          430.0,
+          370.0,
+          470.0
+        ],
+        "time_ranges": [
+          "09h00-10h00"
+        ],
+        "group_labels": [
+          "FI-CIL-OFF"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-14bcca3f5a20d6fb",
+      "message": "« Déléguer - conférence (Demi-promo A) » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-325373937f1dbe14",
+      "message": "« Communication en préfecture (Demi-promo B) » n'indique aucune cohorte FI/CIL/OFF (séance en 5 groupes) — conservée pour tout le monde"
+    },
+    {
+      "code": "AMBIGUOUS_LOCATION",
+      "event_uid": "edt-insp-325373937f1dbe14",
+      "message": "« Communication en préfecture (Demi-promo B) » : salle selon le groupe"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-a40df469e92ed12f",
+      "message": "« Déléguer - ateliers (Demi-promo A) » n'indique aucune cohorte FI/CIL/OFF (séance en 3 groupes) — conservée pour tout le monde"
+    },
+    {
+      "code": "AMBIGUOUS_LOCATION",
+      "event_uid": "edt-insp-a40df469e92ed12f",
+      "message": "« Déléguer - ateliers (Demi-promo A) » : salle selon le groupe"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-5129fd2ab11530a5",
+      "message": "« Déléguer - bilan (Demi-promo A) » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-d4654c7799fe5aa1",
+      "message": "« Communication en préfecture (Demi-promo A) » n'indique aucune cohorte FI/CIL/OFF (séance en 5 groupes) — conservée pour tout le monde"
+    },
+    {
+      "code": "AMBIGUOUS_LOCATION",
+      "event_uid": "edt-insp-d4654c7799fe5aa1",
+      "message": "« Communication en préfecture (Demi-promo A) » : salle selon le groupe"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-13f8454e2515740a",
+      "message": "« Déléguer - conférence (Demi-promo B) » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-c1f7a99f2e3b6639",
+      "message": "« Déléguer - ateliers (Demi-promo B) » n'indique aucune cohorte FI/CIL/OFF (séance en 3 groupes) — conservée pour tout le monde"
+    },
+    {
+      "code": "AMBIGUOUS_LOCATION",
+      "event_uid": "edt-insp-c1f7a99f2e3b6639",
+      "message": "« Déléguer - ateliers (Demi-promo B) » : salle selon le groupe"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-7baa93249823f427",
+      "message": "« Déléguer - bilan (Demi-promo B) » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-14bcca3f5a20d6fb",
+      "message": "« Déléguer - conférence (Demi-promo A) » et « Communication en préfecture (Demi-promo B) » se chevauchent le 2026-10-29"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-325373937f1dbe14",
+      "message": "« Communication en préfecture (Demi-promo B) » et « Déléguer - ateliers (Demi-promo A) » se chevauchent le 2026-10-29"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-325373937f1dbe14",
+      "message": "« Communication en préfecture (Demi-promo B) » et « Déléguer - bilan (Demi-promo A) » se chevauchent le 2026-10-29"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-d4654c7799fe5aa1",
+      "message": "« Communication en préfecture (Demi-promo A) » et « Déléguer - conférence (Demi-promo B) » se chevauchent le 2026-10-29"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-d4654c7799fe5aa1",
+      "message": "« Communication en préfecture (Demi-promo A) » et « Déléguer - ateliers (Demi-promo B) » se chevauchent le 2026-10-29"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-d4654c7799fe5aa1",
+      "message": "« Communication en préfecture (Demi-promo A) » et « Déléguer - bilan (Demi-promo B) » se chevauchent le 2026-10-29"
+    }
+  ]
+}

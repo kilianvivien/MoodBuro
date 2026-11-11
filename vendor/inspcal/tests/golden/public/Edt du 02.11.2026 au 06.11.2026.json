@@ -1,0 +1,365 @@
+{
+  "source": {
+    "file": "Edt du 02.11.2026 au 06.11.2026.pdf",
+    "sha256": "8be68f3bddcde5ae70539461dbf5b883084ae1cf0a511014e6fae6c534ea8beb",
+    "week_start": "2026-11-02",
+    "week_end": "2026-11-06",
+    "promotion": "2026-2028",
+    "revision": "2026-10-30T07:00:00+00:00",
+    "parsed_at": "2026-10-23T10:11:24+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-808cc9015042fe24",
+      "date": "2026-11-02",
+      "start": "10:30",
+      "end": "13:30",
+      "title": "Facteurs humains en exemple",
+      "description": null,
+      "module": "Parcours crise",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Demi-promo A",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": "Demi-promos",
+      "notes": [],
+      "links": [
+        {
+          "label": "Demi-promos",
+          "url": "https://example.org/demi-promos",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "A",
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [
+          "10h30-13h30"
+        ],
+        "group_labels": [
+          "Demi-promo A"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-87cb3c5d7e319933",
+      "date": "2026-11-02",
+      "start": "10:30",
+      "end": "13:30",
+      "title": "Travail en autonomie : lecture des cas",
+      "description": null,
+      "module": "Action publique",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Demi-promo B",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [],
+      "location": null,
+      "location_note": null,
+      "preparation": "Documents",
+      "notes": [],
+      "links": [
+        {
+          "label": "Documents",
+          "url": "https://example.org/cas",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "B",
+        "page": 1,
+        "bbox": [
+          170.0,
+          150.0,
+          370.0,
+          190.0
+        ],
+        "time_ranges": [
+          "10h30-13h30"
+        ],
+        "group_labels": [
+          "Demi-promo B"
+        ],
+        "rooms": [],
+        "red_notes": [],
+        "group_speakers": []
+      }
+    },
+    {
+      "uid": "edt-insp-24b1b6eae9dc57b9",
+      "date": "2026-11-02",
+      "start": "14:30",
+      "end": "17:30",
+      "title": "Facteurs humains en exemple",
+      "description": null,
+      "module": "Parcours crise",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Demi-promo B",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": "Demi-promos",
+      "notes": [],
+      "links": [
+        {
+          "label": "Demi-promos",
+          "url": "https://example.org/demi-promos",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "B",
+        "page": 1,
+        "bbox": [
+          170.0,
+          110.0,
+          370.0,
+          150.0
+        ],
+        "time_ranges": [
+          "14h30-17h30"
+        ],
+        "group_labels": [
+          "Demi-promo B"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-7ea69475d72b2991",
+      "date": "2026-11-02",
+      "start": "14:30",
+      "end": "17:30",
+      "title": "Travail en autonomie : lecture des cas",
+      "description": null,
+      "module": "Action publique",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Demi-promo A",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [],
+      "location": null,
+      "location_note": null,
+      "preparation": "Documents",
+      "notes": [],
+      "links": [
+        {
+          "label": "Documents",
+          "url": "https://example.org/cas",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "half_promotion": "A",
+        "page": 1,
+        "bbox": [
+          170.0,
+          190.0,
+          370.0,
+          230.0
+        ],
+        "time_ranges": [
+          "14h30-17h30"
+        ],
+        "group_labels": [
+          "Demi-promo A"
+        ],
+        "rooms": [],
+        "red_notes": [],
+        "group_speakers": []
+      }
+    },
+    {
+      "uid": "edt-insp-23a0dff6f1b39f51",
+      "date": "2026-11-06",
+      "start": "09:00",
+      "end": "10:30",
+      "title": "Atelier exemple",
+      "description": "Art de l'exemple",
+      "module": "Autres activités",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Elèves inscrits",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "M. Bob EXEMPLE"
+      ],
+      "location": "Salle B",
+      "location_note": null,
+      "preparation": "Lien d'inscription",
+      "notes": [],
+      "links": [
+        {
+          "label": "Lien d'inscription",
+          "url": "https://example.org/inscription",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          230.0,
+          370.0,
+          270.0
+        ],
+        "time_ranges": [
+          "09h00-10h30"
+        ],
+        "group_labels": [
+          "Elèves inscrits"
+        ],
+        "rooms": [
+          "Salle B"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "M. Bob EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-00bec605634a0df8",
+      "date": "2026-11-06",
+      "start": "13:30",
+      "end": "16:30",
+      "title": "Séance commune",
+      "description": null,
+      "module": "Autres activités",
+      "module_color": null,
+      "cohorts": [
+        "FI",
+        "CIL",
+        "OFF"
+      ],
+      "cohort_label": "FI-CIL-OFF 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Claire EXEMPLE"
+      ],
+      "location": "Amphi 1",
+      "location_note": null,
+      "preparation": null,
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          270.0,
+          370.0,
+          310.0
+        ],
+        "time_ranges": [
+          "13h30-16h30"
+        ],
+        "group_labels": [
+          "FI-CIL-OFF 2026-2028"
+        ],
+        "rooms": [
+          "Amphi 1"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Claire EXEMPLE"
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-808cc9015042fe24",
+      "message": "« Facteurs humains en exemple » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-87cb3c5d7e319933",
+      "message": "« Travail en autonomie : lecture des cas » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-24b1b6eae9dc57b9",
+      "message": "« Facteurs humains en exemple » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-7ea69475d72b2991",
+      "message": "« Travail en autonomie : lecture des cas » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-23a0dff6f1b39f51",
+      "message": "« Atelier exemple » n'indique aucune cohorte FI/CIL/OFF (cellule Cohorte vide) — conservée pour tout le monde"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-808cc9015042fe24",
+      "message": "« Facteurs humains en exemple » et « Travail en autonomie : lecture des cas » se chevauchent le 2026-11-02"
+    },
+    {
+      "code": "EVENT_OVERLAP",
+      "event_uid": "edt-insp-24b1b6eae9dc57b9",
+      "message": "« Facteurs humains en exemple » et « Travail en autonomie : lecture des cas » se chevauchent le 2026-11-02"
+    }
+  ]
+}

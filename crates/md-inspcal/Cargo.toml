@@ -1,0 +1,22 @@
+[package]
+name = "md-inspcal"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "MoodBuro's adapter around the vendored native InspCal timetable engine."
+
+[dependencies]
+inspcal-engine = { path = "../../vendor/inspcal/engine" }
+serde_json.workspace = true
+sha2 = "0.10"
+base64 = "0.22"
+
+# PDFium is linked statically on macOS only: the pinned 8046d release ships a
+# universal static archive whose symbols cannot be re-exported from a dylib.
+# Other platforms build the PDFium-independent adapter and report the engine
+# as unavailable. Features must match the engine's (Cargo unifies them).
+[target.'cfg(target_os = "macos")'.dependencies]
+pdfium-render = { version = "=0.9.4", default-features = false, features = ["pdfium_latest", "thread_safe", "static", "libc++", "core_graphics"] }
+
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+pdfium-render = { version = "=0.9.4", default-features = false, features = ["pdfium_latest", "thread_safe"] }

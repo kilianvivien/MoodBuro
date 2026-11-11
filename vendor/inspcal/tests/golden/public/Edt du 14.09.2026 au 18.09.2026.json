@@ -1,0 +1,119 @@
+{
+  "source": {
+    "file": "Edt du 14.09.2026 au 18.09.2026.pdf",
+    "sha256": "7be8113c9d50db3ad233b116cf3010af275c864acf84fb9e28d2124bc35a094b",
+    "week_start": "2026-09-14",
+    "week_end": "2026-09-18",
+    "promotion": "2026-2028",
+    "revision": "2026-09-08T09:00:00+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-6d4f0434bd1a6646",
+      "date": "2026-09-14",
+      "start": "09:00",
+      "end": "10:30",
+      "title": "LV1 – Anglais",
+      "description": null,
+      "module": "Parcours langues",
+      "module_color": null,
+      "cohorts": [
+        "FI"
+      ],
+      "cohort_label": "FI 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "Mme Diane EXEMPLE"
+      ],
+      "location": null,
+      "location_note": "Selon la rotation LV1 sur Moodle",
+      "preparation": null,
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "lv1_room": true,
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          110.0
+        ],
+        "time_ranges": [
+          "09h00-10h30"
+        ],
+        "group_labels": [
+          "FI 2026-2028"
+        ],
+        "rooms": [],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Diane EXEMPLE"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-a97ff7a771e4c6ae",
+      "date": "2026-09-14",
+      "start": "11:00",
+      "end": "12:30",
+      "title": "Conférence inaugurale",
+      "description": null,
+      "module": "Parcours public",
+      "module_color": null,
+      "cohorts": [
+        "FI"
+      ],
+      "cohort_label": "FI 2026-2028",
+      "groups": {
+        "multi": false,
+        "count": 0,
+        "time_ranges": []
+      },
+      "speakers": [
+        "M. Eric EXEMPLE"
+      ],
+      "location": "Salle A",
+      "location_note": null,
+      "preparation": null,
+      "notes": [],
+      "links": [],
+      "remote": false,
+      "raw": {
+        "page": 1,
+        "bbox": [
+          170.0,
+          110.0,
+          370.0,
+          150.0
+        ],
+        "time_ranges": [
+          "11h00-12h30"
+        ],
+        "group_labels": [
+          "FI 2026-2028"
+        ],
+        "rooms": [
+          "Salle A"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "M. Eric EXEMPLE"
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "ROOM_ROTATION",
+      "event_uid": "edt-insp-6d4f0434bd1a6646",
+      "message": "« LV1 – Anglais » : la salle dépend de la rotation LV1 — à relever sur Moodle (https://moodle.insp.gouv.fr/mod/folder/view.php?id=55060)"
+    }
+  ]
+}

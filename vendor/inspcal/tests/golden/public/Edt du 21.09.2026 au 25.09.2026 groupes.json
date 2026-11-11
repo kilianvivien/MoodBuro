@@ -1,0 +1,275 @@
+{
+  "source": {
+    "file": "Edt du 21.09.2026 au 25.09.2026 groupes.pdf",
+    "sha256": "e9efced5ede0de1821649efb6cfa5e07f050d2ed663cd36f19998d1f52bfed04",
+    "week_start": "2026-09-21",
+    "week_end": "2026-09-25",
+    "promotion": null,
+    "revision": "2026-09-17T09:00:00+00:00",
+    "parser_version": "0.2.0"
+  },
+  "events": [
+    {
+      "uid": "edt-insp-8a88701d49dbac72",
+      "date": "2026-09-24",
+      "start": "09:15",
+      "end": "12:45",
+      "title": "Etudes de cas",
+      "description": null,
+      "module": "Parcours public",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Groupe A / Groupe B / Groupe C / Groupe D",
+      "groups": {
+        "multi": true,
+        "count": 4,
+        "time_ranges": [
+          "09:15-12:45"
+        ]
+      },
+      "speakers": [
+        "Mme Exemple A",
+        "Mme Exemple B",
+        "Mme Exemple C",
+        "Mme Exemple D"
+      ],
+      "location": null,
+      "location_note": "Selon le groupe",
+      "preparation": "Composition des groupes",
+      "notes": [
+        "Groupe A : 09:15-12:45 ; Salle : C101 ; Mme Exemple A",
+        "Groupe B : 09:15-12:45 ; Salle : C102 ; Mme Exemple B",
+        "Groupe C : 09:15-12:45 ; Salle : C103 ; Mme Exemple C",
+        "Groupe D : 09:15-12:45 ; Salle : C104 ; Mme Exemple D"
+      ],
+      "links": [
+        {
+          "label": "Composition des groupes",
+          "url": "https://example.org/groupes-jeudi",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "group_details": [
+          {
+            "start": "09h15",
+            "end": "12h45",
+            "location": "C101",
+            "speakers": "Mme Exemple A",
+            "label": "Groupe A"
+          },
+          {
+            "start": "09h15",
+            "end": "12h45",
+            "location": "C102",
+            "speakers": "Mme Exemple B",
+            "label": "Groupe B"
+          },
+          {
+            "start": "09h15",
+            "end": "12h45",
+            "location": "C103",
+            "speakers": "Mme Exemple C",
+            "label": "Groupe C"
+          },
+          {
+            "start": "09h15",
+            "end": "12h45",
+            "location": "C104",
+            "speakers": "Mme Exemple D",
+            "label": "Groupe D"
+          }
+        ],
+        "page": 1,
+        "bbox": [
+          170.0,
+          70.0,
+          370.0,
+          230.0
+        ],
+        "time_ranges": [
+          "09h15-12h45"
+        ],
+        "group_labels": [
+          "Groupe A",
+          "Groupe B",
+          "Groupe C",
+          "Groupe D"
+        ],
+        "rooms": [
+          "C101",
+          "C102",
+          "C103",
+          "C104"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Exemple A",
+          "Mme Exemple B",
+          "Mme Exemple C",
+          "Mme Exemple D"
+        ]
+      }
+    },
+    {
+      "uid": "edt-insp-03b6835090f7c8c2",
+      "date": "2026-09-25",
+      "start": "14:30",
+      "end": "16:45",
+      "title": "Ateliers de management",
+      "description": null,
+      "module": "Parcours managemen",
+      "module_color": null,
+      "cohorts": [],
+      "cohort_label": "Groupe A / Groupe B / Groupe C / Groupe D / Groupe E / Groupe F / Groupe G / Groupe H",
+      "groups": {
+        "multi": true,
+        "count": 8,
+        "time_ranges": [
+          "14:30-16:45"
+        ]
+      },
+      "speakers": [
+        "Mme Alice EXEMPLE"
+      ],
+      "location": null,
+      "location_note": "Selon le groupe",
+      "preparation": "Composition des groupes",
+      "notes": [
+        "Groupe A : 14:30-16:45 ; Salle : C301 ; Mme Alice EXEMPLE",
+        "Groupe B : 14:30-16:45 ; Salle : C302 ; Mme Alice EXEMPLE",
+        "Groupe C : 14:30-16:45 ; Salle : C303 ; Mme Alice EXEMPLE",
+        "Groupe D : 14:30-16:45 ; Salle : C304 ; Mme Alice EXEMPLE",
+        "Groupe E : 14:30-16:45 ; Salle : C203 ; Mme Alice EXEMPLE",
+        "Groupe F : 14:30-16:45 ; Salle : C204 ; Mme Alice EXEMPLE",
+        "Groupe G : 14:30-16:45 ; Salle : C205 ; Mme Alice EXEMPLE",
+        "Groupe H : 14:30-16:45 ; Salle : C206 ; Mme Alice EXEMPLE"
+      ],
+      "links": [
+        {
+          "label": "Composition des groupes",
+          "url": "https://example.org/groupes-vendredi",
+          "column": "preparation"
+        }
+      ],
+      "remote": false,
+      "raw": {
+        "group_details": [
+          {
+            "start": "14h30",
+            "end": "16h45",
+            "location": "C301",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupe A"
+          },
+          {
+            "start": "14h30",
+            "end": "16h45",
+            "location": "C302",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupe B"
+          },
+          {
+            "start": "14h30",
+            "end": "16h45",
+            "location": "C303",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupe C"
+          },
+          {
+            "start": "14h30",
+            "end": "16h45",
+            "location": "C304",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupe D"
+          },
+          {
+            "start": "14h30",
+            "end": "16h45",
+            "location": "C203",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupe E"
+          },
+          {
+            "start": "14h30",
+            "end": "16h45",
+            "location": "C204",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupe F"
+          },
+          {
+            "start": "14h30",
+            "end": "16h45",
+            "location": "C205",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupe G"
+          },
+          {
+            "start": "14h30",
+            "end": "16h45",
+            "location": "C206",
+            "speakers": "Mme Alice EXEMPLE",
+            "label": "Groupe H"
+          }
+        ],
+        "page": 2,
+        "bbox": [
+          170.0,
+          30.0,
+          370.0,
+          350.0
+        ],
+        "time_ranges": [
+          "14h30-16h45"
+        ],
+        "group_labels": [
+          "Groupe A",
+          "Groupe B",
+          "Groupe C",
+          "Groupe D",
+          "Groupe E",
+          "Groupe F",
+          "Groupe G",
+          "Groupe H"
+        ],
+        "rooms": [
+          "C301",
+          "C302",
+          "C303",
+          "C304",
+          "C203",
+          "C204",
+          "C205",
+          "C206"
+        ],
+        "red_notes": [],
+        "group_speakers": [
+          "Mme Alice EXEMPLE"
+        ]
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-8a88701d49dbac72",
+      "message": "« Etudes de cas » n'indique aucune cohorte FI/CIL/OFF (séance en 4 groupes) — conservée pour tout le monde"
+    },
+    {
+      "code": "AMBIGUOUS_LOCATION",
+      "event_uid": "edt-insp-8a88701d49dbac72",
+      "message": "« Etudes de cas » : salle selon le groupe"
+    },
+    {
+      "code": "NO_COHORT",
+      "event_uid": "edt-insp-03b6835090f7c8c2",
+      "message": "« Ateliers de management » n'indique aucune cohorte FI/CIL/OFF (séance en 8 groupes) — conservée pour tout le monde"
+    },
+    {
+      "code": "AMBIGUOUS_LOCATION",
+      "event_uid": "edt-insp-03b6835090f7c8c2",
+      "message": "« Ateliers de management » : salle selon le groupe"
+    }
+  ]
+}
