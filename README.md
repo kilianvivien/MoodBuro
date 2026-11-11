@@ -16,11 +16,11 @@ MoodBuro affiche **le vrai site Moodle** dans une application macOS, avec vos or
 
 ## Télécharger et installer
 
-**[Télécharger MoodBuro 0.1.0 pour macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
+**[Télécharger MoodBuro 0.2.0 pour macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
 
 Le DMG universel contient les versions **Apple Silicon et Intel**, avec macOS 12 comme version minimale configurée. Téléchargez le DMG et `SHA256SUMS.txt`, vérifiez la somme de contrôle, puis glissez MoodBuro dans Applications. Pour une mise à jour, quittez d’abord l’application.
 
-La version 0.1.0 utilise une **signature ad hoc et n’est pas notariée**. macOS peut demander d’autoriser sa première ouverture dans Réglages Système → Confidentialité et sécurité. Les mises à jour s’installent manuellement.
+La version 0.2.0 utilise une **signature ad hoc et n’est pas notariée**. macOS peut demander d’autoriser sa première ouverture dans Réglages Système → Confidentialité et sécurité. Installez la version 0.2.0 manuellement ; les prochaines versions normales pourront être installées dans Réglages → Général.
 
 ## Vos cours, dans une interface pensée pour le Mac
 
@@ -114,6 +114,6 @@ Le lecteur PDF utilise un rappel privé de WebKit pour l’enregistrement ; sa c
 
 [MIT](LICENSE) — © 2026 Kilian Vivien.
 
-## Mises à jour bêta
+## Mises à jour
 
-Le workflow macOS prépare des archives universelles signées pour les tags `v0.*-beta.*`, avec un flux bêta distinct sur GitHub Releases. La première version compatible doit être installée manuellement. Réglages → Général permet la recherche automatique au lancement puis toutes les six heures, sa désactivation, la consultation des notes, le suivi du téléchargement, l’installation et le relancement explicites. La version 0.1.0 reste à mettre à jour manuellement. La qualification des mises à jour sur Intel et Apple Silicon reste ouverte. Voir les consignes de publication dans le [README anglais](README.en.md#beta-update-releases-maintainers).
+Le workflow macOS publie des versions normales pour les tags `vMAJOR.MINOR.PATCH`, avec des archives universelles signées et un manifeste `latest.json` sur GitHub Releases. Les tags `-beta.N` conservent un flux distinct. La première version compatible (0.2.0) doit être installée manuellement. Réglages → Général permet la recherche automatique au lancement puis toutes les six heures, sa désactivation, la consultation des notes, le suivi du téléchargement, l’installation et le relancement explicites. La qualification des mises à jour installées sur Intel et Apple Silicon reste ouverte. Voir les [consignes de publication](README.en.md#update-releases-maintainers).

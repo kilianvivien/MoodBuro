@@ -7,11 +7,11 @@ MoodBuro hosts the **real Moodle site** in a macOS application, keeping your org
 
 ## Download and install
 
-**[Download MoodBuro 0.1.0 for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
+**[Download MoodBuro 0.2.0 for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
 
 The universal DMG includes **Apple Silicon and Intel** binaries, with macOS 12 as the configured minimum. Download the DMG and `SHA256SUMS.txt`, verify the checksum, then drag MoodBuro into Applications. Quit the app before replacing it during an upgrade.
 
-Version 0.1.0 is **ad-hoc signed and not notarized**. macOS may require first-launch approval in System Settings → Privacy & Security. Updates install manually.
+Version 0.2.0 is **ad-hoc signed and not notarized**. macOS may require first-launch approval in System Settings → Privacy & Security. Install 0.2.0 manually; future normal releases can be installed through Settings → General.
 
 ## Your courses, at home on the Mac
 
@@ -95,10 +95,10 @@ The native PDF Save adapter uses a private WebKit callback and requires macOS co
 
 [MIT](LICENSE) — © 2026 Kilian Vivien.
 
-## Beta update releases (maintainers)
+## Update releases (maintainers)
 
-The macOS packaging workflow builds signed universal updater archives and publishes beta prereleases from `v0.*-beta.*` tags. Set matching versions (for example `0.2.0-beta.1`) in the workspace Cargo manifest, Tauri config and both package manifests; refresh lockfiles before tagging. Version `0.1.0` itself remains a manual-upgrade release.
+The macOS packaging workflow builds signed universal updater archives and publishes normal releases from `vMAJOR.MINOR.PATCH` tags. Matching `-beta.N` tags remain prereleases on a separate beta feed. Keep the workspace Cargo manifest, Tauri config and both package manifests at the same version and refresh lockfiles before tagging.
 
-Actions uses the `TAURI_SIGNING_PRIVATE_KEY` secret and `MOODBURO_UPDATE_PUBLIC_KEY` variable. The public repository serves a separate `beta-feed` prerelease with `beta.json`; the app accepts newer beta versions only. The first updater-enabled build must be installed manually. Settings → General checks at launch/every six hours and supports opt-out, release notes, progress, explicit install and relaunch. Developer ID signing/notarization and installed Intel/Apple Silicon update qualification remain open.
+Actions uses the `TAURI_SIGNING_PRIVATE_KEY` secret and `MOODBURO_UPDATE_PUBLIC_KEY` variable. Normal builds fetch `latest.json` from the latest normal GitHub release and accept only newer normal versions. Beta builds stay on `beta-feed/beta.json`. Install the first updater-enabled version (0.2.0) manually. Settings → General supports launch/six-hour checks, opt-out, release notes, progress, explicit install and relaunch.
 
-If publication succeeds but feed upload fails, upload the versioned release’s `beta.json` to `beta-feed` with `gh release upload beta-feed beta.json --clobber` after checking that its version advances the feed. Keep the signing-key backup safe; replacing the verification key requires an update signed by the old key first.
+Developer ID signing/notarization and installed Intel/Apple Silicon update qualification remain open. Keep the signing-key backup safe: changing the verification key requires an update signed by the old key first. Release assets are uploaded to a draft before publication; a failed publish step can be recovered after inspecting the draft and its artifacts.

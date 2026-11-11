@@ -1,4 +1,4 @@
-"""Validate beta versions and collect a universal Tauri update for GitHub Releases."""
+"""Validate release versions and collect a universal Tauri update for GitHub Releases."""
 import argparse
 import hashlib
 import json
@@ -11,13 +11,24 @@ ROOT = Path(__file__).resolve().parents[1]
 REPO = "kilianvivien/MoodBuro"
 
 
+def version_order(version):
+    match = re.fullmatch(r"v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-beta\.([1-9][0-9]*))?", version)
+    if not match:
+        raise ValueError("Expected vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-beta.N")
+    major, minor, patch, beta = match.groups()
+    return (int(major), int(minor), int(patch), 1 if beta is None else 0, int(beta or 0))
+
+
+def manifest_name(tag):
+    version_order(tag)
+    return "beta.json" if "-beta." in tag else "latest.json"
+
+
 def validate(tag):
-    if not re.fullmatch(r"v0\.[1-9][0-9]*\.[0-9]+-beta\.[1-9][0-9]*", tag):
-        raise ValueError("Expected v0.MINOR.PATCH-beta.N (beta must be newer than 0.1.0)")
+    version_order(tag)
+    if not tag.startswith("v") or version_order(tag) <= version_order("0.1.0"):
+        raise ValueError("Release tags must start with v and be newer than 0.1.0")
     version = tag[1:]
-    base = tuple(map(int, version.split("-")[0].split(".")))
-    if base <= (0, 1, 0):
-        raise ValueError("Beta versions must be newer than 0.1.0")
     import tomllib
     versions = [json.loads((ROOT / p).read_text())["version"] for p in
                 ["package.json", "apps/shell/package.json", "src-tauri/tauri.conf.json"]]
@@ -28,13 +39,8 @@ def validate(tag):
 
 
 def forward_only(tag, previous):
-    def order(version):
-        match = re.fullmatch(r"v?(0)\.([0-9]+)\.([0-9]+)-beta\.([0-9]+)", version)
-        if not match:
-            raise ValueError("Invalid beta feed version")
-        return tuple(map(int, match.groups()))
-    if order(tag) <= order(json.loads(previous.read_text())["version"]):
-        raise ValueError("Beta feed may only advance to a newer version")
+    if version_order(tag) <= version_order(json.loads(previous.read_text())["version"]):
+        raise ValueError("Update feed may only advance to a newer version")
 
 
 def collect(tag, bundle, output, notes=None):
@@ -55,7 +61,7 @@ def collect(tag, bundle, output, notes=None):
     manifest = {"version": version, "notes": notes.read_text() if notes else f"MoodBuro {version}\nhttps://github.com/{REPO}/releases/tag/{tag}",
                 "pub_date": datetime.now(timezone.utc).isoformat(),
                 "platforms": {"darwin-aarch64": platform, "darwin-x86_64": platform}}
-    (output / "beta.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    (output / manifest_name(tag)).write_text(json.dumps(manifest, indent=2) + "\n")
     files = sorted(p for p in output.iterdir() if p.is_file() and p.name != "SHA256SUMS.txt")
     (output / "SHA256SUMS.txt").write_text("".join(f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n" for p in files))
 

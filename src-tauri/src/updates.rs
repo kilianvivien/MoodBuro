@@ -1,9 +1,12 @@
-//! Rust-owned beta updater. Remote webviews have no updater permissions.
+//! Rust-owned signed updater. Remote webviews have no updater permissions.
 use crate::AppState;
 use std::{sync::Mutex, time::Duration};
 use tauri::{AppHandle, Manager};
 use tauri_plugin_updater::{Update, UpdaterExt};
-const FEED: &str = "https://github.com/kilianvivien/MoodBuro/releases/download/beta-feed/beta.json";
+const BETA_FEED: &str =
+    "https://github.com/kilianvivien/MoodBuro/releases/download/beta-feed/beta.json";
+const STABLE_FEED: &str =
+    "https://github.com/kilianvivien/MoodBuro/releases/latest/download/latest.json";
 const KEY: Option<&str> = option_env!("MOODBURO_UPDATE_PUBLIC_KEY");
 #[derive(Clone, Default, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -62,11 +65,22 @@ pub fn preference(app: &AppHandle, enabled: bool) -> Result<(), String> {
         .set_automatic_updates(enabled)
         .map_err(|_| "Could not save settings.".into())
 }
-// Beta builds accept only newer beta versions. Stable distribution gets its own feed later.
-fn beta_version(version: &str) -> bool {
-    version
-        .split_once('-')
-        .is_some_and(|(_, pre)| pre.starts_with("beta."))
+// A stable install never opts into prereleases. Beta installs stay on their own feed.
+fn same_channel(current: &str, offered: &str) -> bool {
+    if current.contains("-beta.") {
+        offered
+            .split_once('-')
+            .is_some_and(|(_, pre)| pre.starts_with("beta."))
+    } else {
+        !offered.contains('-')
+    }
+}
+fn feed(current: &str) -> &'static str {
+    if current.contains("-beta.") {
+        BETA_FEED
+    } else {
+        STABLE_FEED
+    }
 }
 fn trusted_download(url: &url::Url) -> bool {
     url.scheme() == "https"
@@ -96,10 +110,13 @@ pub async fn check(app: &AppHandle) -> Result<(), String> {
         let updater = app
             .updater_builder()
             .pubkey(KEY.unwrap_or_default())
-            .endpoints(vec![FEED.parse().expect("fixed HTTPS feed")])?
+            .endpoints(vec![feed(&app.package_info().version.to_string())
+                .parse()
+                .expect("fixed HTTPS feed")])?
             .timeout(Duration::from_secs(120))
             .version_comparator(|current, release| {
-                release.version > current && beta_version(&release.version.to_string())
+                release.version > current
+                    && same_channel(&current.to_string(), &release.version.to_string())
             })
             .build()?;
         updater.check().await
@@ -191,11 +208,15 @@ pub fn start(app: &AppHandle) {
 mod tests {
     use super::*;
     #[test]
-    fn beta_feed_cannot_offer_stable_or_alpha() {
-        assert!(beta_version("0.2.0-beta.2"));
-        for v in ["0.2.0", "0.2.0-alpha.1", "0.2.0-betax.1"] {
-            assert!(!beta_version(v));
+    fn stable_and_beta_channels_stay_separate() {
+        assert!(same_channel("0.2.0", "0.2.1"));
+        assert!(same_channel("0.2.0-beta.1", "0.2.0-beta.2"));
+        assert_eq!(feed("0.2.0"), STABLE_FEED);
+        assert_eq!(feed("0.2.1-beta.1"), BETA_FEED);
+        for offered in ["0.2.1-beta.1", "0.2.1-alpha.1", "0.2.1-rc.1"] {
+            assert!(!same_channel("0.2.0", offered));
         }
+        assert!(!same_channel("0.2.0-beta.1", "0.2.0"));
     }
     #[test]
     fn download_stays_in_our_release_repository() {

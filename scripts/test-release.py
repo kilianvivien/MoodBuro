@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-spec = importlib.util.spec_from_file_location("release", Path(__file__).with_name("beta-release.py"))
+spec = importlib.util.spec_from_file_location("release", Path(__file__).with_name("release.py"))
 release = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(release)
 
@@ -26,9 +26,24 @@ class ReleaseTests(unittest.TestCase):
 
     def test_versions_and_channel(self):
         self.assertEqual(release.validate("v0.2.0-beta.2"), "0.2.0-beta.2")
-        for tag in ["v0.2.0", "v0.2.0-alpha.1", "v0.2.0-beta.1", "v0.0.0-beta.1", "v0.1.0-beta.1"]:
+        for tag in ["v0.2.0-alpha.1", "v0.2.0-beta.1", "v0.0.0-beta.1", "v0.1.0-beta.1"]:
             with self.assertRaises(ValueError):
                 release.validate(tag)
+
+    def test_stable_release_matches_manifests_and_has_its_own_feed(self):
+        for name in ["package.json", "apps/shell/package.json", "src-tauri/tauri.conf.json"]:
+            (self.root / name).write_text('{"version":"0.2.0"}')
+        (self.root / "Cargo.toml").write_text('[workspace.package]\nversion="0.2.0"\n')
+        self.assertEqual(release.validate("v0.2.0"), "0.2.0")
+        self.assertEqual(release.manifest_name("v0.2.0"), "latest.json")
+        self.assertEqual(release.manifest_name("v0.2.1-beta.1"), "beta.json")
+        previous = self.root / "previous.json"
+        previous.write_text('{"version":"0.2.0-beta.10"}')
+        release.forward_only("v0.2.0", previous)
+        previous.write_text('{"version":"0.2.0"}')
+        for tag in ["v0.2.0", "v0.1.9", "v0.2.0-beta.11"]:
+            with self.assertRaises(ValueError):
+                release.forward_only(tag, previous)
 
     def test_feed_only_advances(self):
         previous = self.root / "previous.json"
