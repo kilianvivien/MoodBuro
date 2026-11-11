@@ -249,3 +249,10 @@ One-off reminders are visible and removable outside the assistant: each deadline
 File → Bookmark This Page… (⌘D), or the toolbar bookmark button, captures the current standard Moodle content page. The local editor uses the existing `.page`, `PageHeader`, grouped rows, text field and native select. It starts with the page title, previews the selected monochrome icon and offers explicit Save/Cancel. Eight icons use the existing Lucide stroke/size conventions. Feedback stays in the editor; removal asks inline with Cancel focused.
 
 The 72 pt sidebar shows five bookmark icons below the organisation group, with full name/organisation tooltips. The ellipsis opens a real native menu for the remaining bookmarks and Edit Bookmarks…. File → Edit Bookmarks… also reaches the full list. This menu stays above Moodle; it is not drawn in the shell. Bookmarks are local and account-bound; removing/replacing the account clears them. Saved addresses omit authentication parameters and only restore validated standard Moodle content routes. Opening a bookmark uses its own organisation and the existing session restoration path.
+
+
+### Settings categories and provider help
+
+Settings uses five icon categories (General, Files, Reminders, AI Assistant, Organisations), with one visible panel. Categories use 18px Lucide strokes, semantic label/control tokens and the existing control shadow for the selected category. They are navigation tabs, not a segmented preference; Left/Right/Home/End move and select, and only the selected tab is in the Tab order. Category controls wrap when the assistant narrows the content area.
+
+API-key help uses the existing small icon button beside the key label, with an accessible name and tooltip. Its compact HTML dialog contains three steps and fixed official links; there is no dimming backdrop or imitation AppKit sheet. Done is focused initially; Escape closes only help and restores the trigger. Provider model choices come from the returned API list. Long context-sharing guidance remains collapsed; Reminders always has a useful empty state.

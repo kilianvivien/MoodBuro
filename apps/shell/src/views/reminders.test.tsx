@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { I18nProvider } from "../i18n/context";
-import { ReminderRows } from "./Reminders";
+import { ReminderRows, Reminders } from "./Reminders";
 import type { ReminderSettings, Site } from "../ipc";
 const sites: Site[] = [
   {
@@ -74,4 +74,14 @@ describe("local deadline reminder preferences", () => {
     expect(html).toContain("1 heure avant");
     expect(html).toContain("Aucune actualisation");
   });
+});
+
+it("explains reminder setup when no organisation is connected", () => {
+  const html = renderToStaticMarkup(
+    <I18nProvider locale="en">
+      <Reminders sites={[]} onAdd={vi.fn()} />
+    </I18nProvider>,
+  );
+  expect(html).toContain("Add an organisation to set deadline reminders.");
+  expect(html).toContain("Add Organisation");
 });

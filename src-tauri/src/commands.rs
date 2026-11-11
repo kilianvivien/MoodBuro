@@ -1303,3 +1303,187 @@ pub async fn calendar_subscribe(
     shell(&webview)?;
     crate::calendar_subscription::subscribe(&app, &site_id, user_id, confirmed, repeat).await
 }
+
+#[tauri::command]
+pub fn desktop_preferences(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<crate::desktop::Preferences, String> {
+    shell(&webview)?;
+    crate::desktop::get(&app)
+}
+#[tauri::command]
+pub fn desktop_preferences_set(
+    webview: tauri::Webview,
+    app: AppHandle,
+    menu_bar_only: Option<bool>,
+    start_at_login: Option<bool>,
+) -> Result<crate::desktop::Preferences, String> {
+    shell(&webview)?;
+    crate::desktop::set(&app, menu_bar_only, start_at_login)
+}
+#[tauri::command]
+pub fn finder_moodle_folder(webview: tauri::Webview, app: AppHandle) -> Result<(), String> {
+    shell(&webview)?;
+    crate::desktop::finder(&app)
+}
+
+#[tauri::command]
+pub async fn upload_pick(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Option<crate::uploads::File>, String> {
+    shell(&webview)?;
+    crate::uploads::pick(&app).await
+}
+#[tauri::command]
+pub fn upload_files(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Vec<crate::uploads::File>, String> {
+    shell(&webview)?;
+    crate::uploads::files(&app)
+}
+#[tauri::command]
+pub async fn upload_assignments(
+    webview: tauri::Webview,
+    app: AppHandle,
+    target: OfflineTarget,
+) -> Result<Vec<crate::uploads::Target>, String> {
+    shell(&webview)?;
+    crate::uploads::targets(&app, &target.site_id, target.user_id, target.course_id).await
+}
+#[tauri::command]
+pub async fn upload_prepare(
+    webview: tauri::Webview,
+    app: AppHandle,
+    target: OfflineTarget,
+    assignment: i64,
+    file: String,
+) -> Result<crate::uploads::Review, String> {
+    shell(&webview)?;
+    crate::uploads::prepare(
+        &app,
+        &target.site_id,
+        target.user_id,
+        target.course_id,
+        assignment,
+        &file,
+    )
+    .await
+}
+#[tauri::command]
+pub async fn upload_confirm(
+    webview: tauri::Webview,
+    app: AppHandle,
+    approval: String,
+    confirmed: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::uploads::confirm(&app, &approval, confirmed).await
+}
+#[tauri::command]
+pub fn upload_stop(
+    webview: tauri::Webview,
+    app: AppHandle,
+    approval: String,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::uploads::stop(&app, &approval)
+}
+#[tauri::command]
+pub fn upload_history(
+    webview: tauri::Webview,
+    app: AppHandle,
+) -> Result<Vec<md_store::DraftUpload>, String> {
+    shell(&webview)?;
+    app.state::<AppState>()
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?
+        .draft_uploads()
+        .map_err(|_| "Could not read upload history.".into())
+}
+#[tauri::command]
+pub async fn upload_open(
+    webview: tauri::Webview,
+    app: AppHandle,
+    target: OfflineTarget,
+    assignment: i64,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::uploads::open(
+        &app,
+        &target.site_id,
+        target.user_id,
+        target.course_id,
+        assignment,
+    )
+    .await
+}
+#[tauri::command]
+pub fn upload_reviewed(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+    confirmed: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    if !confirmed {
+        return Err("Confirm checking the previous upload in Moodle first.".into());
+    }
+    let state = app.state::<AppState>();
+    let store = state
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?;
+    let row = store
+        .draft_uploads()
+        .map_err(|_| "Could not read upload history.")?
+        .into_iter()
+        .find(|u| u.id == id && u.state == "uncertain")
+        .ok_or("This upload is unavailable.")?;
+    store
+        .upload_state(&id, row.user_id, "reviewed", None)
+        .map_err(|_| "Could not update upload history.".into())
+}
+
+#[tauri::command]
+pub async fn download_cancel(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+) -> Result<(), String> {
+    shell(&webview)?;
+    crate::downloads::cancel(&app, &id).await
+}
+#[tauri::command]
+pub async fn download_remove_file(
+    webview: tauri::Webview,
+    app: AppHandle,
+    id: String,
+    confirmed: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::downloads::remove_file(&app, &id, confirmed)
+    })
+    .await
+    .map_err(|_| "Could not remove this downloaded file.".to_string())?
+}
+
+#[tauri::command]
+pub fn assistant_key_help(
+    webview: tauri::Webview,
+    app: AppHandle,
+    provider: String,
+    guide: bool,
+) -> Result<(), String> {
+    shell(&webview)?;
+    app.opener()
+        .open_url(
+            crate::assistant::key_help_url(&provider, guide)?,
+            None::<&str>,
+        )
+        .map_err(|_| "Could not open the browser.".into())
+}

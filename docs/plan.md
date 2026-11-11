@@ -128,10 +128,14 @@ Implementation checks below are for this bounded selected-resource policy; the o
 
 ### B3 — download and macOS workflows
 
-- [ ] Select and implement the beta subset of DL-4/DL-5/DL-6/DL-8/DL-11: cancel/pause/resume/fresh-source retry, native completion actions/progress, metadata and separate cleanup controls. Reuse B1 transfer identity rather than replaying stale authenticated URLs.
-- [ ] Reconcile expanded history/Where From requirements with the current deliberate omission of source URLs; document privacy/security policy before persisting new metadata.
-- [ ] Complete menu-bar-only mode if still open, optional start-at-login (OS-14) and offered Finder sidebar integration (MAC-4); qualify permissions, relaunch and disabled defaults.
-- [ ] Decide whether upload/submission drafts (OS-10) belong in beta or the M3 backlog; if included, spike upload/save-submission contracts and define exact-target confirmation and duplicate/failure handling first.
+- [x] Select and implement the beta subset: WKDownload progress/cancel, Dock progress, safe fresh-source return, completion actions, new-file metadata and separate per-file/history cleanup. Pause/byte resume, activity attribution and full sign-out cleanup remain deferred; [scope and policy](b3-qa.md).
+- [x] Reconcile Where From with private URL omission: only fixed credential-free course/site pages; new files only, preserve quarantine, expose best-effort failure.
+- [x] Implement menu-bar-only mode, opt-in launch at login and an offered manual Finder favourite workflow. Defaults remain off; no automatic sidebar mutation.
+- [x] Include OS-10 assignment drafts in beta, as requested: native file intake, one empty individual file-only draft, exact-target consent, no final submission, no write replay and durable uncertain-result handling. Stock Moodle contracts and scope limits are recorded in [B3 QA](b3-qa.md).
+- [x] Group Settings with icon categories; load provider model lists automatically; add concise Albert/Mistral API-key help and a nonblank Reminders empty state.
+- [ ] Qualify installed downloads/cancellation/actions, login/relaunch/Dock behavior, Finder workflows, live sandbox drafts, failure recovery and VoiceOver. Implementation/fixture checks do not establish beta readiness.
+
+**Implementation — 11 November 2026:** 131 frontend / 141 Rust tests, lint/format/build, Clippy and IPC guards pass. No real assignment or Mac login/favourite preference was changed. [Policy, evidence and deferred requirements](b3-qa.md).
 
 **Exit:** the selected beta subset is explicit, implemented and qualified; all remaining v1.0 requirements stay visible for M3. Download retention (DL-9), Finder Services (MAC-7), MDM (MAC-10), dock recent-course menus and other outstanding PRD surfaces need an explicit release assignment before M3 scope is closed.
 

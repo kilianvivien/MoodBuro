@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ChevronsUpDown,
+  CircleHelp,
   CircleAlert,
   CircleCheck,
   KeyRound,
   LoaderCircle,
 } from "lucide-react";
+import { ApiKeyHelp } from "../components/ApiKeyHelp";
 import { Segmented } from "../components/ui";
 import { ipc, message, type AssistantProvider } from "../ipc";
 import { useAssistant } from "../stores/assistant";
@@ -29,9 +31,7 @@ export interface AssistantSettingsViewProps {
   asking: Asking;
   outcome: Outcome;
   keyText: string;
-  modelText: string;
   onKeyText: (text: string) => void;
-  onModelText: (text: string) => void;
   onProvider: (provider: AssistantProvider) => void;
   onSaveKey: () => void;
   onRemoveKey: () => void;
@@ -47,14 +47,13 @@ export function AssistantSettingsView(props: AssistantSettingsViewProps) {
   const s = t.assistant.settings;
   const name = providerNames[props.provider];
   const cancel = useRef<HTMLButtonElement>(null);
+  const helpButton = useRef<HTMLButtonElement>(null);
+  const [help, setHelp] = useState(false);
   useEffect(() => {
     if (props.asking) cancel.current?.focus();
   }, [props.asking]);
-  // The saved model stays selectable even when the provider no longer lists it.
-  const choices =
-    props.models && !props.models.includes(props.model)
-      ? [props.model, ...props.models]
-      : props.models;
+  const choices = props.models ?? [];
+  const selected = choices.includes(props.model) ? props.model : "";
   const confirm = (
     title: string,
     body: string,
@@ -120,9 +119,19 @@ export function AssistantSettingsView(props: AssistantSettingsViewProps) {
         </div>
         <div className="group-row">
           <div className="row-text">
-            <label className="row-title" htmlFor="assistant-key">
-              {s.key}
-            </label>
+            <div className="row-title assistant-key-title">
+              <label htmlFor="assistant-key">{s.key}</label>
+              <button
+                ref={helpButton}
+                className="button small icon"
+                title={s.keyHelp}
+                aria-label={s.keyHelp}
+                disabled={props.busy}
+                onClick={() => setHelp(true)}
+              >
+                <CircleHelp size={13} strokeWidth={1.75} aria-hidden="true" />
+              </button>
+            </div>
             <span className="row-subtitle" id="assistant-key-state">
               {props.hasKey ? s.keySaved : s.keyMissing}
             </span>
@@ -181,56 +190,29 @@ export function AssistantSettingsView(props: AssistantSettingsViewProps) {
             <span className="row-subtitle">{s.modelHint}</span>
           </div>
           <div className="row-actions">
-            {choices ? (
-              <label className="popup-button">
-                <span className="visually-hidden">{s.modelLabel}</span>
-                <select
-                  value={props.model}
-                  disabled={props.busy}
-                  onChange={(event) => props.onModel(event.target.value)}
-                >
-                  {choices.map((model) => (
-                    <option key={model} value={model}>
-                      {model}
-                    </option>
-                  ))}
-                </select>
-                <ChevronsUpDown size={12} strokeWidth={2} aria-hidden="true" />
-              </label>
-            ) : (
-              <form
-                className="row-actions"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  props.onModel(props.modelText);
-                }}
+            <label className="popup-button assistant-model">
+              <span className="visually-hidden">{s.modelLabel}</span>
+              <select
+                value={selected}
+                disabled={props.busy || props.checking || choices.length === 0}
+                onChange={(event) => props.onModel(event.target.value)}
               >
-                <span className="text-field compact assistant-model">
-                  <input
-                    value={props.modelText}
-                    spellCheck={false}
-                    autoComplete="off"
-                    aria-label={s.modelLabel}
-                    disabled={props.busy}
-                    onChange={(event) => props.onModelText(event.target.value)}
-                  />
-                </span>
-                <button
-                  type="submit"
-                  className="button small"
-                  disabled={
-                    props.busy ||
-                    props.modelText.trim() === "" ||
-                    props.modelText.trim() === props.model
-                  }
-                >
-                  {s.saveModel}
-                </button>
-              </form>
-            )}
+                {!selected && (
+                  <option value="" disabled>
+                    {props.checking ? s.checking : s.chooseModel}
+                  </option>
+                )}
+                {choices.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </select>
+              <ChevronsUpDown size={12} strokeWidth={2} aria-hidden="true" />
+            </label>
             <button
               className="button small"
-              disabled={props.busy || !props.hasKey}
+              disabled={props.busy || props.checking || !props.hasKey}
               onClick={props.onCheck}
             >
               {props.checking && (
@@ -248,7 +230,11 @@ export function AssistantSettingsView(props: AssistantSettingsViewProps) {
         <div className="group-row">
           <div className="row-text">
             <span className="row-title">{s.consent}</span>
-            <span className="row-subtitle">{s.consentHint(name)}</span>
+            <span className="row-subtitle">{s.consentSummary}</span>
+            <details className="help-disclosure">
+              <summary>{s.consentDetails}</summary>
+              <p>{s.consentHint(name)}</p>
+            </details>
           </div>
           <Segmented
             name="assistant-consent"
@@ -295,6 +281,15 @@ export function AssistantSettingsView(props: AssistantSettingsViewProps) {
             {props.outcome.success}
           </p>
         ))}
+      {help && (
+        <ApiKeyHelp
+          provider={props.provider}
+          onClose={() => {
+            setHelp(false);
+            helpButton.current?.focus();
+          }}
+        />
+      )}
       <details className="help-disclosure section-footnote">
         <summary>{t.common.details}</summary>
         <p>{s.intro}</p>
@@ -314,7 +309,8 @@ export function AssistantSettings() {
   const [asking, setAsking] = useState<Asking>(null);
   const [outcome, setOutcome] = useState<Outcome>(null);
   const [keyText, setKeyText] = useState("");
-  const [modelDraft, setModelDraft] = useState<string | null>(null);
+  const [modelRevision, setModelRevision] = useState(0);
+  const pending = useRef(false);
   const alive = useRef(true);
   useEffect(() => {
     alive.current = true;
@@ -325,7 +321,8 @@ export function AssistantSettings() {
 
   /** One action at a time; the outcome is shown under the group. */
   async function act(action: () => Promise<string | void>) {
-    if (busy) return;
+    if (pending.current) return;
+    pending.current = true;
     setBusy(true);
     setAsking(null);
     setOutcome(null);
@@ -335,21 +332,34 @@ export function AssistantSettings() {
     } catch (cause) {
       if (alive.current) setOutcome({ error: message(cause) });
     } finally {
+      pending.current = false;
       if (alive.current) setBusy(false);
     }
   }
-  const check = async () => {
-    setChecking(true);
-    try {
-      const found = await ipc.assistantModels();
-      if (!alive.current) return;
-      setModels(found);
-      setModelDraft(null);
-      return t.assistant.settings.connected(found.length);
-    } finally {
-      if (alive.current) setChecking(false);
+  useEffect(() => {
+    let current = true;
+    setModels(null);
+    setOutcome(null);
+    if (!assistant.loaded || !assistant.hasKey) {
+      setChecking(false);
+      return;
     }
-  };
+    setChecking(true);
+    void ipc
+      .assistantModels()
+      .then((found) => {
+        if (current) setModels(found);
+      })
+      .catch((cause) => {
+        if (current) setOutcome({ error: message(cause) });
+      })
+      .finally(() => {
+        if (current) setChecking(false);
+      });
+    return () => {
+      current = false;
+    };
+  }, [assistant.provider, assistant.hasKey, assistant.loaded, modelRevision]);
   return (
     <AssistantSettingsView
       provider={assistant.provider}
@@ -362,15 +372,12 @@ export function AssistantSettings() {
       asking={asking}
       outcome={outcome}
       keyText={keyText}
-      modelText={modelDraft ?? assistant.model}
       onKeyText={setKeyText}
-      onModelText={setModelDraft}
       onAsk={setAsking}
       onProvider={(provider) =>
         void act(async () => {
           // Models and the pasted key belong to the provider they were entered for.
           setModels(null);
-          setModelDraft(null);
           setKeyText("");
           await assistant.configure({ provider });
         })
@@ -382,7 +389,7 @@ export function AssistantSettings() {
           );
           setKeyText("");
           // A saved key is only useful if the provider accepts it: say so now.
-          return check();
+          setModelRevision((n) => n + 1);
         })
       }
       onRemoveKey={() =>
@@ -393,11 +400,10 @@ export function AssistantSettings() {
       }
       onModel={(model) =>
         void act(async () => {
-          await assistant.configure({ model: model.trim() });
-          setModelDraft(null);
+          if (models?.includes(model)) await assistant.configure({ model });
         })
       }
-      onCheck={() => void act(check)}
+      onCheck={() => setModelRevision((n) => n + 1)}
       onConsent={(consent) => void act(() => assistant.configure({ consent }))}
       onClearAll={() =>
         void act(async () => {

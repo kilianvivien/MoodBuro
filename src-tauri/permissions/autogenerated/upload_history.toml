@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-upload-history"
+description = "Enables the upload_history command without any pre-configured scope."
+commands.allow = ["upload_history"]
+
+[[permission]]
+identifier = "deny-upload-history"
+description = "Denies the upload_history command without any pre-configured scope."
+commands.deny = ["upload_history"]

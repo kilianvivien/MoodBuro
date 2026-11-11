@@ -25,7 +25,7 @@ impl Store {
         rows
     }
     pub fn fingerprint_download(&self, id: &str, user: i64, hash: &str) -> rusqlite::Result<()> {
-        let count = self.0.execute("INSERT INTO download_hashes SELECT d.id,?3 FROM downloads d JOIN sites s ON s.id=d.site_id WHERE d.id=?1 AND s.user_id=?2 AND d.state='complete' AND d.course_id IS NOT NULL ON CONFLICT(download_id) DO UPDATE SET sha256=excluded.sha256", params![id,user,hash])?;
+        let count = self.0.execute("INSERT INTO download_hashes SELECT d.id,?3 FROM downloads d JOIN sites s ON s.id=d.site_id WHERE d.id=?1 AND s.user_id=?2 AND d.state='complete' ON CONFLICT(download_id) DO UPDATE SET sha256=excluded.sha256", params![id,user,hash])?;
         if count == 1 {
             Ok(())
         } else {

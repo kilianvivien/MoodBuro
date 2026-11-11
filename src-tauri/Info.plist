@@ -7,4 +7,5 @@
 <key>CFBundleURLName</key><string>app.moodburo</string>
 <key>CFBundleURLSchemes</key><array><string>moodledesk</string></array>
 </dict></array>
+<key>CFBundleDocumentTypes</key><array><dict><key>CFBundleTypeName</key><string>Assignment draft file</string><key>CFBundleTypeRole</key><string>Editor</string><key>LSHandlerRank</key><string>Alternate</string><key>LSItemContentTypes</key><array><string>public.data</string></array></dict></array>
 </dict></plist>

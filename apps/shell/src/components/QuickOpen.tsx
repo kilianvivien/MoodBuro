@@ -5,6 +5,7 @@ import {
   CalendarDays,
   CornerDownLeft,
   Download,
+  Upload,
   Bell,
   Pin,
   Settings,
@@ -19,7 +20,7 @@ import { useListing } from "../lib/useListing";
 import { SearchField } from "./ui";
 
 export type QuickView =
-  "inbox" | "courses" | "agenda" | "downloads" | "settings";
+  "inbox" | "courses" | "agenda" | "downloads" | "uploads" | "settings";
 export type QuickTarget =
   | { kind: "course"; siteId: string; courseId: number }
   | { kind: "activity"; siteId: string; activityId: number }
@@ -40,6 +41,7 @@ const views: readonly QuickView[] = [
   "courses",
   "agenda",
   "downloads",
+  "uploads",
   "settings",
 ];
 
@@ -125,6 +127,7 @@ const viewIcons: Record<QuickView, typeof Bell> = {
   courses: BookOpen,
   agenda: CalendarDays,
   downloads: Download,
+  uploads: Upload,
   settings: Settings,
 };
 function ResultIcon({ result }: { result: QuickResult }): ReactNode {

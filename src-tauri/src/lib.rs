@@ -5,7 +5,10 @@ mod calendar;
 mod calendar_subscription;
 mod commands;
 mod course_sync;
+mod desktop;
 mod documents;
+#[cfg(target_os = "macos")]
+mod download_control;
 mod downloads;
 #[cfg(target_os = "macos")]
 mod frame_guard;
@@ -24,6 +27,7 @@ mod reminders;
 mod session_restore;
 mod shortcut;
 mod tray;
+mod uploads;
 mod window_state;
 mod windows;
 use std::sync::Mutex;
@@ -51,6 +55,7 @@ pub fn run() {
     tauri::Builder::default()
         .manage(Mutex::new(links::Inbox::default()))
         .manage(calendar_subscription::Operations::default())
+        .manage(uploads::State::default())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             tray::show(app);
             for arg in args
@@ -64,6 +69,11 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(shortcut::plugin())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            Some(vec!["--autostart"]),
+        ))
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
@@ -97,11 +107,19 @@ pub fn run() {
             if let Ok(home) = app.path().home_dir() {
                 md_os::offline::clean_staging(&home.join("Moodle"));
             }
+            app.state::<AppState>()
+                .store
+                .lock()
+                .expect("store")
+                .recover_uploads()?;
             assistant::install(app.handle());
             window_state::install(app.handle());
             windows::create_shell(app.handle())?;
             menus::install(app.handle())?;
             tray::install(app.handle())?;
+            desktop::restore(app.handle());
+            #[cfg(target_os = "macos")]
+            download_control::install(app.handle());
             notifications::install_click_handler(app.handle())?;
             // A shortcut that cannot be registered must never stop the app from starting.
             shortcut::restore(app.handle());
@@ -123,6 +141,19 @@ pub fn run() {
                 links::receive(app.handle(), &arg);
             }
             Ok(())
+        })
+        .on_webview_event(|view, event| {
+            if view.window().label() == "main"
+                && (view.label() == "shell" || view.label().starts_with("site-"))
+            {
+                if let tauri::WebviewEvent::DragDrop(tauri::DragDropEvent::Drop { paths, .. }) =
+                    event
+                {
+                    if let Err(error) = uploads::drop_file(view.app_handle(), paths) {
+                        let _ = view.emit_to("shell", "shell://error", error);
+                    }
+                }
+            }
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Resized(_) | tauri::WindowEvent::ScaleFactorChanged { .. } =
@@ -185,6 +216,7 @@ pub fn run() {
             commands::assistant_configure,
             commands::assistant_key_set,
             commands::assistant_key_remove,
+            commands::assistant_key_help,
             commands::assistant_models,
             commands::assistant_panel,
             commands::assistant_history,
@@ -207,6 +239,20 @@ pub fn run() {
             commands::sites_list,
             commands::site_move,
             commands::agenda_export,
+            commands::download_cancel,
+            commands::download_remove_file,
+            commands::desktop_preferences,
+            commands::desktop_preferences_set,
+            commands::finder_moodle_folder,
+            commands::upload_pick,
+            commands::upload_files,
+            commands::upload_assignments,
+            commands::upload_prepare,
+            commands::upload_confirm,
+            commands::upload_stop,
+            commands::upload_history,
+            commands::upload_open,
+            commands::upload_reviewed,
             commands::calendar_handoffs,
             commands::calendar_subscribe,
             commands::popup_context,
@@ -260,7 +306,17 @@ pub fn run() {
             match event {
                 tauri::RunEvent::Reopen { .. } => tray::show(app),
                 tauri::RunEvent::Opened { urls } => {
-                    for url in urls {
+                    let files: Vec<_> = urls
+                        .iter()
+                        .filter(|u| u.scheme() == "file")
+                        .filter_map(|u| u.to_file_path().ok())
+                        .collect();
+                    if !files.is_empty() {
+                        if let Err(error) = uploads::drop_file(app, &files) {
+                            let _ = app.emit_to("shell", "shell://error", error);
+                        }
+                    }
+                    for url in urls.into_iter().filter(|u| u.scheme() != "file") {
                         links::receive(app, url.as_str());
                     }
                 }

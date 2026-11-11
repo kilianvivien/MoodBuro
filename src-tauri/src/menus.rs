@@ -35,7 +35,7 @@ pub fn french(app: &AppHandle) -> bool {
 }
 /// Local shell views a menu, the tray or the shell itself may show instead of a Moodle view.
 /// Quick Open overlays the current view and preserves the active account.
-pub const LOCAL_VIEWS: [&str; 8] = [
+pub const LOCAL_VIEWS: [&str; 9] = [
     "onboarding",
     "settings",
     "downloads",
@@ -44,6 +44,7 @@ pub const LOCAL_VIEWS: [&str; 8] = [
     "agenda",
     "quick-open",
     "bookmarks",
+    "uploads",
 ];
 /// Hides the Moodle views and asks the shell to show one of its local views.
 pub fn show_local_view(app: &AppHandle, view: &str) {
@@ -144,10 +145,20 @@ pub fn rebuild(app: &AppHandle, language: md_store::Language) -> tauri::Result<(
     )
     .accelerator("CmdOrCtrl+Alt+S")
     .build(app)?;
+    let uploads = MenuItemBuilder::with_id(
+        "uploads",
+        text(
+            "Upload Assignment Draft…",
+            "Téléverser un brouillon de devoir…",
+        ),
+    )
+    .accelerator("CmdOrCtrl+Shift+U")
+    .build(app)?;
     let file = SubmenuBuilder::new(app, text("File", "Fichier"))
         .item(&add)
         .separator()
         .item(&save)
+        .item(&uploads)
         .item(&calendar_subscription)
         .separator()
         .item(&bookmark)

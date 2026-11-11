@@ -37,9 +37,10 @@ import { Inbox } from "./views/Inbox";
 import { Courses } from "./views/Courses";
 import { Agenda } from "./views/Agenda";
 import { Toolbar } from "./components/Toolbar";
+import { Uploads } from "./views/Uploads";
 import { Downloads } from "./views/Downloads";
 import { AddSite } from "./views/AddSite";
-import { Settings, type Notice } from "./views/Settings";
+import { Settings, type Notice, type SettingsSection } from "./views/Settings";
 import { I18nProvider } from "./i18n/context";
 import { resolveLocale, systemLanguages } from "./i18n/locale";
 import { catalogues } from "./i18n/messages";
@@ -60,7 +61,10 @@ export default function App() {
   const [prefill, setPrefill] = useState({ url: "", revision: 0 });
   const consumingLink = useRef(false);
   const linkAgain = useRef(false);
+  const [uploadRevision, setUploadRevision] = useState(0);
   const [calendarRequest, setCalendarRequest] = useState(0);
+  const [settingsSection, setSettingsSection] =
+    useState<SettingsSection>("general");
   const [view, setView] = useState<View>("onboarding");
   const [downloadFeedback, setDownloadFeedback] =
     useState<DownloadFeedback | null>(null);
@@ -115,7 +119,8 @@ export default function App() {
     }
   }
 
-  async function showSettings() {
+  async function showSettings(section: SettingsSection = "general") {
+    setSettingsSection(section);
     setError(null);
     setPalette(false);
     setRemoved(null);
@@ -130,7 +135,9 @@ export default function App() {
   }
 
   /** Inbox, Courses, Agenda or Downloads: hide the Moodle view, then render. */
-  async function showLocal(target: Destination | "downloads" | "bookmarks") {
+  async function showLocal(
+    target: Destination | "downloads" | "bookmarks" | "uploads",
+  ) {
     setError(null);
     setPalette(false);
     try {
@@ -362,6 +369,7 @@ export default function App() {
       setBookmarkRevision((r) => r + 1);
       void showLocal("bookmarks");
     } else if (
+      target === "uploads" ||
       target === "downloads" ||
       target === "inbox" ||
       target === "courses" ||
@@ -447,6 +455,9 @@ export default function App() {
       listen<string>("sites://changed", (e) => onSitesChanged(e.payload)),
       listen<string>("sites://removed", () => onSiteRemoved()),
       listen<string>("shell://navigate", (e) => onNavigate(e.payload)),
+      listen("uploads://selected", () =>
+        setUploadRevision((revision) => revision + 1),
+      ),
       listen<string>("shell://error", (e) => setError(e.payload)),
       listen<DownloadFeedback>("downloads://feedback", (e) =>
         setDownloadFeedback(e.payload),
@@ -594,6 +605,9 @@ export default function App() {
               onOpenCourse={(id, course) => void openPage(id, "course", course)}
             />
           )}
+          {ready && view === "uploads" && (
+            <Uploads sites={sites} revision={uploadRevision} />
+          )}
           {ready && view === "agenda" && (
             <Agenda
               calendarRequest={calendarRequest}
@@ -613,6 +627,7 @@ export default function App() {
           )}
           {ready && view === "downloads" && (
             <Downloads
+              onUpload={() => void showLocal("uploads")}
               sites={sites}
               onReturn={(item) => {
                 void ipc
@@ -633,6 +648,12 @@ export default function App() {
           )}
           {ready && view === "settings" && (
             <Settings
+              section={settingsSection}
+              onSection={setSettingsSection}
+              reminders={
+                <Reminders sites={sites} onAdd={() => void showOnboarding()} />
+              }
+              assistant={<AssistantSettings />}
               desktop={desktop}
               sites={sites}
               appearance={settings.appearance}
@@ -670,10 +691,7 @@ export default function App() {
               onReauthenticate={(id) => void reauthenticate(id)}
               onRemove={removeSite}
               onAdd={() => void showOnboarding()}
-            >
-              <Reminders sites={sites} />
-              <AssistantSettings />
-            </Settings>
+            />
           )}
         </main>
         {ready && assistant.panel.open && (
@@ -685,7 +703,7 @@ export default function App() {
             onOpenPage={(source, siteId) =>
               void openPage(siteId, source.page, source.value ?? undefined)
             }
-            onSettings={() => void showSettings()}
+            onSettings={() => void showSettings("assistant")}
             onClose={() => void toggleAssistant()}
           />
         )}

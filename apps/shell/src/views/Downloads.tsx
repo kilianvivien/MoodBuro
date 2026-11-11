@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import {
   CircleAlert,
+  ChevronsUpDown,
   CircleCheck,
   Copy,
   Download as DownloadIcon,
@@ -11,6 +12,8 @@ import {
   LoaderCircle,
   SearchX,
   TriangleAlert,
+  XCircle,
+  Trash2,
 } from "lucide-react";
 import {
   desktop,
@@ -20,6 +23,7 @@ import {
   type Course,
   type Download,
   type DownloadState,
+  type DownloadProgress,
   type Site,
 } from "../ipc";
 import { useI18n } from "../i18n/context";
@@ -28,7 +32,6 @@ import {
   EmptyState,
   PageHeader,
   SearchField,
-  Segmented,
   SiteSelect,
   Skeleton,
 } from "../components/ui";
@@ -88,6 +91,8 @@ const stateIcons = {
   downloading: LoaderCircle,
   complete: CircleCheck,
   failed: TriangleAlert,
+  cancelled: XCircle,
+  removed: Trash2,
 } as const;
 
 export function DownloadList({
@@ -103,7 +108,13 @@ export function DownloadList({
   onReturn,
   onCancel,
   onConfirm,
+  progress = [],
+  onStop,
+  onRemove,
 }: {
+  progress?: DownloadProgress[];
+  onStop?: (id: string) => void;
+  onRemove?: (item: Download) => void;
   items: Download[];
   sites: Site[];
   busy: boolean;
@@ -118,7 +129,7 @@ export function DownloadList({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  const { t, date } = useI18n();
+  const { t, date, locale } = useI18n();
   if (items.length === 0)
     return filtered ? (
       <EmptyState
@@ -137,6 +148,8 @@ export function DownloadList({
     <ul className="group" role="list">
       {items.map((item) => {
         const Icon = stateIcons[item.state];
+        const transfer = progress.find((p) => p.id === item.id);
+        const number = new Intl.NumberFormat(locale);
         const unavailable = busy || item.state !== "complete";
         return (
           <li key={item.id}>
@@ -157,6 +170,9 @@ export function DownloadList({
                     sites.find((s) => s.id === item.siteId)?.name,
                     item.courseName ?? t.downloads.unknownCourse,
                     t.downloads.states[item.state],
+                    item.bytes != null
+                      ? t.offline.bytes(number.format(item.bytes))
+                      : null,
                     date(item.startedAt * 1000, {
                       dateStyle: "medium",
                       timeStyle: "short",
@@ -165,18 +181,56 @@ export function DownloadList({
                     .filter(Boolean)
                     .join(" · ")}
                 </span>
+                {item.state === "downloading" && transfer && (
+                  <>
+                    <span className="row-subtitle" role="status">
+                      {t.downloads.progress(
+                        number.format(transfer.received),
+                        transfer.total == null
+                          ? null
+                          : number.format(transfer.total),
+                      )}
+                    </span>
+                    <progress
+                      aria-label={item.filename}
+                      value={
+                        transfer.total && transfer.total > 0
+                          ? transfer.received
+                          : undefined
+                      }
+                      max={transfer.total ?? undefined}
+                    />
+                  </>
+                )}
+                {item.metadataApplied === false && (
+                  <span className="row-subtitle">
+                    {t.downloads.metadataFailed}
+                  </span>
+                )}
               </div>
               <div className="row-actions">
-                {item.state === "failed" && onReturn && (
+                {item.state === "downloading" && transfer && onStop && (
                   <button
                     className="button small"
-                    disabled={busy || !sites.some((s) => s.id === item.siteId)}
-                    title={t.downloads.returnHint}
-                    onClick={() => onReturn(item)}
+                    disabled={busy}
+                    onClick={() => onStop(item.id)}
                   >
-                    {t.downloads.returnToMoodle}
+                    {t.downloads.stop}
                   </button>
                 )}
+                {(item.state === "failed" || item.state === "cancelled") &&
+                  onReturn && (
+                    <button
+                      className="button small"
+                      disabled={
+                        busy || !sites.some((s) => s.id === item.siteId)
+                      }
+                      title={t.downloads.returnHint}
+                      onClick={() => onReturn(item)}
+                    >
+                      {t.downloads.returnToMoodle}
+                    </button>
+                  )}
                 {item.canPreview && onPreview && (
                   <button
                     className="button small"
@@ -200,7 +254,9 @@ export function DownloadList({
                   className="button small icon"
                   title={t.downloads.reveal}
                   aria-label={t.downloads.revealLabel(item.filename)}
-                  disabled={unavailable}
+                  disabled={
+                    busy || !["complete", "removed"].includes(item.state)
+                  }
                   onClick={() => onReveal(item.id)}
                 >
                   <FolderOpen size={13} strokeWidth={2} aria-hidden="true" />
@@ -214,6 +270,17 @@ export function DownloadList({
                     onClick={() => onCopy(item.id)}
                   >
                     <Copy size={13} strokeWidth={2} aria-hidden="true" />
+                  </button>
+                )}
+                {item.state === "complete" && onRemove && (
+                  <button
+                    className="button small icon"
+                    title={t.downloads.removeFile}
+                    aria-label={t.downloads.removeTitle(item.filename)}
+                    disabled={busy}
+                    onClick={() => onRemove(item)}
+                  >
+                    <Trash2 size={13} strokeWidth={2} aria-hidden="true" />
                   </button>
                 )}
               </div>
@@ -230,6 +297,61 @@ export function DownloadList({
         );
       })}
     </ul>
+  );
+}
+
+export function RemoveConfirmation({
+  item,
+  busy,
+  onCancel,
+  onConfirm,
+}: {
+  item: Download;
+  busy: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const { t } = useI18n();
+  const cancel = useRef<HTMLButtonElement>(null);
+  useEffect(() => cancel.current?.focus(), []);
+  return (
+    <div
+      className="confirm standalone"
+      role="alertdialog"
+      aria-labelledby="remove-file-title"
+      aria-describedby="remove-file-body"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!busy) onCancel();
+        }
+      }}
+    >
+      <p className="confirm-title" id="remove-file-title">
+        {t.downloads.removeTitle(item.filename)}
+      </p>
+      <p className="confirm-body" id="remove-file-body">
+        {t.downloads.removeBody}
+      </p>
+      <div className="confirm-actions">
+        <button
+          ref={cancel}
+          className="button"
+          disabled={busy}
+          onClick={onCancel}
+        >
+          {t.downloads.cancel}
+        </button>
+        <button
+          className="button destructive"
+          disabled={busy}
+          onClick={onConfirm}
+        >
+          {t.downloads.confirmRemove}
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -293,11 +415,14 @@ type StateFilter = "all" | DownloadState;
 export function Downloads({
   sites,
   onReturn,
+  onUpload,
 }: {
   sites: Site[];
   onReturn?: (item: Download) => void;
+  onUpload?: () => void;
 }) {
   const { t } = useI18n();
+  const [revision, setRevision] = useState(0);
   const [items, setItems] = useState<Download[]>([]);
   const [total, setTotal] = useState(0);
   const [loaded, setLoaded] = useState(false);
@@ -311,6 +436,17 @@ export function Downloads({
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<Download | null>(null);
+  const [progress, setProgress] = useState<DownloadProgress[]>([]);
+  useEffect(() => {
+    if (!desktop) return;
+    const listener = listen<DownloadProgress[]>("downloads://progress", (e) =>
+      setProgress(e.payload),
+    );
+    return () => {
+      void listener.then((stop) => stop()).catch(() => {});
+    };
+  }, []);
   const [clearing, setClearing] = useState(false);
   const loadSequence = useRef(0);
   useEffect(() => {
@@ -327,11 +463,11 @@ export function Downloads({
   }, [sites]);
   const returnFocus = useRef<HTMLElement | null>(null);
   useEffect(() => {
-    if (!confirming && !clearing && !busy && returnFocus.current) {
+    if (!confirming && !clearing && !removing && !busy && returnFocus.current) {
       returnFocus.current.focus();
       returnFocus.current = null;
     }
-  }, [confirming, clearing, busy]);
+  }, [confirming, clearing, removing, busy]);
   const load = useEffectEvent(async (cancelled: () => boolean) => {
     const sequence = ++loadSequence.current;
     const current = () => !cancelled() && sequence === loadSequence.current;
@@ -386,7 +522,7 @@ export function Downloads({
       cancelled = true;
       void listener.then((stop) => stop()).catch(() => {});
     };
-  }, [query, siteId, courseId, state, pages]);
+  }, [query, siteId, courseId, state, pages, revision]);
   async function action(run: () => Promise<void>, done: string | null = null) {
     setBusy(true);
     setError(null);
@@ -395,7 +531,9 @@ export function Downloads({
       await run();
       setConfirming(null);
       setClearing(false);
+      setRemoving(null);
       setNotice(done);
+      setRevision((n) => n + 1);
     } catch (cause) {
       setError(message(cause));
     } finally {
@@ -415,7 +553,7 @@ export function Downloads({
     courseId !== null ||
     state !== "all";
   return (
-    <div className="page">
+    <div className="page downloads-page">
       <PageHeader
         title={t.downloads.title}
         detail={
@@ -424,6 +562,15 @@ export function Downloads({
             : undefined
         }
       >
+        {onUpload && (
+          <button
+            className="button"
+            disabled={busy || sites.length === 0}
+            onClick={onUpload}
+          >
+            {t.uploads.title}
+          </button>
+        )}
         <button
           className="button"
           disabled={busy || sites.length === 0}
@@ -488,19 +635,42 @@ export function Downloads({
                 </option>
               ))}
         </select>
-        <Segmented<StateFilter>
-          name="download-state"
-          legend={t.downloads.stateFilter}
-          value={state}
-          options={[
-            { value: "all", label: t.downloads.allStates },
-            { value: "downloading", label: t.downloads.filters.downloading },
-            { value: "complete", label: t.downloads.filters.complete },
-            { value: "failed", label: t.downloads.filters.failed },
-          ]}
-          onChange={filter(setState)}
-        />
+        <label className="popup-button">
+          <span className="visually-hidden">{t.downloads.stateFilter}</span>
+          <select
+            value={state}
+            onChange={(event) =>
+              filter(setState)(event.target.value as StateFilter)
+            }
+          >
+            <option value="all">{t.downloads.allStates}</option>
+            {(
+              [
+                "downloading",
+                "complete",
+                "failed",
+                "cancelled",
+                "removed",
+              ] as const
+            ).map((value) => (
+              <option key={value} value={value}>
+                {t.downloads.filters[value]}
+              </option>
+            ))}
+          </select>
+          <ChevronsUpDown size={12} strokeWidth={2} aria-hidden="true" />
+        </label>
       </div>
+      {removing && (
+        <RemoveConfirmation
+          item={removing}
+          busy={busy}
+          onCancel={() => setRemoving(null)}
+          onConfirm={() =>
+            void action(() => ipc.removeDownloadFile(removing.id, true))
+          }
+        />
+      )}
       {clearing && (
         <ClearConfirmation
           site={sites.find((site) => site.id === siteId)}
@@ -533,6 +703,12 @@ export function Downloads({
           confirming={confirming}
           filtered={filtered}
           onReturn={onReturn}
+          progress={progress}
+          onStop={(id) => void action(() => ipc.cancelDownload(id))}
+          onRemove={(item) => {
+            returnFocus.current = document.activeElement as HTMLElement;
+            setRemoving(item);
+          }}
           onOpen={(item) => {
             if (item.needsConfirmation) {
               returnFocus.current = document.activeElement as HTMLElement;
@@ -562,6 +738,7 @@ export function Downloads({
       <details className="help-disclosure section-footnote">
         <summary>{t.common.details}</summary>
         <p>{t.downloads.folders}</p>
+        <p>{t.downloads.metadataHint}</p>
         <p>{t.downloads.previewHint}</p>
         <p>{t.downloads.returnHint}</p>
       </details>

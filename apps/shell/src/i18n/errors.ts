@@ -8,6 +8,79 @@ import { catalogues, type Messages } from "./messages";
  * exact text. Keep this list in step with the Rust messages.
  */
 const french: Record<string, string> = {
+  "Another upload is running.": "Un autre envoi est en cours.",
+  "Check the previous upload in Moodle before starting another attempt.":
+    "Vérifiez l’envoi précédent dans Moodle avant de réessayer.",
+  "Choose one regular file up to 32 MB.":
+    "Choisissez un fichier de 32 Mo maximum.",
+  "Choose the assignment again.": "Sélectionnez à nouveau le devoir.",
+  "Choose the file again.": "Sélectionnez à nouveau le fichier.",
+  "Confirm the upload destination first.":
+    "Confirmez d’abord la destination du fichier.",
+  "Could not open the file picker.":
+    "Impossible d’ouvrir le sélecteur de fichier.",
+  "Could not read the selected file.":
+    "Impossible de lire le fichier sélectionné.",
+  "Could not record upload progress.":
+    "Impossible d’enregistrer la progression de l’envoi.",
+  "The Moodle draft changed. No file was attached; continue in Moodle.":
+    "Le brouillon Moodle a changé. Aucun fichier joint ; poursuivez dans Moodle.",
+  "The selected file changed. Choose it again.":
+    "Le fichier a changé. Sélectionnez-le à nouveau.",
+  "The upload account changed. Choose the assignment again.":
+    "Le compte a changé. Sélectionnez à nouveau le devoir.",
+  "The upload approval expired. Review the destination again.":
+    "La confirmation a expiré. Vérifiez à nouveau la destination.",
+  "This assignment needs Moodle. Choose an individual file draft.":
+    "Utilisez Moodle pour ce devoir. Choisissez un brouillon individuel avec fichier.",
+  "This draft is locked or already contains work. Continue in Moodle.":
+    "Ce brouillon est verrouillé ou contient déjà du travail. Poursuivez dans Moodle.",
+  "This file exceeds the assignment’s limit.":
+    "Le fichier dépasse la limite du devoir.",
+  "Too many selected files. Reopen MoodBuro and try again.":
+    "Trop de fichiers sélectionnés. Relancez MoodBuro puis réessayez.",
+  "Too many upload approvals. Reopen the upload view.":
+    "Trop de confirmations. Rouvrez la vue des envois.",
+  "Upload outcome is uncertain. Check Moodle before retrying.":
+    "Résultat incertain. Vérifiez Moodle avant de réessayer.",
+  "Upload preparation is unavailable.":
+    "La préparation de l’envoi est indisponible.",
+  "Upload stopped. Check Moodle before retrying.":
+    "Envoi arrêté. Vérifiez Moodle avant de réessayer.",
+  "Could not change launch at login.":
+    "Impossible de modifier l’ouverture à la connexion.",
+  "Could not change menu-bar mode.":
+    "Impossible de modifier le mode barre des menus.",
+  "Could not read login settings.":
+    "Impossible de lire les réglages de connexion.",
+  "Could not show the Moodle folder in Finder.":
+    "Impossible d’afficher le dossier Moodle dans le Finder.",
+  "Could not cancel the download.": "Impossible d’annuler le téléchargement.",
+  "This download cannot be cancelled here. Return to Moodle.":
+    "Ce téléchargement ne peut pas être annulé ici. Retournez dans Moodle.",
+  "Confirm removing this downloaded file first.":
+    "Confirmez d’abord le retrait de ce fichier téléchargé.",
+  "Could not remove this downloaded file.":
+    "Impossible de retirer ce fichier téléchargé.",
+  "Could not update download history.":
+    "Impossible de mettre à jour l’historique des téléchargements.",
+  "Local changes cannot be checked. Remove this file in Finder.":
+    "Impossible de vérifier les modifications locales. Retirez ce fichier dans le Finder.",
+  "This download is no longer running.":
+    "Ce téléchargement n’est plus en cours.",
+  "This file is shared with another saved copy. Keep it or manage the copies first.":
+    "Ce fichier est partagé avec une autre copie. Gérez d’abord les copies enregistrées.",
+  "This file was edited or moved. Remove it in Finder.":
+    "Ce fichier a été modifié ou déplacé. Retirez-le dans le Finder.",
+  "Confirm checking the previous upload in Moodle first.":
+    "Confirmez d’abord la vérification de l’envoi précédent dans Moodle.",
+  "Could not apply the application preferences.":
+    "Impossible d’appliquer les préférences de l’application.",
+  "Could not read upload history.":
+    "Impossible de lire l’historique des envois.",
+  "Could not update upload history.":
+    "Impossible de mettre à jour l’historique des envois.",
+  "This upload is unavailable.": "Cet envoi est indisponible.",
   "This page cannot be bookmarked. Open a Moodle course, activity or other standard content page.":
     "Cette page ne peut pas être ajoutée aux signets. Ouvrez un cours, une activité ou une autre page de contenu Moodle standard.",
   "Invalid bookmark.": "Signet non valide.",

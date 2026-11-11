@@ -26,13 +26,15 @@ md-secrets = { path = "../crates/md-secrets" }
 md-assistant = { path = "../crates/md-assistant" }
 serde_json.workspace = true
 md-store = { path = "../crates/md-store" }
+tauri-plugin-dialog = "2"
+tauri-plugin-autostart = "2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"
 block2 = "0.6"
-objc2-web-kit = { version = "0.3", default-features = false, features = ["WKWebView", "WKNavigation", "WKUIDelegate", "WKBackForwardList", "WKBackForwardListItem", "WKNavigationDelegate", "WKNavigationAction", "WKNavigationResponse", "WKFrameInfo", "block2"] }
+objc2-web-kit = { version = "0.3", default-features = false, features = ["WKDownload", "WKWebView", "WKNavigation", "WKUIDelegate", "WKBackForwardList", "WKBackForwardListItem", "WKNavigationDelegate", "WKNavigationAction", "WKNavigationResponse", "WKFrameInfo", "block2"] }
 
-objc2-foundation = { version = "0.3", features = ["NSLocale", "NSArray", "NSString", "NSData", "NSURL", "NSURLRequest", "NSURLResponse"] }
+objc2-foundation = { version = "0.3", features = ["NSProgress", "NSLocale", "NSArray", "NSString", "NSData", "NSURL", "NSURLRequest", "NSURLResponse"] }
 objc2-app-kit = { version = "0.3", default-features = false, features = ["NSView", "NSGraphics", "NSWindow", "NSToolbar", "NSToolbarItem", "NSImage", "NSAlert", "NSWorkspace", "NSRunningApplication", "block2", "NSTextField", "NSScrollView"] }
 objc2-quick-look-ui = { version = "0.3", default-features = false, features = ["std", "objc2-app-kit", "QLPreviewView", "QLPreviewItem"] }
 objc2-pdf-kit = { version = "0.3", default-features = false, features = ["PDFView", "PDFDocument", "PDFPage", "objc2-app-kit", "objc2-core-foundation"] }

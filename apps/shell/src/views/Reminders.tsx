@@ -93,7 +93,13 @@ export function ReminderRows({
     </ul>
   );
 }
-export function Reminders({ sites }: { sites: Site[] }) {
+export function Reminders({
+  sites,
+  onAdd,
+}: {
+  sites: Site[];
+  onAdd?: () => void;
+}) {
   const { t } = useI18n();
   const [settings, setSettings] = useState<ReminderSettings[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -148,7 +154,24 @@ export function Reminders({ sites }: { sites: Site[] }) {
       if (alive.current) setBusy(false);
     }
   }
-  if (sites.length === 0) return null;
+  if (sites.length === 0)
+    return (
+      <section aria-labelledby="reminders-title">
+        <h2 className="section-title" id="reminders-title">
+          {t.reminders.title}
+        </h2>
+        <div className="group">
+          <div className="group-row">
+            <p className="row-text">{t.reminders.noOrganisations}</p>
+            {onAdd && (
+              <button className="button" onClick={onAdd}>
+                {t.settings.add}
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+    );
   return (
     <section aria-labelledby="reminders-title">
       <h2 className="section-title" id="reminders-title">

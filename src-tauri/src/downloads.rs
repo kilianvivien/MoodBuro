@@ -22,6 +22,7 @@ struct Feedback {
 pub type Transfers = HashMap<(String, String), Transfer>;
 #[derive(Clone)]
 pub struct Transfer {
+    cancelled: bool,
     ambiguous: bool,
     finished: bool,
     user_id: i64,
@@ -38,6 +39,14 @@ fn finish_transfer(
     success: bool,
 ) -> Option<Transfer> {
     let transfer = transfers.get_mut(key)?;
+    if transfer.cancelled {
+        if transfer.finished {
+            return None;
+        }
+        transfer.ambiguous = true;
+        transfer.finished = true;
+        return Some(transfer.clone());
+    }
     if transfer.ambiguous {
         if !success || transfer.finished {
             return None;
@@ -98,9 +107,7 @@ fn complete(
     }
     md_os::offline::managed_path(root, &transfer.staged).ok()?;
     // Hashing is bounded to the offline limit. Larger and unidentified downloads retain their normal path.
-    let hash = item
-        .course_id
-        .and_then(|_| md_os::offline::hash(&transfer.staged).ok());
+    let hash = md_os::offline::hash(&transfer.staged).ok();
     let reused = hash.as_ref().and_then(|hash| {
         let files = store
             .shared_files(&md_store::FileIdentity {
@@ -113,6 +120,7 @@ fn complete(
             .ok()?;
         md_os::offline::reusable(root, &files, hash)
     });
+    let published_new = reused.is_none();
     let path = reused
         .or_else(|| policy::publish(&transfer.staged, &transfer.folder, &transfer.filename).ok())?;
     store
@@ -120,6 +128,41 @@ fn complete(
         .ok()?;
     if let Some(hash) = hash {
         let _ = store.fingerprint_download(&transfer.id, transfer.user_id, &hash);
+    }
+    if let Some(site) = store
+        .sites()
+        .unwrap_or_default()
+        .into_iter()
+        .find(|s| s.id == item.site_id)
+    {
+        if let Ok(base) = md_moodle::normalize_site(&site.wwwroot) {
+            let source = match item.course_id {
+                Some(id) => md_moodle::page_url(&base, md_moodle::Page::Course(id)).ok(),
+                None => base.join("my/").ok(),
+            };
+            if let Some(source) = source {
+                let metadata = if published_new {
+                    Some(md_os::metadata::annotate(
+                        &path,
+                        source.as_str(),
+                        item.course_name.as_deref(),
+                    ))
+                } else {
+                    None
+                };
+                if let Ok(file) = std::fs::metadata(&path) {
+                    let _ = store.save_download_details(
+                        &transfer.id,
+                        transfer.user_id,
+                        &md_store::DownloadDetails {
+                            bytes: file.len(),
+                            source_page: source.to_string(),
+                            metadata_applied: metadata,
+                        },
+                    );
+                }
+            }
+        }
     }
     Some(path)
 }
@@ -237,6 +280,7 @@ pub fn handle_for_user(
                         staged,
                         folder,
                         filename: filename.clone(),
+                        cancelled: false,
                         ambiguous: false,
                         finished: false,
                         user_id: site.user_id,
@@ -306,7 +350,7 @@ fn finished(app: &AppHandle, site_id: &str, transfer: Transfer, success: bool) {
             .unwrap_or_default()
             .iter()
             .any(|s| s.id == site_id && s.user_id == transfer.user_id);
-        let completed = if success && saved {
+        let completed = if success && saved && !transfer.cancelled {
             app.path()
                 .home_dir()
                 .ok()
@@ -315,8 +359,15 @@ fn finished(app: &AppHandle, site_id: &str, transfer: Transfer, success: bool) {
             None
         };
         if completed.is_none() {
-            let _ =
-                store.download_finish(&transfer.id, &transfer.staged.to_string_lossy(), "failed");
+            let _ = store.download_finish(
+                &transfer.id,
+                &transfer.staged.to_string_lossy(),
+                if transfer.cancelled {
+                    "cancelled"
+                } else {
+                    "failed"
+                },
+            );
         }
         (saved, completed)
     };
@@ -350,28 +401,117 @@ fn finished(app: &AppHandle, site_id: &str, transfer: Transfer, success: bool) {
                 filename,
                 state: if completed.is_some() {
                     "complete"
+                } else if transfer.cancelled {
+                    "cancelled"
                 } else {
                     "failed"
                 },
             },
         );
+        if transfer.cancelled {
+            changed(app);
+            return;
+        }
         let fr = crate::menus::french(app);
         let body = match (completed.is_some(), fr) {
-            (true, false) => "Download complete. Open Downloads in MoodBuro to view it.",
-            (true, true) => {
-                "Téléchargement terminé. Ouvrez Téléchargements dans MoodBuro pour le consulter."
-            }
+            (true, false) => "Download complete.",
+            (true, true) => "Téléchargement terminé.",
             (false, false) => "Download failed. Please try again from Moodle.",
             (false, true) => "Échec du téléchargement. Réessayez depuis Moodle.",
         };
-        let _ = app
+        let mut notification = app
             .notification()
             .builder()
             .title("MoodBuro")
             .body(body)
-            .show();
+            .extra("kind", "download")
+            .extra("downloadId", &transfer.id);
+        if completed.is_some() {
+            use tauri_plugin_notification::{Action, ActionType};
+            let category = if fr { "download-fr" } else { "download-en" };
+            let _ = app
+                .notification()
+                .register_action_types(vec![ActionType::builder(category)
+                    .actions(vec![
+                        Action::builder("download-open", if fr { "Ouvrir" } else { "Open" })
+                            .foreground(true)
+                            .build(),
+                        Action::builder(
+                            "download-reveal",
+                            if fr {
+                                "Afficher dans le Finder"
+                            } else {
+                                "Show in Finder"
+                            },
+                        )
+                        .foreground(true)
+                        .build(),
+                    ])
+                    .build()]);
+            notification = notification.action_type_id(category);
+        }
+        let _ = notification.show();
     }
     changed(app);
+}
+
+pub(crate) fn live_info(app: &AppHandle, site: &str, source: &str) -> Option<(String, i64)> {
+    app.state::<AppState>()
+        .downloads
+        .lock()
+        .ok()?
+        .get(&(site.into(), source.into()))
+        .filter(|t| !t.finished)
+        .map(|t| (t.id.clone(), t.user_id))
+}
+pub async fn cancel(app: &AppHandle, id: &str) -> Result<(), String> {
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = (app, id);
+        Err("This download cannot be cancelled here. Return to Moodle.".into())
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let state = app.state::<AppState>();
+        let key = {
+            let mut transfers = state
+                .downloads
+                .lock()
+                .map_err(|_| "Download unavailable.")?;
+            let (key, transfer) = transfers
+                .iter_mut()
+                .find(|(_, t)| t.id == id && !t.finished)
+                .ok_or("This download is no longer running.")?;
+            transfer.cancelled = true;
+            key.clone()
+        };
+        if let Err(error) = crate::download_control::cancel(app, key.0.clone(), key.1.clone()).await
+        {
+            if let Ok(mut transfers) = state.downloads.lock() {
+                if let Some(t) = transfers.get_mut(&key).filter(|t| t.id == id) {
+                    t.cancelled = false;
+                }
+            }
+            return Err(error);
+        }
+        let transfer = {
+            let mut transfers = state
+                .downloads
+                .lock()
+                .map_err(|_| "Download unavailable.")?;
+            if transfers.get(&key).is_some_and(|t| t.id == id) {
+                finish_transfer(&mut transfers, &key, true)
+            } else {
+                None
+            }
+        };
+        if let Some(transfer) = transfer {
+            let app = app.clone();
+            let site = key.0;
+            tauri::async_runtime::spawn_blocking(move || finished(&app, &site, transfer, false));
+        }
+        Ok(())
+    }
 }
 
 #[derive(serde::Serialize)]
@@ -381,6 +521,8 @@ pub struct Summary {
     item: md_store::Download,
     needs_confirmation: bool,
     can_preview: bool,
+    bytes: Option<u64>,
+    metadata_applied: Option<bool>,
 }
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -397,7 +539,11 @@ pub fn page(
     offset: u32,
     course_id: Option<i64>,
 ) -> Result<Page, String> {
-    if !matches!(state, None | Some("downloading" | "complete" | "failed")) || query.len() > 256 {
+    if !matches!(
+        state,
+        None | Some("downloading" | "complete" | "failed" | "cancelled" | "removed")
+    ) || query.len() > 256
+    {
         return Err("Unknown download filter.".into());
     }
     let filter = md_store::DownloadFilter {
@@ -416,11 +562,22 @@ pub fn page(
     Ok(Page {
         items: items
             .into_iter()
-            .map(|item| Summary {
-                can_preview: cfg!(target_os = "macos")
-                    && crate::documents::supported(&item.filename),
-                needs_confirmation: policy::needs_confirmation(Path::new(&item.filename)),
-                item,
+            .map(|item| {
+                let details = app
+                    .state::<AppState>()
+                    .store
+                    .lock()
+                    .ok()
+                    .and_then(|s| s.download_details(&item.id).ok())
+                    .flatten();
+                Summary {
+                    bytes: details.as_ref().map(|d| d.bytes),
+                    metadata_applied: details.and_then(|d| d.metadata_applied),
+                    can_preview: cfg!(target_os = "macos")
+                        && crate::documents::supported(&item.filename),
+                    needs_confirmation: policy::needs_confirmation(Path::new(&item.filename)),
+                    item,
+                }
             })
             .collect(),
         total,
@@ -474,7 +631,7 @@ pub fn path(app: &AppHandle, id: &str, confirmed: bool, opening: bool) -> Result
         .map_err(|_| "Site storage unavailable.")?
         .download(id)
         .map_err(|_| "Could not read download history.")?
-        .filter(|d| d.state == "complete")
+        .filter(|d| d.state == "complete" || (!opening && d.state == "removed"))
         .ok_or("This download is unavailable.")?;
     let path = PathBuf::from(&item.local_path);
     let root = app
@@ -509,6 +666,62 @@ pub fn path(app: &AppHandle, id: &str, confirmed: bool, opening: bool) -> Result
         return Err("Confirm opening this file first.".into());
     }
     Ok(actual)
+}
+
+/// Explicit reversible file cleanup, independent of history clearing.
+pub fn remove_file(app: &AppHandle, id: &str, confirmed: bool) -> Result<(), String> {
+    if !confirmed {
+        return Err("Confirm removing this downloaded file first.".into());
+    }
+    let state = app.state::<AppState>();
+    let store = state
+        .store
+        .lock()
+        .map_err(|_| "Site storage unavailable.")?;
+    let item = store
+        .download(id)
+        .map_err(|_| "Could not read download history.")?
+        .filter(|d| d.state == "complete")
+        .ok_or("This download is unavailable.")?;
+    if store
+        .download_file_referenced(&item.local_path, id)
+        .map_err(|_| "Could not read download history.")?
+    {
+        return Err(
+            "This file is shared with another saved copy. Keep it or manage the copies first."
+                .into(),
+        );
+    }
+    let hash = store
+        .download_hash(id)
+        .map_err(|_| "Could not read download history.")?
+        .ok_or("Local changes cannot be checked. Remove this file in Finder.")?;
+    let root = app
+        .path()
+        .home_dir()
+        .map_err(|_| "Download folder unavailable.")?
+        .join("Moodle");
+    let archive = uuid::Uuid::new_v4().to_string();
+    let result = md_os::offline::remove_copy(&root, Path::new(&item.local_path), &hash, &archive)
+        .map_err(|_| "Could not remove this downloaded file.")?;
+    if result == md_os::offline::Removal::Kept {
+        return Err("This file was edited or moved. Remove it in Finder.".into());
+    }
+    let path = if result == md_os::offline::Removal::Archived {
+        root.join(".trash").join(archive).join(
+            Path::new(&item.local_path)
+                .file_name()
+                .ok_or("This download is unavailable.")?,
+        )
+    } else {
+        PathBuf::from(&item.local_path)
+    };
+    store
+        .download_finish(id, &path.to_string_lossy(), "removed")
+        .map_err(|_| "Could not update download history.")?;
+    drop(store);
+    changed(app);
+    Ok(())
 }
 
 #[cfg(test)]
@@ -557,6 +770,7 @@ mod tests {
             staged: staged.clone(),
             folder: root.clone(),
             filename: "notes.pdf".into(),
+            cancelled: false,
             ambiguous: false,
             finished: false,
             user_id: 7,
@@ -592,6 +806,31 @@ mod tests {
         std::fs::remove_dir_all(root).unwrap();
     }
     #[test]
+    fn cancellation_is_terminal_and_reserves_the_url_against_late_callbacks() {
+        let key = ("site".into(), "https://example.org/file".into());
+        let mut transfers = Transfers::new();
+        transfers.insert(
+            key.clone(),
+            Transfer {
+                id: "one".into(),
+                staged: "/staged".into(),
+                folder: "/folder".into(),
+                filename: "file.pdf".into(),
+                cancelled: true,
+                ambiguous: false,
+                finished: false,
+                user_id: 1,
+                open_after: false,
+            },
+        );
+        let terminal = finish_transfer(&mut transfers, &key, false).unwrap();
+        assert!(terminal.cancelled);
+        assert!(terminal.finished);
+        assert!(finish_transfer(&mut transfers, &key, true).is_none());
+        assert!(finish_transfer(&mut transfers, &key, false).is_none());
+        assert_eq!(transfers.len(), 1);
+    }
+    #[test]
     fn duplicate_failure_cannot_finish_original_or_a_later_transfer() {
         let key = ("site".into(), "https://example.org/file".into());
         let mut transfers = Transfers::new();
@@ -602,6 +841,7 @@ mod tests {
                 staged: "/staged".into(),
                 folder: "/folder".into(),
                 filename: "file.pdf".into(),
+                cancelled: false,
                 ambiguous: true,
                 finished: false,
                 user_id: 1,

@@ -171,6 +171,7 @@ const en = {
       "Pins are saved on this Mac only and do not change your Moodle favourites. This list stays available offline; opening a course needs a connection.",
   },
   reminders: {
+    noOrganisations: "Add an organisation to set deadline reminders.",
     summary:
       "Choose when to be notified before deadlines for each organisation.",
     help: "How reminders work",
@@ -188,6 +189,49 @@ const en = {
     deliveryFailed:
       "A notification attempt failed. Check macOS notification settings. Failed or interrupted attempts are not replayed.",
     saving: "Saving reminder preferences…",
+  },
+  desktop: {
+    title: "Mac Integration",
+    menuBar: "Menu-bar-only mode",
+    login: "Launch at login",
+    finder: "Finder sidebar",
+    showFolder: "Show Moodle Folder",
+    finderHint: "Drag Moodle into Finder’s Favourites.",
+  },
+  uploads: {
+    title: "Assignment Draft",
+    hint: "Choose one file up to 32 MB, or drop it onto the window.",
+    chooseFile: "Choose File…",
+    noFile: "No file selected",
+    organisation: "Organisation",
+    course: "Course",
+    assignment: "Assignment",
+    choose: "Choose…",
+    review: "Review Upload…",
+    openMoodle: "Open in Moodle",
+    unsupported:
+      "Use Moodle for this assignment. In-app uploads need an individual file draft.",
+    confirmTitle: (name: string) => `Upload “${name}” as a draft?`,
+    draftOnly:
+      "Final submission stays in Moodle. Existing work will not be replaced.",
+    confirm: "Upload Draft",
+    uploading: "Uploading…",
+    stop: "Stop Upload",
+    saved: "Draft saved. Review and submit it in Moodle.",
+    history: "Recent Draft Uploads",
+    newAttempt: "Allow New Attempt…",
+    acknowledge:
+      "Check the previous attempt in Moodle first. A new upload may duplicate an uncertain request.",
+    checked: "I Checked Moodle",
+    states: {
+      started: "Started",
+      uploaded: "File uploaded",
+      saving: "Saving draft…",
+      saved: "Draft saved",
+      uncertain: "Check outcome in Moodle",
+      failed: "Failed",
+      reviewed: "Reviewed",
+    },
   },
   calendar: {
     title: "Calendar Subscription",
@@ -301,6 +345,7 @@ const en = {
     courses: "Courses",
     agenda: "Agenda",
     bookmarks: "Bookmarks",
+    uploads: "Assignment Draft",
     quickOpen: "Quick Open (⌘K)",
     sessionWaiting: (time: string) =>
       `Moodle limits automatic sign-in. Retrying at ${time}.`,
@@ -326,6 +371,17 @@ const en = {
     cancel: "Cancel",
   },
   downloads: {
+    stop: "Cancel Transfer",
+    removeFile: "Remove File…",
+    removeTitle: (name: string) => `Remove ${name}?`,
+    removeBody:
+      "The file will be kept in ~/Moodle/.trash. History stays listed.",
+    confirmRemove: "Remove File",
+    metadataHint:
+      "New files get the public course address and a Finder course tag, without private links.",
+    metadataFailed: "Finder metadata unavailable",
+    progress: (received: string, total: string | null) =>
+      total ? `${received} of ${total} bytes` : `${received} bytes`,
     destination:
       "Saved in ~/Moodle, in an organisation folder, then a course folder. Use Show in Finder to see the exact location.",
     folders:
@@ -333,6 +389,8 @@ const en = {
     feedback: {
       downloading: (name: string) => `Downloading ${name}…`,
       complete: (name: string) => `Downloaded: ${name}`,
+      cancelled: (name: string) => `Download cancelled: ${name}`,
+      removed: (name: string) => `File removed: ${name}`,
       failed: (name: string) => `Download failed: ${name}`,
     },
     preview: "Preview",
@@ -344,8 +402,7 @@ const en = {
     unknownCourse: "Unknown course",
     refreshFolders: "Refresh Course Folders",
     returnToMoodle: "Return to Moodle",
-    returnHint:
-      "For a failed download, return to Moodle and start it again there. This does not restart the transfer.",
+    returnHint: "To retry, return to Moodle and start a new download.",
     foldersRefreshed:
       "Course folders refreshed. New downloads will use known course folders; existing files stay in place.",
     openLabel: (name: string) => `Open ${name}`,
@@ -358,6 +415,8 @@ const en = {
     filters: {
       downloading: "In progress",
       complete: "Complete",
+      cancelled: "Cancelled",
+      removed: "Files removed",
       failed: "Failed",
     },
     shown: (shown: number, total: number) =>
@@ -391,6 +450,8 @@ const en = {
     states: {
       downloading: "Downloading…",
       complete: "Complete",
+      cancelled: "Cancelled",
+      removed: "Files removed",
       failed: "Failed — download again from Moodle",
     },
   },
@@ -412,6 +473,14 @@ const en = {
       "MoodBuro never sees your password. Its access token is kept in your Mac’s Keychain.",
   },
   settings: {
+    sectionsLabel: "Settings sections",
+    sections: {
+      general: "General",
+      files: "Files",
+      notifications: "Reminders",
+      assistant: "AI Assistant",
+      organisations: "Organisations",
+    },
     previewBanner:
       "Browser preview: settings changes last until reload, and accounts can only be managed in the desktop app.",
     general: "General",
@@ -596,6 +665,26 @@ const en = {
       keySaved: "A key is saved in your Mac’s Keychain.",
       keyMissing: "No key saved yet.",
       keyPlaceholder: "Paste your API key",
+      keyHelp: "Get an API key…",
+      keyHelpTitle: (provider: string) => `Get an API key · ${provider}`,
+      keyHelpAlbert:
+        "For French State public servants, with ProConnect access.",
+      keyHelpMistral:
+        "You need a Mistral account with API access. Usage follows your plan’s limits and pricing.",
+      keyHelpAlbertSteps: [
+        "Sign in to Albert Playground with ProConnect.",
+        "Open the keys section and create a key for MoodBuro.",
+        "Copy it, paste it here, then choose Save Key.",
+      ],
+      keyHelpMistralSteps: [
+        "Sign in to the Mistral Studio console.",
+        "Open API Keys, choose New key, and copy the key shown once.",
+        "Paste it here, then choose Save Key.",
+      ],
+      keyHelpPortal: "Open provider portal",
+      keyHelpGuide: "Official guide",
+      consentSummary: "Off by default. Only attached Moodle context is shared.",
+      consentDetails: "What gets shared",
       saveKey: "Save Key",
       removeKey: "Remove Key…",
       removeKeyTitle: (provider: string) => `Remove the ${provider} key?`,
@@ -603,10 +692,9 @@ const en = {
         "The key is deleted from your Mac’s Keychain and any answer in progress stops. The key itself stays valid with the provider.",
       removeKeyConfirm: "Remove",
       model: "Model",
-      modelHint:
-        "Check the connection to choose from the models your key can use.",
+      modelHint: "Models available to your API key.",
       modelLabel: "Model name",
-      saveModel: "Save",
+      chooseModel: "Choose a model…",
       check: "Check Connection",
       checking: "Checking…",
       connected: (count: number) =>
@@ -750,7 +838,7 @@ const fr: Messages = {
     removed: {
       archived:
         "Copie retirée. Le fichier inchangé reste récupérable dans ~/Moodle/.trash (Finder → Aller → Aller au dossier). Aucun nettoyage automatique n’est appliqué.",
-      kept: "Entrée retirée. Le fichier a été modifié, est partagé avec une autre entrée ou un téléchargement, ou n’a pas pu être déplacé en toute sécurité ; il reste dans son dossier actuel.",
+      kept: "Entrée retirée. Le fichier a été modifié, est partagé avec une autre entrée ou un téléchargement, ou n’a pas pu être déplacé en toute sécurité\u00a0; il reste dans son dossier actuel.",
       missing:
         "Copie indisponible retirée de la liste. Aucun fichier n’a été déplacé.",
     },
@@ -762,7 +850,7 @@ const fr: Messages = {
     freshnessHint:
       "Actualisez manuellement ou activez une fréquence pour les fichiers choisis. Les fichiers Moodle peuvent avoir changé depuis la dernière actualisation réussie. Les modifications locales et les versions précédentes sont conservées.",
     refreshFailed:
-      "Échec de l’actualisation. Cette copie reste consultable ; elle peut différer de Moodle.",
+      "Échec de l’actualisation. Cette copie reste consultable\u00a0; elle peut différer de Moodle.",
     savedTitle: "Enregistrés sur ce Mac",
     availableTitle: "Disponibles dans Moodle",
     load: "Charger la liste des fichiers",
@@ -817,6 +905,8 @@ const fr: Messages = {
       "Les épingles sont enregistrées sur ce Mac uniquement et ne modifient pas vos favoris Moodle. Cette liste reste disponible hors ligne\u00a0; ouvrir un cours nécessite une connexion.",
   },
   reminders: {
+    noOrganisations:
+      "Ajoutez une organisation pour configurer les rappels d’échéance.",
     summary:
       "Choisissez quand recevoir un rappel avant les échéances de chaque organisation.",
     help: "Fonctionnement des rappels",
@@ -835,6 +925,49 @@ const fr: Messages = {
     deliveryFailed:
       "Une tentative de notification a échoué. Vérifiez les réglages de notifications macOS. Les tentatives échouées ou interrompues ne sont pas rejouées.",
     saving: "Enregistrement des préférences de rappel…",
+  },
+  desktop: {
+    title: "Intégration Mac",
+    menuBar: "Mode barre des menus seule",
+    login: "Ouvrir à la connexion",
+    finder: "Barre latérale du Finder",
+    showFolder: "Afficher le dossier Moodle",
+    finderHint: "Glissez Moodle dans les favoris du Finder.",
+  },
+  uploads: {
+    title: "Brouillon de devoir",
+    hint: "Choisissez un fichier de 32 Mo maximum, ou déposez-le dans la fenêtre.",
+    chooseFile: "Choisir un fichier…",
+    noFile: "Aucun fichier choisi",
+    organisation: "Organisation",
+    course: "Cours",
+    assignment: "Devoir",
+    choose: "Choisir…",
+    review: "Vérifier l’envoi…",
+    openMoodle: "Ouvrir dans Moodle",
+    unsupported:
+      "Utilisez Moodle pour ce devoir. L’envoi intégré nécessite un brouillon individuel avec fichier.",
+    confirmTitle: (name: string) =>
+      `Envoyer « ${name} » comme brouillon\u00a0?`,
+    draftOnly: "Le dépôt définitif se fait dans Moodle.",
+    confirm: "Envoyer le brouillon",
+    uploading: "Envoi…",
+    stop: "Arrêter l’envoi",
+    saved: "Brouillon enregistré. Vérifiez-le et déposez-le dans Moodle.",
+    history: "Derniers envois de brouillons",
+    newAttempt: "Autoriser une nouvelle tentative…",
+    acknowledge:
+      "Vérifiez d’abord la tentative précédente dans Moodle. Un nouvel envoi peut faire doublon si son résultat est incertain.",
+    checked: "J’ai vérifié Moodle",
+    states: {
+      started: "Démarré",
+      uploaded: "Fichier envoyé",
+      saving: "Enregistrement du brouillon…",
+      saved: "Brouillon enregistré",
+      uncertain: "Vérifiez le résultat dans Moodle",
+      failed: "Échec",
+      reviewed: "Vérifié",
+    },
   },
   calendar: {
     title: "Abonnement au calendrier",
@@ -908,7 +1041,7 @@ const fr: Messages = {
     editTitle: "Modifier le signet",
     saved: "Signet enregistré.",
     saving: "Enregistrement…",
-    removeQuestion: "Supprimer ce signet ?",
+    removeQuestion: "Supprimer ce signet\u00a0?",
     add: "Ajouter cette page aux signets… (⌘D)",
     more: "Autres signets",
     edit: "Modifier le signet",
@@ -954,6 +1087,7 @@ const fr: Messages = {
     courses: "Cours",
     agenda: "Agenda",
     bookmarks: "Signets",
+    uploads: "Brouillon de devoir",
     quickOpen: "Ouverture rapide (⌘K)",
     sessionWaiting: (time: string) =>
       `Moodle limite la connexion automatique. Nouvel essai à ${time}.`,
@@ -961,7 +1095,7 @@ const fr: Messages = {
     sessionFailed:
       "Échec de la connexion automatique. Connectez-vous à Moodle ou via les Réglages.",
     sessionHelp:
-      "Moodle limite temporairement la connexion automatique après une connexion récente (normalement environ six minutes ; votre site peut imposer un délai plus long). Vos identifiants sont conservés. MoodBuro réessaie une fois à l’heure indiquée tant que l’application reste ouverte. Vous pouvez aussi vous connecter manuellement.",
+      "Moodle limite temporairement la connexion automatique après une connexion récente (normalement environ six minutes\u00a0; votre site peut imposer un délai plus long). Vos identifiants sont conservés. MoodBuro réessaie une fois à l’heure indiquée tant que l’application reste ouverte. Vous pouvez aussi vous connecter manuellement.",
     home: "Accueil Moodle",
     backToMoodle: "Retour à Moodle",
     popup: "Fenêtre Moodle",
@@ -979,6 +1113,17 @@ const fr: Messages = {
     cancel: "Annuler",
   },
   downloads: {
+    stop: "Annuler le transfert",
+    removeFile: "Retirer le fichier…",
+    removeTitle: (name: string) => `Retirer ${name}\u00a0?`,
+    removeBody:
+      "Le fichier sera conservé dans ~/Moodle/.trash. L’historique reste visible.",
+    confirmRemove: "Retirer le fichier",
+    metadataHint:
+      "Les nouveaux fichiers reçoivent l’adresse publique du cours et son étiquette Finder, sans lien privé.",
+    metadataFailed: "Métadonnées Finder indisponibles",
+    progress: (received: string, total: string | null) =>
+      total ? `${received} sur ${total} octets` : `${received} octets`,
     destination:
       "Enregistrés dans ~/Moodle, par organisation puis par cours. Afficher dans le Finder permet de retrouver l’emplacement exact.",
     folders:
@@ -986,6 +1131,8 @@ const fr: Messages = {
     feedback: {
       downloading: (name: string) => `Téléchargement de ${name}…`,
       complete: (name: string) => `Téléchargé\u00a0: ${name}`,
+      cancelled: (name: string) => `Téléchargement annulé\u00a0: ${name}`,
+      removed: (name: string) => `Fichier retiré\u00a0: ${name}`,
       failed: (name: string) => `Échec du téléchargement\u00a0: ${name}`,
     },
     preview: "Aperçu",
@@ -998,7 +1145,7 @@ const fr: Messages = {
     refreshFolders: "Actualiser les dossiers de cours",
     returnToMoodle: "Retour à Moodle",
     returnHint:
-      "Après un échec, retournez dans Moodle pour relancer le téléchargement. Cette action ne relance pas le transfert.",
+      "Pour réessayer, lancez un nouveau téléchargement depuis Moodle.",
     foldersRefreshed:
       "Dossiers de cours actualisés. Les nouveaux téléchargements seront classés par cours identifié\u00a0; les fichiers existants restent en place.",
     openLabel: (name: string) => `Ouvrir ${name}`,
@@ -1011,6 +1158,8 @@ const fr: Messages = {
     filters: {
       downloading: "En cours",
       complete: "Terminés",
+      cancelled: "Annulés",
+      removed: "Fichiers retirés",
       failed: "Échecs",
     },
     shown: (shown: number, total: number) =>
@@ -1046,6 +1195,8 @@ const fr: Messages = {
     states: {
       downloading: "Téléchargement…",
       complete: "Terminé",
+      cancelled: "Annulés",
+      removed: "Fichiers retirés",
       failed: "Échec — téléchargez à nouveau depuis Moodle",
     },
   },
@@ -1068,6 +1219,14 @@ const fr: Messages = {
       "MoodBuro ne voit jamais votre mot de passe. Son jeton d’accès est conservé dans le trousseau de votre Mac.",
   },
   settings: {
+    sectionsLabel: "Sections des réglages",
+    sections: {
+      general: "Général",
+      files: "Fichiers",
+      notifications: "Rappels",
+      assistant: "Assistant IA",
+      organisations: "Organisations",
+    },
     previewBanner:
       "Aperçu dans le navigateur\u00a0: les changements de réglages durent jusqu’au rechargement, et les comptes ne peuvent être gérés que dans l’app de bureau.",
     general: "Général",
@@ -1264,6 +1423,27 @@ const fr: Messages = {
       keySaved: "Une clé est enregistrée dans le trousseau de votre Mac.",
       keyMissing: "Aucune clé enregistrée pour l’instant.",
       keyPlaceholder: "Collez votre clé d’API",
+      keyHelp: "Obtenir une clé d’API…",
+      keyHelpTitle: (provider: string) => `Obtenir une clé ${provider}`,
+      keyHelpAlbert:
+        "Pour les agents de la fonction publique d’État, avec ProConnect.",
+      keyHelpMistral:
+        "Un compte Mistral avec accès API est nécessaire. Les limites et tarifs de votre offre s’appliquent.",
+      keyHelpAlbertSteps: [
+        "Connectez-vous au Playground Albert avec ProConnect.",
+        "Ouvrez la rubrique des clés et créez une clé pour MoodBuro.",
+        "Copiez-la, collez-la ici, puis choisissez Enregistrer la clé.",
+      ],
+      keyHelpMistralSteps: [
+        "Connectez-vous à la console Mistral Studio.",
+        "Ouvrez API Keys, choisissez New key et copiez la clé affichée une seule fois.",
+        "Collez-la ici, puis choisissez Enregistrer la clé.",
+      ],
+      keyHelpPortal: "Ouvrir le portail",
+      keyHelpGuide: "Guide officiel",
+      consentSummary:
+        "Désactivé par défaut. Seul le contexte Moodle joint est partagé.",
+      consentDetails: "Données partagées",
       saveKey: "Enregistrer la clé",
       removeKey: "Supprimer la clé…",
       removeKeyTitle: (provider: string) =>
@@ -1272,10 +1452,9 @@ const fr: Messages = {
         "La clé est supprimée du trousseau de votre Mac et toute réponse en cours s’arrête. La clé elle-même reste valide chez le fournisseur.",
       removeKeyConfirm: "Supprimer",
       model: "Modèle",
-      modelHint:
-        "Vérifiez la connexion pour choisir parmi les modèles accessibles avec votre clé.",
+      modelHint: "Modèles accessibles avec votre clé d’API.",
       modelLabel: "Nom du modèle",
-      saveModel: "Enregistrer",
+      chooseModel: "Choisir un modèle…",
       check: "Vérifier la connexion",
       checking: "Vérification…",
       connected: (count: number) =>

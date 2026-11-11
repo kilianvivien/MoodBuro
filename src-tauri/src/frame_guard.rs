@@ -18,8 +18,8 @@ use objc2::{
 };
 use objc2_foundation::{MainThreadMarker, NSHTTPURLResponse, NSObjectProtocol, NSString};
 use objc2_web_kit::{
-    WKNavigationAction, WKNavigationActionPolicy, WKNavigationDelegate, WKNavigationResponse,
-    WKNavigationResponsePolicy, WKWebView,
+    WKDownload, WKNavigationAction, WKNavigationActionPolicy, WKNavigationDelegate,
+    WKNavigationResponse, WKNavigationResponsePolicy, WKWebView,
 };
 use std::{
     cell::{Cell, RefCell},
@@ -50,6 +50,17 @@ define_class!(
         }
     }
     unsafe impl WKNavigationDelegate for FrameGuard {
+        #[unsafe(method(webView:navigationAction:didBecomeDownload:))]
+        fn action_download(&self,view:&WKWebView,action:&WKNavigationAction,download:&WKDownload){
+            crate::download_control::register(&self.ivars().site,download);
+            unsafe{self.ivars().original.webView_navigationAction_didBecomeDownload(view,action,download);}
+        }
+        #[unsafe(method(webView:navigationResponse:didBecomeDownload:))]
+        fn response_download(&self,view:&WKWebView,response:&WKNavigationResponse,download:&WKDownload){
+            crate::download_control::register(&self.ivars().site,download);
+            unsafe{self.ivars().original.webView_navigationResponse_didBecomeDownload(view,response,download);}
+        }
+
         #[unsafe(method(webView:decidePolicyForNavigationAction:decisionHandler:))]
         fn decide(
             &self,

@@ -1514,8 +1514,32 @@ impl Run<'_> {
     }
 }
 
+/// Only fixed public onboarding links; neither a key nor an arbitrary URL is accepted.
+pub fn key_help_url(name: &str, guide: bool) -> Result<&'static str, String> {
+    match (Provider::parse(name),guide) {
+        (Some(Provider::Albert),false)=>Ok("https://albert.playground.etalab.gouv.fr/"),
+        (Some(Provider::Albert),true)=>Ok("https://guides.ia.numerique.gouv.fr/albert-api"),
+        (Some(Provider::Mistral),false)=>Ok("https://console.mistral.ai/api-keys"),
+        (Some(Provider::Mistral),true)=>Ok("https://docs.mistral.ai/getting-started/quickstarts/studio/activate-and-generate-api-key"),
+        _=>Err("Unknown AI provider.".into())
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn key_help_only_opens_fixed_official_provider_links() {
+        for provider in ["albert", "mistral"] {
+            for guide in [false, true] {
+                let url = url::Url::parse(super::key_help_url(provider, guide).unwrap()).unwrap();
+                assert_eq!(url.scheme(), "https");
+                assert!(url.query().is_none());
+                assert!(url.username().is_empty());
+            }
+        }
+        assert!(super::key_help_url("https://example.org", false).is_err());
+    }
+
     use super::*;
     #[test]
     fn listed_files_get_turn_local_ids_and_reach_the_model_without_urls() {

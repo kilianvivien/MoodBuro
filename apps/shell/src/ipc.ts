@@ -20,14 +20,21 @@ export interface Download {
   id: string;
   siteId: string;
   filename: string;
-  state: "downloading" | "complete" | "failed";
+  state: "downloading" | "complete" | "failed" | "cancelled" | "removed";
   startedAt: number;
   needsConfirmation: boolean;
   canPreview?: boolean;
+  bytes?: number | null;
+  metadataApplied?: boolean | null;
   courseId?: number | null;
   courseName?: string | null;
 }
 
+export interface DownloadProgress {
+  id: string;
+  received: number;
+  total: number | null;
+}
 export type DownloadState = Download["state"];
 export interface DownloadQuery {
   query: string;
@@ -93,6 +100,49 @@ export interface OfflineOutcome {
   key: string;
   reused: boolean;
   error: string | null;
+}
+export interface DesktopPreferences {
+  menuBarOnly: boolean;
+  startAtLogin: boolean;
+}
+export interface UploadFile {
+  id: string;
+  name: string;
+  bytes: number;
+}
+export interface DraftAssignment {
+  id: number;
+  moduleId: number;
+  name: string;
+  supported: boolean;
+}
+export interface UploadReview {
+  id: string;
+  filename: string;
+  bytes: number;
+  organisation: string;
+  course: string;
+  assignment: string;
+}
+export interface DraftUpload {
+  id: string;
+  siteId: string;
+  userId: number;
+  courseId: number;
+  assignmentId: number;
+  moduleId: number;
+  filename: string;
+  bytes: number;
+  state:
+    | "started"
+    | "uploaded"
+    | "saving"
+    | "saved"
+    | "uncertain"
+    | "failed"
+    | "reviewed";
+  createdAt: number;
+  draftId: number | null;
 }
 export interface CalendarHandoff {
   siteId: string;
@@ -210,7 +260,8 @@ export type ShellView =
   | "agenda"
   | "quick-open"
   | "quick-open-close"
-  | "bookmarks";
+  | "bookmarks"
+  | "uploads";
 export type NavAction =
   "back" | "forward" | "reload" | "home" | "open_in_browser";
 
@@ -355,6 +406,12 @@ const demoSites: Site[] = [
 
 // Dev-only sample data for the browser preview. Neutral names, in memory, and
 // mutable so Mark Read, pins and Clear History can be tried without a Mac app.
+const demoUploads: DraftUpload[] = [];
+const demoApprovals = new Map<
+  string,
+  { target: OfflineCourse; assignment: number; review: UploadReview }
+>();
+const demoStopped = new Set<string>();
 function buildDemoData() {
   const demoNow = Math.floor(Date.now() / 1000);
   const hour = 3600;
@@ -574,6 +631,10 @@ let demoPicks: ReminderPick[] = [];
 const demoOfflineCopies: OfflineCopy[] = [];
 const demoCourseSyncs: CourseSync[] = [];
 const demoCalendarHandoffs: CalendarHandoff[] = [];
+const demoDesktop: DesktopPreferences = {
+  menuBarOnly: false,
+  startAtLogin: false,
+};
 const demoResources: OfflineResource[] = [
   {
     key: "a".repeat(64),
@@ -706,6 +767,19 @@ export const ipc = {
     if (!demo) return desktopFeature();
     demoAssistant = { ...demoAssistant, hasKey: false };
     return Promise.resolve({ ...demoAssistant });
+  },
+  assistantKeyHelp: (provider: AssistantProvider, guide: boolean) => {
+    if (desktop) return invoke<void>("assistant_key_help", { provider, guide });
+    const url =
+      provider === "albert"
+        ? guide
+          ? "https://guides.ia.numerique.gouv.fr/albert-api"
+          : "https://albert.playground.etalab.gouv.fr/"
+        : guide
+          ? "https://docs.mistral.ai/getting-started/quickstarts/studio/activate-and-generate-api-key"
+          : "https://console.mistral.ai/api-keys";
+    window.open(url, "_blank", "noopener,noreferrer");
+    return Promise.resolve();
   },
   /** Checks the saved key with the provider and lists its chat models. */
   assistantModels: async (): Promise<string[]> => {
@@ -1093,6 +1167,17 @@ export const ipc = {
     );
     return Promise.resolve();
   },
+  cancelDownload: (id: string) =>
+    desktop ? invoke<void>("download_cancel", { id }) : desktopFeature(),
+  removeDownloadFile: (id: string, confirmed: boolean) => {
+    if (desktop) return invoke<void>("download_remove_file", { id, confirmed });
+    if (!demo) return desktopFeature();
+    const row = demoData.downloads.find((r) => r.id === id);
+    if (!confirmed || row?.state !== "complete")
+      return Promise.reject(new Error("This download is unavailable."));
+    row.state = "removed";
+    return Promise.resolve();
+  },
   previewDownload: (id: string) =>
     desktop ? invoke<void>("download_preview", { id }) : desktopFeature(),
   refreshCourseFolders: (id: string) =>
@@ -1161,6 +1246,117 @@ export const ipc = {
         course.pinned = pinned;
     return Promise.resolve();
   },
+  desktopPreferences: () =>
+    desktop
+      ? invoke<DesktopPreferences>("desktop_preferences")
+      : Promise.resolve({ ...demoDesktop }),
+  desktopPreferencesSet: async (
+    change: Partial<DesktopPreferences>,
+  ): Promise<DesktopPreferences> => {
+    if (desktop) return invoke("desktop_preferences_set", change);
+    if (!demo) return desktopFeature();
+    Object.assign(demoDesktop, change);
+    return { ...demoDesktop };
+  },
+  finderMoodleFolder: () =>
+    desktop
+      ? invoke<void>("finder_moodle_folder")
+      : demo
+        ? Promise.resolve()
+        : desktopFeature(),
+  uploadPick: async (): Promise<UploadFile | null> => {
+    if (desktop) return invoke("upload_pick");
+    if (!demo) return desktopFeature();
+    return { id: "demo-file", name: "Essay.docx", bytes: 24576 };
+  },
+  uploadFiles: () =>
+    desktop ? invoke<UploadFile[]>("upload_files") : Promise.resolve([]),
+  uploadAssignments: async (
+    target: OfflineCourse,
+  ): Promise<DraftAssignment[]> =>
+    desktop
+      ? invoke("upload_assignments", { target })
+      : demo
+        ? [
+            { id: 42, moduleId: 84, name: "Policy brief", supported: true },
+            { id: 43, moduleId: 85, name: "Group project", supported: false },
+          ]
+        : [],
+  uploadPrepare: async (
+    target: OfflineCourse,
+    assignment: number,
+    file: string,
+  ): Promise<UploadReview> => {
+    if (desktop) return invoke("upload_prepare", { target, assignment, file });
+    if (!demo) return desktopFeature();
+    const review = {
+      id: crypto.randomUUID(),
+      filename: "Essay.docx",
+      bytes: 24576,
+      organisation:
+        demoSites.find((s) => s.id === target.siteId)?.name ?? "Example Campus",
+      course:
+        demoData.courses.find((c) => c.id === target.courseId)?.name ??
+        "Course",
+      assignment: "Policy brief",
+    };
+    demoApprovals.set(review.id, { target, assignment, review });
+    return review;
+  },
+  uploadConfirm: async (
+    approval: string,
+    confirmed: boolean,
+  ): Promise<void> => {
+    if (desktop) return invoke("upload_confirm", { approval, confirmed });
+    if (!demo) return desktopFeature();
+    const a = demoApprovals.get(approval);
+    demoApprovals.delete(approval);
+    if (!confirmed || !a)
+      throw new Error(
+        "The upload approval expired. Review the destination again.",
+      );
+    const row: DraftUpload = {
+      id: approval,
+      ...a.target,
+      assignmentId: a.assignment,
+      moduleId: 84,
+      filename: a.review.filename,
+      bytes: a.review.bytes,
+      state: "started",
+      createdAt: Math.floor(Date.now() / 1000),
+      draftId: null,
+    };
+    demoUploads.unshift(row);
+    await pause(600);
+    if (demoStopped.delete(approval)) {
+      row.state = "uncertain";
+      throw new Error("Upload stopped. Check Moodle before retrying.");
+    }
+    row.state = "saved";
+  },
+  uploadStop: (approval: string) => {
+    if (desktop) return invoke<void>("upload_stop", { approval });
+    demoStopped.add(approval);
+    return Promise.resolve();
+  },
+  uploadHistory: () =>
+    desktop
+      ? invoke<DraftUpload[]>("upload_history")
+      : Promise.resolve(demoUploads.map((r) => ({ ...r }))),
+  uploadOpen: (target: OfflineCourse, assignment: number) =>
+    desktop
+      ? invoke<void>("upload_open", { target, assignment })
+      : demo
+        ? Promise.resolve()
+        : desktopFeature(),
+  uploadReviewed: (id: string, confirmed: boolean) =>
+    desktop
+      ? invoke<void>("upload_reviewed", { id, confirmed })
+      : (() => {
+          const row = demoUploads.find((r) => r.id === id);
+          if (confirmed && row?.state === "uncertain") row.state = "reviewed";
+          return Promise.resolve();
+        })(),
   calendarHandoffs: () =>
     desktop
       ? invoke<CalendarHandoff[]>("calendar_handoffs")

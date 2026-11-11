@@ -457,7 +457,9 @@ it("offers failed downloads a return route without enabling file opening", () =>
   };
   const html = inLocale("en", <DownloadList {...props} items={[item]} />);
   expect(html).toContain("Return to Moodle");
-  expect(html).toContain("This does not restart the transfer.");
+  expect(html).toContain(
+    "To retry, return to Moodle and start a new download.",
+  );
   expect(html).toMatch(/aria-label="Open notes.pdf" disabled=""/);
   expect(inLocale("fr", <DownloadList {...props} items={[item]} />)).toContain(
     "Retour à Moodle",
@@ -514,4 +516,16 @@ it("keeps transfer feedback visible over Moodle and translates its outcome", () 
     />,
   );
   expect(complete).toContain("Téléchargé");
+});
+
+it("groups Settings into five accessible panels with General selected", () => {
+  const html = settings();
+  expect(html.match(/role="tab"/g)).toHaveLength(5);
+  expect(html).toContain(
+    'id="settings-general-tab" role="tab" aria-selected="true"',
+  );
+  expect(html).toContain('id="settings-files-panel" role="tabpanel" hidden=""');
+  expect(html).toContain(
+    'id="settings-assistant-panel" role="tabpanel" hidden=""',
+  );
 });

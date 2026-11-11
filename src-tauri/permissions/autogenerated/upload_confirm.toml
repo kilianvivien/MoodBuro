@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-upload-confirm"
+description = "Enables the upload_confirm command without any pre-configured scope."
+commands.allow = ["upload_confirm"]
+
+[[permission]]
+identifier = "deny-upload-confirm"
+description = "Denies the upload_confirm command without any pre-configured scope."
+commands.deny = ["upload_confirm"]

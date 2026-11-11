@@ -1,7 +1,13 @@
+import { DesktopPreferences } from "../components/DesktopPreferences";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Segmented } from "../components/ui";
 import {
   ArrowUp,
+  SlidersHorizontal,
+  Files,
+  Bell,
+  Sparkles,
+  Building2,
   ArrowDown,
   CircleAlert,
   CircleCheck,
@@ -31,6 +37,22 @@ import type { ErrorContext } from "../i18n/errors";
 export type Notice =
   | { tone: "success"; text: string }
   | { tone: "error"; error: string; context: ErrorContext };
+
+export const settingsSections = [
+  "general",
+  "files",
+  "notifications",
+  "assistant",
+  "organisations",
+] as const;
+export type SettingsSection = (typeof settingsSections)[number];
+const categoryIcons: Record<SettingsSection, typeof SlidersHorizontal> = {
+  general: SlidersHorizontal,
+  files: Files,
+  notifications: Bell,
+  assistant: Sparkles,
+  organisations: Building2,
+};
 
 const appearanceIcons: Record<Appearance, typeof Sun> = {
   system: Monitor,
@@ -332,10 +354,15 @@ export function Settings({
   onReauthenticate,
   onRemove,
   onAdd,
-  children,
+  reminders,
+  assistant,
+  section,
+  onSection,
 }: {
-  /** Further sections (the AI assistant), shown above the organisations. */
-  children?: ReactNode;
+  reminders?: ReactNode;
+  assistant?: ReactNode;
+  section?: SettingsSection;
+  onSection?: (section: SettingsSection) => void;
   desktop: boolean;
   sites: Site[];
   appearance: Appearance;
@@ -364,6 +391,17 @@ export function Settings({
   onRemove: (id: string) => Promise<boolean>;
   onAdd: () => void;
 }) {
+  const [localSection, setLocalSection] = useState<SettingsSection>("general");
+  const selected = section ?? localSection;
+  const choose = onSection ?? setLocalSection;
+  const tabs = useRef<HTMLDivElement>(null);
+  const panel = (id: SettingsSection) => ({
+    id: `settings-${id}-panel`,
+    role: "tabpanel",
+    hidden: selected !== id,
+    "aria-labelledby": `settings-${id}-tab`,
+    className: "settings-panel",
+  });
   const [orderBusy, setOrderBusy] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const orderPending = useRef(false);
@@ -391,216 +429,268 @@ export function Settings({
         </p>
       )}
 
-      <section aria-labelledby="general-heading">
-        <h2 id="general-heading" className="section-title">
-          {t.settings.general}
-        </h2>
-        <div className="group">
-          <div className="group-row">
-            <div className="row-text">
-              <span className="row-title">{t.settings.theme}</span>
-              <span className="row-subtitle">{t.settings.themeHint}</span>
-            </div>
-            <Segmented
-              name="appearance"
-              legend={t.settings.theme}
-              value={appearance}
-              disabled={appearanceSaving}
-              onChange={onAppearance}
-              options={(["system", "light", "dark"] as const).map((value) => {
-                const Icon = appearanceIcons[value];
-                return {
-                  value,
-                  label: (
-                    <>
-                      <Icon size={14} strokeWidth={1.75} aria-hidden="true" />
-                      {t.settings.appearance[value]}
-                    </>
-                  ),
-                };
-              })}
-            />
-          </div>
-          <div className="group-row">
-            <div className="row-text">
-              <span className="row-title">{t.settings.language}</span>
-              <span className="row-subtitle">{t.settings.languageHint}</span>
-            </div>
-            <Segmented
-              name="language"
-              legend={t.settings.language}
-              value={language}
-              disabled={languageSaving}
-              onChange={onLanguage}
-              options={languageOptions.map((value) => ({
-                value,
-                // Language names read in their own language, as on macOS.
-                lang: value === "system" ? undefined : value,
-                label:
-                  value === "system" ? (
-                    <>
-                      <Languages
-                        size={14}
-                        strokeWidth={1.75}
-                        aria-hidden="true"
-                      />
-                      {t.settings.languages.system}
-                    </>
-                  ) : (
-                    t.settings.languages[value]
-                  ),
-              }))}
-            />
-          </div>
-          <div className="group-row">
-            <div className="row-text">
-              <span className="row-title">{t.settings.globalShortcut}</span>
-              <span className="row-subtitle">
-                {t.settings.globalShortcutHint}
-              </span>
-            </div>
-            <Segmented
-              name="global-shortcut"
-              legend={t.settings.globalShortcut}
-              value={globalShortcut ? "on" : "off"}
-              disabled={globalShortcutSaving}
-              onChange={(value) => onGlobalShortcut(value === "on")}
-              options={(["off", "on"] as const).map((value) => ({
-                value,
-                label: t.settings.shortcutOptions[value],
-              }))}
-            />
-          </div>
-        </div>
-        {settingsError && settingsErrorIn === "general" && (
-          <p className="section-message error" role="alert">
-            <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
-            <ErrorText error={settingsError} context="settings" />
-          </p>
-        )}
-        {globalShortcut && shortcutUnavailable && (
-          <p className="section-message error" role="status">
-            <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
-            {t.settings.shortcutUnavailable}
-          </p>
-        )}
-        {globalShortcut && (
-          <p className="section-footnote">{t.settings.shortcutFootnote}</p>
-        )}
-      </section>
-
-      <section aria-labelledby="files-heading">
-        <h2 id="files-heading" className="section-title">
-          {t.settings.files}
-        </h2>
-        <div className="group">
-          {fileKinds.map((kind) => (
-            <div className="group-row" key={kind}>
+      <div
+        className="settings-tabs"
+        ref={tabs}
+        role="tablist"
+        aria-label={t.settings.sectionsLabel}
+        onKeyDown={(event) => {
+          const direction =
+            event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+          const index = settingsSections.indexOf(selected);
+          const next =
+            event.key === "Home"
+              ? 0
+              : event.key === "End"
+                ? settingsSections.length - 1
+                : direction
+                  ? (index + direction + settingsSections.length) %
+                    settingsSections.length
+                  : null;
+          if (next != null) {
+            event.preventDefault();
+            choose(settingsSections[next]);
+            tabs.current
+              ?.querySelectorAll<HTMLButtonElement>('[role="tab"]')
+              .item(next)
+              ?.focus();
+          }
+        }}
+      >
+        {settingsSections.map((id) => {
+          const Icon = categoryIcons[id];
+          return (
+            <button
+              key={id}
+              id={`settings-${id}-tab`}
+              role="tab"
+              aria-selected={selected === id}
+              aria-controls={`settings-${id}-panel`}
+              tabIndex={selected === id ? 0 : -1}
+              onClick={() => choose(id)}
+            >
+              <Icon size={18} strokeWidth={1.75} aria-hidden="true" />
+              <span>{t.settings.sections[id]}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div {...panel("general")}>
+        <section aria-labelledby="general-heading">
+          <h2 id="general-heading" className="section-title">
+            {t.settings.general}
+          </h2>
+          <div className="group">
+            <div className="group-row">
               <div className="row-text">
-                <span className="row-title">{t.settings[kind]}</span>
-                <span className="row-subtitle">
-                  {t.settings[`${kind}Hint`]}
-                </span>
+                <span className="row-title">{t.settings.theme}</span>
+                <span className="row-subtitle">{t.settings.themeHint}</span>
               </div>
               <Segmented
-                name={`handling-${kind}`}
-                legend={t.settings[kind]}
-                value={files[kind]}
-                disabled={filesSaving[kind]}
-                onChange={(value) => onFileHandling(kind, value)}
-                options={handlingOptions.map((value) => ({
+                name="appearance"
+                legend={t.settings.theme}
+                value={appearance}
+                disabled={appearanceSaving}
+                onChange={onAppearance}
+                options={(["system", "light", "dark"] as const).map((value) => {
+                  const Icon = appearanceIcons[value];
+                  return {
+                    value,
+                    label: (
+                      <>
+                        <Icon size={14} strokeWidth={1.75} aria-hidden="true" />
+                        {t.settings.appearance[value]}
+                      </>
+                    ),
+                  };
+                })}
+              />
+            </div>
+            <div className="group-row">
+              <div className="row-text">
+                <span className="row-title">{t.settings.language}</span>
+                <span className="row-subtitle">{t.settings.languageHint}</span>
+              </div>
+              <Segmented
+                name="language"
+                legend={t.settings.language}
+                value={language}
+                disabled={languageSaving}
+                onChange={onLanguage}
+                options={languageOptions.map((value) => ({
                   value,
-                  label: t.settings.handling[value],
+                  // Language names read in their own language, as on macOS.
+                  lang: value === "system" ? undefined : value,
+                  label:
+                    value === "system" ? (
+                      <>
+                        <Languages
+                          size={14}
+                          strokeWidth={1.75}
+                          aria-hidden="true"
+                        />
+                        {t.settings.languages.system}
+                      </>
+                    ) : (
+                      t.settings.languages[value]
+                    ),
                 }))}
               />
             </div>
-          ))}
-        </div>
-        {settingsError && settingsErrorIn === "files" && (
-          <p className="section-message error" role="alert">
-            <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
-            <ErrorText error={settingsError} context="settings" />
-          </p>
-        )}
-        <details className="help-disclosure section-footnote">
-          <summary>{t.common.details}</summary>
-          <p>{t.settings.filesFootnote}</p>
-        </details>
-      </section>
-
-      {children}
-
-      <section aria-labelledby="accounts-heading">
-        <div className="section-header">
-          <h2 id="accounts-heading" className="section-title">
-            {t.settings.organisations}
-          </h2>
-          <span className="section-count">
-            {t.settings.siteCount(sites.length)}
-          </span>
-        </div>
-        {orderError && (
-          <p className="section-message error" role="alert">
-            <ErrorText error={orderError} context="settings" />
-          </p>
-        )}
-        <div className="group">
-          {sites.length > 0 ? (
-            <ul className="site-rows" role="list">
-              {sites.map((site, index) => (
-                <SiteRow
-                  key={site.id}
-                  site={site}
-                  order={{
-                    first: index === 0,
-                    last: index === sites.length - 1,
-                    busy: orderBusy,
-                    move: (direction) => void moveSite(site.id, direction),
-                  }}
-                  connection={connection}
-                  onOpen={() => onOpenSite(site.id)}
-                  onReauthenticate={() => onReauthenticate(site.id)}
-                  onRemove={() => onRemove(site.id)}
-                />
-              ))}
-            </ul>
-          ) : (
-            <p className="group-empty">{t.settings.empty}</p>
-          )}
-          <div className="group-row group-footer">
-            <button className="button" onClick={onAdd}>
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              {t.settings.add}
-            </button>
+            <div className="group-row">
+              <div className="row-text">
+                <span className="row-title">{t.settings.globalShortcut}</span>
+                <span className="row-subtitle">
+                  {t.settings.globalShortcutHint}
+                </span>
+              </div>
+              <Segmented
+                name="global-shortcut"
+                legend={t.settings.globalShortcut}
+                value={globalShortcut ? "on" : "off"}
+                disabled={globalShortcutSaving}
+                onChange={(value) => onGlobalShortcut(value === "on")}
+                options={(["off", "on"] as const).map((value) => ({
+                  value,
+                  label: t.settings.shortcutOptions[value],
+                }))}
+              />
+            </div>
           </div>
-        </div>
-        {accountMessage && (
-          <p
-            className={`section-message ${accountMessage.tone}`}
-            role={accountMessage.tone === "error" ? "alert" : "status"}
-          >
-            {accountMessage.tone === "error" ? (
-              <>
-                <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
-                <ErrorText
-                  error={accountMessage.error}
-                  context={accountMessage.context}
+          {settingsError && settingsErrorIn === "general" && (
+            <p className="section-message error" role="alert">
+              <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
+              <ErrorText error={settingsError} context="settings" />
+            </p>
+          )}
+          {globalShortcut && shortcutUnavailable && (
+            <p className="section-message error" role="status">
+              <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
+              {t.settings.shortcutUnavailable}
+            </p>
+          )}
+          {globalShortcut && (
+            <p className="section-footnote">{t.settings.shortcutFootnote}</p>
+          )}
+        </section>
+
+        <DesktopPreferences />
+      </div>
+      <div {...panel("files")}>
+        <section aria-labelledby="files-heading">
+          <h2 id="files-heading" className="section-title">
+            {t.settings.files}
+          </h2>
+          <div className="group">
+            {fileKinds.map((kind) => (
+              <div className="group-row" key={kind}>
+                <div className="row-text">
+                  <span className="row-title">{t.settings[kind]}</span>
+                  <span className="row-subtitle">
+                    {t.settings[`${kind}Hint`]}
+                  </span>
+                </div>
+                <Segmented
+                  name={`handling-${kind}`}
+                  legend={t.settings[kind]}
+                  value={files[kind]}
+                  disabled={filesSaving[kind]}
+                  onChange={(value) => onFileHandling(kind, value)}
+                  options={handlingOptions.map((value) => ({
+                    value,
+                    label: t.settings.handling[value],
+                  }))}
                 />
-              </>
+              </div>
+            ))}
+          </div>
+          {settingsError && settingsErrorIn === "files" && (
+            <p className="section-message error" role="alert">
+              <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
+              <ErrorText error={settingsError} context="settings" />
+            </p>
+          )}
+          <details className="help-disclosure section-footnote">
+            <summary>{t.common.details}</summary>
+            <p>{t.settings.filesFootnote}</p>
+          </details>
+        </section>
+      </div>
+      <div {...panel("notifications")}>{reminders}</div>
+      <div {...panel("assistant")}>{assistant}</div>
+      <div {...panel("organisations")}>
+        <section aria-labelledby="accounts-heading">
+          <div className="section-header">
+            <h2 id="accounts-heading" className="section-title">
+              {t.settings.organisations}
+            </h2>
+            <span className="section-count">
+              {t.settings.siteCount(sites.length)}
+            </span>
+          </div>
+          {orderError && (
+            <p className="section-message error" role="alert">
+              <ErrorText error={orderError} context="settings" />
+            </p>
+          )}
+          <div className="group">
+            {sites.length > 0 ? (
+              <ul className="site-rows" role="list">
+                {sites.map((site, index) => (
+                  <SiteRow
+                    key={site.id}
+                    site={site}
+                    order={{
+                      first: index === 0,
+                      last: index === sites.length - 1,
+                      busy: orderBusy,
+                      move: (direction) => void moveSite(site.id, direction),
+                    }}
+                    connection={connection}
+                    onOpen={() => onOpenSite(site.id)}
+                    onReauthenticate={() => onReauthenticate(site.id)}
+                    onRemove={() => onRemove(site.id)}
+                  />
+                ))}
+              </ul>
             ) : (
-              <>
-                <CircleCheck size={14} strokeWidth={2} aria-hidden="true" />
-                {accountMessage.text}
-              </>
+              <p className="group-empty">{t.settings.empty}</p>
             )}
-          </p>
-        )}
-        <details className="help-disclosure section-footnote">
-          <summary>{t.common.details}</summary>
-          <p>{t.settings.orderHint}</p>
-          <p>{t.settings.footnote}</p>
-        </details>
-      </section>
+            <div className="group-row group-footer">
+              <button className="button" onClick={onAdd}>
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                {t.settings.add}
+              </button>
+            </div>
+          </div>
+          {accountMessage && (
+            <p
+              className={`section-message ${accountMessage.tone}`}
+              role={accountMessage.tone === "error" ? "alert" : "status"}
+            >
+              {accountMessage.tone === "error" ? (
+                <>
+                  <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
+                  <ErrorText
+                    error={accountMessage.error}
+                    context={accountMessage.context}
+                  />
+                </>
+              ) : (
+                <>
+                  <CircleCheck size={14} strokeWidth={2} aria-hidden="true" />
+                  {accountMessage.text}
+                </>
+              )}
+            </p>
+          )}
+          <details className="help-disclosure section-footnote">
+            <summary>{t.common.details}</summary>
+            <p>{t.settings.orderHint}</p>
+            <p>{t.settings.footnote}</p>
+          </details>
+        </section>
+      </div>
     </div>
   );
 }

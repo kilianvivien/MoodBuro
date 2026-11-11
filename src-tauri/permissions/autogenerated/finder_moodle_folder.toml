@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-finder-moodle-folder"
+description = "Enables the finder_moodle_folder command without any pre-configured scope."
+commands.allow = ["finder_moodle_folder"]
+
+[[permission]]
+identifier = "deny-finder-moodle-folder"
+description = "Denies the finder_moodle_folder command without any pre-configured scope."
+commands.deny = ["finder_moodle_folder"]

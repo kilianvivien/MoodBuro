@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-assistant-key-help"
+description = "Enables the assistant_key_help command without any pre-configured scope."
+commands.allow = ["assistant_key_help"]
+
+[[permission]]
+identifier = "deny-assistant-key-help"
+description = "Denies the assistant_key_help command without any pre-configured scope."
+commands.deny = ["assistant_key_help"]

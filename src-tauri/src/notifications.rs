@@ -25,6 +25,44 @@ pub type Workers = HashMap<String, Worker>;
 pub fn install_click_handler(app: &AppHandle) -> tauri_plugin_notification::Result<()> {
     let handle = app.clone();
     app.notification().on_action(move |action| {
+        let notification = action.notification();
+        if notification
+            .and_then(|n| n.extra().get("kind"))
+            .and_then(|v| v.as_str())
+            == Some("download")
+        {
+            crate::tray::show(&handle);
+            crate::menus::show_local_view(&handle, "downloads");
+            let id = notification
+                .and_then(|n| n.extra().get("downloadId"))
+                .and_then(|v| v.as_str());
+            if let Some(id) = id {
+                use tauri_plugin_opener::OpenerExt;
+                // The saved row and path are revalidated; active-content files still require shell confirmation.
+                let result = match action.action_id() {
+                    "download-open" => {
+                        crate::downloads::path(&handle, id, false, true).and_then(|p| {
+                            handle
+                                .opener()
+                                .open_path(p.to_string_lossy(), None::<&str>)
+                                .map_err(|_| "Could not open this downloaded file.".into())
+                        })
+                    }
+                    "download-reveal" => crate::downloads::path(&handle, id, false, false)
+                        .and_then(|p| {
+                            handle
+                                .opener()
+                                .reveal_item_in_dir(p)
+                                .map_err(|_| "Could not show this downloaded file.".into())
+                        }),
+                    _ => Ok(()),
+                };
+                if let Err(error) = result {
+                    let _ = handle.emit_to("shell", "shell://error", error);
+                }
+            }
+            return;
+        }
         if action.action_id() != "tap" {
             return;
         }

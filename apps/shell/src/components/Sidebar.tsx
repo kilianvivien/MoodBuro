@@ -20,7 +20,8 @@ export type View =
   | "inbox"
   | "courses"
   | "agenda"
-  | "bookmarks";
+  | "bookmarks"
+  | "uploads";
 /** Local shell views; anything else shows a Moodle view positioned by Rust. */
 export const isLocal = (view: View) => view !== "site";
 /** Views reached from the sidebar's top group. */

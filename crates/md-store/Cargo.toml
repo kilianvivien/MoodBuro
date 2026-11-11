@@ -6,3 +6,6 @@ license.workspace = true
 [dependencies]
 serde.workspace = true
 rusqlite = { version = "0.37", features = ["bundled"] }
+
+[dev-dependencies]
+serde_json.workspace = true

@@ -1,4 +1,5 @@
 //! Moodle protocol and navigation policy. No dependency on Tauri.
+pub mod assignments;
 pub mod calendar;
 pub mod deep_link;
 use base64::{engine::general_purpose::STANDARD, Engine};

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-upload-reviewed"
+description = "Enables the upload_reviewed command without any pre-configured scope."
+commands.allow = ["upload_reviewed"]
+
+[[permission]]
+identifier = "deny-upload-reviewed"
+description = "Denies the upload_reviewed command without any pre-configured scope."
+commands.deny = ["upload_reviewed"]
