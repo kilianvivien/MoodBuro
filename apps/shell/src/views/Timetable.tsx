@@ -88,11 +88,13 @@ export function useTimetableError() {
 export function Timetable({
   sites,
   request,
+  onRequestHandled,
   onFindInMoodle,
 }: {
   /** Organisations for which timetables are enabled (the INSP Moodle). */
   sites: Site[];
   request: TimetableRequest | null;
+  onRequestHandled?: (request: TimetableRequest) => void;
   onFindInMoodle: (siteId: string) => void;
 }) {
   const { t, locale } = useI18n();
@@ -126,7 +128,7 @@ export function Timetable({
   const [mondayInput, setMondayInput] = useState("");
   // Only the newest review answer is shown; older ones are ignored.
   const reviewTicket = useRef(0);
-  const handled = useRef(0);
+  const handled = useRef<TimetableRequest | null>(null);
 
   const draft = week && week.mode !== "saved" ? week : null;
   const savedHere = weeks.find((w) => mondayOf(w.weekStart) === monday) ?? null;
@@ -214,11 +216,15 @@ export function Timetable({
 
   // A timetable chosen elsewhere (Moodle link, Downloads, course files).
   useEffect(() => {
-    if (!request || request.revision === handled.current) return;
-    handled.current = request.revision;
+    if (!request || request === handled.current) return;
     const target = sites.find((s) => s.id === request.siteId);
-    if (target) void prepare(request.source, target);
-  }, [request]);
+    if (!target) return;
+    handled.current = request;
+    // The native link token is single-use. Clear it in App as soon as the
+    // request starts, so returning to Agenda cannot replay it after a remount.
+    onRequestHandled?.(request);
+    void prepare(request.source, target);
+  }, [request, sites]);
 
   async function review(choices: TimetableChoices, options: TimetableOptions) {
     if (!draft?.draftId || draft.draftRevision === null) return;

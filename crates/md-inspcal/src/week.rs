@@ -103,7 +103,7 @@ fn statuses(ics: &[u8]) -> Vec<(String, String)> {
 /// status taken from the calendar the engine rendered for it
 /// (`body.download`). Without a calendar (an empty week) nothing is tentative.
 pub fn sessions(selected: &Value, calendar: Option<&[u8]>) -> Result<Vec<Session>, WeekError> {
-    let timetable = Timetable::from_json(selected).ok_or(WeekError::Unreadable)?;
+    let timetable = selected_timetable(selected).ok_or(WeekError::Unreadable)?;
     let statuses = calendar.map(statuses).unwrap_or_default();
     Ok(timetable
         .events
@@ -137,6 +137,25 @@ pub fn sessions(selected: &Value, calendar: Option<&[u8]>) -> Result<Vec<Session
             }
         })
         .collect())
+}
+
+/// Restoring a selected week reassigns occurrences after filtering or renaming
+/// sessions. Preserve the engine's serialized identities before that happens:
+/// a later occurrence must not take an earlier session's calendar identity.
+fn selected_timetable(selected: &Value) -> Option<Timetable> {
+    let mut selected = selected.clone();
+    for event in selected.get_mut("events")?.as_array_mut()? {
+        let uid = event["raw"]["choice_uid"]
+            .as_str()
+            .filter(|uid| !uid.is_empty())
+            .or_else(|| event["uid"].as_str().filter(|uid| !uid.is_empty()))?
+            .to_owned();
+        event
+            .get_mut("raw")?
+            .as_object_mut()?
+            .insert("choice_uid".into(), Value::String(uid));
+    }
+    Timetable::from_json(&selected)
 }
 
 /// Noon in Paris on an ISO date: an unambiguous anchor for all-day sessions.
@@ -189,8 +208,8 @@ pub fn export_calendar(
     alarm: Option<i64>,
 ) -> Result<Vec<u8>, WeekError> {
     use inspcal_engine::ics::{to_calendars_after, IcsOptions};
-    let current = Timetable::from_json(selected).ok_or(WeekError::Unreadable)?;
-    let earlier: Vec<Timetable> = previous.iter().filter_map(Timetable::from_json).collect();
+    let current = selected_timetable(selected).ok_or(WeekError::Unreadable)?;
+    let earlier: Vec<Timetable> = previous.iter().filter_map(selected_timetable).collect();
     let options = IcsOptions {
         prefix: prefix.to_owned(),
         alarm_minutes: alarm,
@@ -212,6 +231,47 @@ pub fn export_calendar(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn selected_occurrences_keep_their_ids_after_a_group_choice_and_round_trip() {
+        let event = |start, end| {
+            json!({
+                "date": "2026-11-13", "start": start, "end": end,
+                "title": "Workshop", "cohort_label": "Promotion", "raw": {}
+            })
+        };
+        let input = json!({
+            "source": {"file": "Week.pdf", "sha256": "00",
+                "week_start": "2026-11-09", "week_end": "2026-11-13"},
+            "events": [event("10:30", "11:45"), event("13:15", "15:45")]
+        });
+        let mut selected = Timetable::from_json(&input).unwrap().to_json();
+        let ids: Vec<String> = selected["events"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|event| event["uid"].as_str().unwrap().to_owned())
+            .collect();
+        // Choosing a group changes the first session's identity group. On
+        // restoration the second session is now occurrence 1, not 2.
+        selected["events"][0]["cohort_label"] = json!("Group B");
+        selected["events"][0]["raw"]["choice_uid"] = json!(ids[0]);
+        let projected = sessions(&selected, None).unwrap();
+        assert_eq!(
+            projected.iter().map(|s| &s.uid).collect::<Vec<_>>(),
+            ids.iter().collect::<Vec<_>>()
+        );
+        let calendar = export_calendar(&selected, &[], "", None).unwrap();
+        let calendar_ids: Vec<String> = statuses(&calendar)
+            .into_iter()
+            .map(|(uid, _)| uid)
+            .collect();
+        assert_eq!(calendar_ids, ids);
+        // Filtering out an earlier occurrence must not renumber a survivor.
+        selected["events"].as_array_mut().unwrap().remove(0);
+        assert_eq!(sessions(&selected, None).unwrap()[0].uid, ids[1]);
+    }
 
     fn at(year: i64, month: i64, day: i64, hour: i64, minute: i64) -> Option<i64> {
         paris_instant(

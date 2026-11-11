@@ -887,9 +887,9 @@ ol {
   display: block;
   position: absolute;
   top: 2px;
+  bottom: 2px;
   left: 0;
   width: var(--thumb-width);
-  height: 22px;
   border-radius: var(--radius-s);
   background: var(--control);
   box-shadow:
@@ -2724,6 +2724,23 @@ div.assistant-text {
   display: flex;
   align-items: flex-start;
   gap: 8px;
+}
+/* Participation labels can wrap, especially in French. Keep every segment
+   and its selected bezel tall enough for the longest label. */
+.session-details .segmented {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.session-details .segment {
+  min-width: 0;
+}
+.session-details .segment span {
+  height: 100%;
+  min-height: 22px;
+  padding: 4px 8px;
+  justify-content: center;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 .session-details-header h3 {
   flex: 1;

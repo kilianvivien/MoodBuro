@@ -50,17 +50,25 @@ export function Segmented<T extends string>({
 }) {
   const root = useRef<HTMLFieldSetElement>(null);
   // Measure the selected segment so the thumb can slide to it. Re-measured on
-  // every render: labels change width with the language.
+  // every render and resize: labels change width with the language or layout.
   useLayoutEffect(() => {
     const field = root.current;
     // Not `:has()`: WebKit before macOS 12.3 throws on it in querySelector.
     const selected = field
       ?.querySelector("input:checked")
       ?.closest<HTMLElement>(".segment");
-    if (!field || !selected || selected.offsetWidth === 0) return;
-    field.style.setProperty("--thumb-x", `${selected.offsetLeft}px`);
-    field.style.setProperty("--thumb-width", `${selected.offsetWidth}px`);
-    field.dataset.thumb = "";
+    if (!field || !selected) return;
+    const measure = () => {
+      if (selected.offsetWidth === 0) return;
+      field.style.setProperty("--thumb-x", `${selected.offsetLeft}px`);
+      field.style.setProperty("--thumb-width", `${selected.offsetWidth}px`);
+      field.dataset.thumb = "";
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(field);
+    observer.observe(selected);
+    return () => observer.disconnect();
   });
   return (
     <fieldset className="segmented" disabled={disabled} ref={root}>

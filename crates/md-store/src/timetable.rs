@@ -350,7 +350,11 @@ impl Store {
         if current.as_ref().map(|(revision, ..)| *revision) != expected {
             return Err(CommitError::Conflict);
         }
+        let mut uids = std::collections::HashSet::new();
         for session in sessions {
+            if !uids.insert(&session.uid) {
+                return Err(CommitError::UidCollision);
+            }
             let taken: bool = tx.query_row(
                 "SELECT EXISTS(SELECT 1 FROM timetable_events WHERE site_id=?1 AND uid=?2 AND week_key<>?3 AND cancelled=0)",
                 params![week.site_id, session.uid, week.week_key],
@@ -636,6 +640,42 @@ mod tests {
             .filter(|s| !s.cancelled)
             .map(|s| s.uid)
             .collect()
+    }
+
+    #[test]
+    fn duplicate_session_ids_never_silently_overwrite_a_saved_event() {
+        let store = Store::open(":memory:").unwrap();
+        site(&store, 7);
+        store
+            .commit_timetable_week(
+                &week("k"),
+                &[session("old", 100, "Original")],
+                None,
+                "r1",
+                1,
+            )
+            .unwrap();
+        let result = store.commit_timetable_week(
+            &week("k"),
+            &[
+                session("same", 200, "Morning"),
+                session("same", 300, "Afternoon"),
+            ],
+            Some(1),
+            "r2",
+            2,
+        );
+        assert!(matches!(result, Err(CommitError::UidCollision)));
+        assert_eq!(active(&store, "k"), vec!["old"]);
+        assert_eq!(
+            store
+                .timetable_week("s", 7, "k")
+                .unwrap()
+                .unwrap()
+                .0
+                .revision,
+            1
+        );
     }
 
     #[test]

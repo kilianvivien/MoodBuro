@@ -186,6 +186,7 @@ export function Agenda({
   calendarRequest = 0,
   timetableSites = [],
   timetableRequest = null,
+  onTimetableRequestHandled,
   onFindTimetable,
   onOpenDay,
   onOpenPage,
@@ -196,6 +197,7 @@ export function Agenda({
   /** Organisations with timetables (the INSP Moodle); empty hides Week. */
   timetableSites?: Site[];
   timetableRequest?: TimetableRequest | null;
+  onTimetableRequestHandled?: (request: TimetableRequest) => void;
   onFindTimetable?: (siteId: string) => void;
   onOpenDay: (siteId: string, time: number) => void;
   /** Shows an organisation's calendar export page in Moodle. */
@@ -207,7 +209,7 @@ export function Agenda({
     timetableRequest ? "week" : savedAgendaView(),
   );
   useEffect(() => {
-    if (timetableRequest) setMode("week");
+    if (timetableRequest) changeMode("week");
   }, [timetableRequest]);
   const changeMode = (next: "list" | "week") => {
     setMode(next);
@@ -313,6 +315,7 @@ export function Agenda({
         <Timetable
           sites={timetableSites}
           request={timetableRequest}
+          onRequestHandled={onTimetableRequestHandled}
           onFindInMoodle={(id) => onFindTimetable?.(id)}
         />
       </div>

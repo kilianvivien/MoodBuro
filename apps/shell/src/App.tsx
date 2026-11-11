@@ -722,6 +722,11 @@ export default function App() {
               sites={sites}
               timetableSites={timetableSites}
               timetableRequest={timetableRequest}
+              onTimetableRequestHandled={(request) =>
+                setTimetableRequest((pending) =>
+                  pending === request ? null : pending,
+                )
+              }
               onFindTimetable={(id) => void openSite(id)}
               onSettings={() => void showSettings("notifications")}
               onOpenPage={(id) => void openPage(id, "calendar-export")}
