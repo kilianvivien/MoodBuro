@@ -53,6 +53,9 @@ static LETTER_GROUP_RE: LazyLock<Regex> =
 static PAIRED_GROUP_RE: LazyLock<Regex> = LazyLock::new(|| text::full(r"(?i)Groupes\s+\d+\s+et\s+\d+"));
 /// `Groupe B3`: a numbered group within a demi-promo (from 9 November 2026).
 static HALF_GROUP_RE: LazyLock<Regex> = LazyLock::new(|| text::full(r"(?i)Groupe\s*[A-Z]\s*\d+"));
+/// `1/2 Promo A - Groupe 1`: the same, spelt out (16 November 2026).
+static HALF_NUMBERED_GROUP_RE: LazyLock<Regex> =
+    LazyLock::new(|| text::full(r"(?i)(?:demi[- ]promo(?:tion)?|½\s*promo|1/2\s*promo)\s+[AB]\s*[-–]\s*Groupe\s*\d+"));
 
 /// A title may carry a cohort prefix (`FI-CIL-OFF : Parcours …`) to strip.
 static COHORT_PREFIX_RE: LazyLock<Regex> =
@@ -108,11 +111,39 @@ static MERGED_RANGE_RE: LazyLock<Regex> = LazyLock::new(|| {
 static AUTONOMOUS_RE: LazyLock<Regex> =
     LazyLock::new(|| text::full(r"((?:FI|CIL|OFF)(?:-(?:FI|CIL|OFF))*)\s+Travail en autonomie\s+(.+)"));
 
+const HALF_PROMOTION: &str = r"(?:demi[- ]promo(?:tion)?|½\s*promo|1/2\s*promo)\s+([AB])";
+
 /// An explicit half-promotion heading, never inferred from group numbers.
+///
+/// The heading may name the cohorts it concerns first (`CIL Demi-promo A`,
+/// `FI-OFF 2026-2028 Demi-promo B`, 16–20 November 2026).
 pub fn half_promotion_label(value: &str) -> Option<String> {
-    static HALF: LazyLock<Regex> =
-        LazyLock::new(|| text::full(r"(?i)(?:demi[- ]promo(?:tion)?|½\s*promo|1/2\s*promo)\s+([AB])"));
+    static HALF: LazyLock<Regex> = LazyLock::new(|| {
+        text::full(&format!(
+            r"(?i)(?:(?:{0})(?:\s*-\s*(?:{0}))*(?:\s+20\d{{2}}\s*[-–]\s*(?:20)?\d{{2}})?\s+)?{HALF_PROMOTION}",
+            tokens()
+        ))
+    });
     HALF.captures(&clean_text(value)).map(|found| found[1].to_uppercase())
+}
+
+/// `½ promo B - FI-CIL-OFF : Note d'analyse collective`: the half heading and
+/// the title share one paragraph. `(heading, rest)`.
+fn leading_half_promotion(value: &str) -> Option<(String, String)> {
+    static LEAD: LazyLock<Regex> =
+        LazyLock::new(|| text::full(&format!(r"(?i)(?P<heading>{HALF_PROMOTION})\s*[-–—:]\s*(?P<rest>.+)")));
+    let cleaned = clean_text(value);
+    let found = LEAD.captures(&cleaned)?;
+    Some((found["heading"].to_owned(), found["rest"].to_owned()))
+}
+
+/// The demi-promo heading a Thème cell opens with, if any.
+fn half_promotion_heading(theme: &Cell) -> Option<String> {
+    let first = paragraphs(theme).into_iter().next()?;
+    if half_promotion_label(&first).is_some() {
+        return Some(first);
+    }
+    leading_half_promotion(&first).map(|(heading, _)| heading)
 }
 
 /// True for one of the week's interchangeable sport sessions.
@@ -480,6 +511,16 @@ fn half_day(label: &str) -> Option<(Time, Time)> {
     INSTITUTION.half_day_slots.iter().find(|(name, _, _)| fold(name) == key).map(|&(_, start, end)| (start, end))
 }
 
+/// The end given to a session that runs until the end of its day.
+const DAY_END: Time = Time { hour: 23, minute: 59 };
+
+/// Sessions printed with a start only (`A partir de 13h00`) that last until
+/// the end of the day, as the user asked for 17 November 2026. The end is a
+/// default, flagged and editable in review; APSA stays an open reminder.
+fn runs_to_day_end(title: &str) -> bool {
+    fold(title) == "choix du nom de promotion"
+}
+
 /// Recognise deliberately merged time fields, without hiding malformed times.
 fn unscheduled_label(anchor: &Anchor) -> Result<Option<String>, EdtError> {
     let roles = anchor.grid.roles_of(&anchor.theme);
@@ -567,7 +608,11 @@ fn title_and_description(anchor: &Anchor) -> (String, Option<String>, Vec<String
     if let Some(found) = AUTONOMOUS_RE.captures(&clean_text(&anchor.theme.text)) {
         return (found[2].to_owned(), Some("Travail en autonomie".to_owned()), parse_cohorts(&found[1]).0);
     }
-    let (title, rest, prefix_tokens) = if blocks.len() > 1 && half_promotion_label(&blocks[0]).is_some() {
+    let (title, rest, prefix_tokens) = if let Some((heading, rest)) = leading_half_promotion(&blocks[0]) {
+        let title = strip_cohort_prefix(&rest).to_owned();
+        let tokens = if title == rest { Vec::new() } else { parse_cohorts(&rest).0 };
+        (format!("{title} ({heading})"), blocks[1..].to_vec(), tokens)
+    } else if blocks.len() > 1 && half_promotion_label(&blocks[0]).is_some() {
         (format!("{} ({})", blocks[1], blocks[0]), blocks[2..].to_vec(), Vec::new())
     } else if blocks.len() > 1 && COHORT_PREFIX_RE.is_match(&blocks[0]) {
         let mut rest = vec![blocks[0].clone()];
@@ -614,7 +659,20 @@ fn cohort_label(labels: &[String]) -> Option<String> {
 }
 
 fn cohorts(anchor: &Anchor, fallback: &[String]) -> (Vec<String>, Option<String>) {
-    let labels = anchor.own_texts("cohort");
+    // Demi-promo groups sharing a cell for want of a rule are still listed
+    // apart. Paired groups keep their frozen label (19–23 October 2026).
+    let labels: Vec<String> = anchor
+        .own("cohort")
+        .into_iter()
+        .flat_map(|cell| {
+            let rows = group_rows(cell);
+            if rows.iter().all(|row| HALF_NUMBERED_GROUP_RE.is_match(&clean_text(&row.text))) {
+                rows.iter().map(|row| clean_text(&row.text)).collect()
+            } else {
+                vec![clean_text(&cell.text)]
+            }
+        })
+        .collect();
     let mut tokens: Vec<String> = Vec::new();
     for label in &labels {
         for token in parse_cohorts(label).0 {
@@ -629,22 +687,37 @@ fn cohorts(anchor: &Anchor, fallback: &[String]) -> (Vec<String>, Option<String>
     (tokens, cohort_label(&labels))
 }
 
-// Some exports omit a horizontal rule between two paired groups. Only split
-// when every printed line names a complete pair; wrapped labels stay intact.
+// Some exports omit a horizontal rule between two groups (`Groupes 1 et 2`
+// on one line each; `1/2 Promo A -` / `Groupe 1` wrapped over two, 16
+// November 2026). Only split when every printed line belongs to a complete
+// label; anything else stays intact.
 fn group_rows(cell: &Cell) -> Vec<Cell> {
-    if cell.lines.len() < 2 || !cell.lines.iter().all(|line| PAIRED_GROUP_RE.is_match(&clean_text(&line.text))) {
+    let complete = |text: &str| {
+        let text = clean_text(text);
+        PAIRED_GROUP_RE.is_match(&text) || HALF_NUMBERED_GROUP_RE.is_match(&text)
+    };
+    let mut entries: Vec<Vec<&TextLine>> = Vec::new();
+    let mut pending: Vec<&TextLine> = Vec::new();
+    for line in &cell.lines {
+        pending.push(line);
+        let joined = pending.iter().map(|line| line.text.as_str()).collect::<Vec<_>>().join("\n");
+        if complete(&joined) {
+            entries.push(std::mem::take(&mut pending));
+        }
+    }
+    if entries.len() < 2 || !pending.is_empty() {
         return vec![cell.clone()];
     }
     let mut rows = Vec::new();
-    for (index, line) in cell.lines.iter().enumerate() {
+    for (index, entry) in entries.iter().enumerate() {
         let mut row = cell.clone();
-        row.text = line.text.clone();
-        row.lines = vec![line.clone()];
+        row.text = entry.iter().map(|line| line.text.as_str()).collect::<Vec<_>>().join("\n");
+        row.lines = entry.iter().map(|line| (*line).clone()).collect();
         if index > 0 {
-            row.bbox[1] = (cell.lines[index - 1].bbox[3] + line.bbox[1]) / 2.0;
+            row.bbox[1] = (entries[index - 1].last().unwrap().bbox[3] + entry[0].bbox[1]) / 2.0;
         }
-        if index + 1 < cell.lines.len() {
-            row.bbox[3] = (line.bbox[3] + cell.lines[index + 1].bbox[1]) / 2.0;
+        if let Some(next) = entries.get(index + 1) {
+            row.bbox[3] = (entry.last().unwrap().bbox[3] + next[0].bbox[1]) / 2.0;
         }
         rows.push(row);
     }
@@ -655,9 +728,14 @@ fn group_rows(cell: &Cell) -> Vec<Cell> {
 /// Lists cannot be zipped: shared cells and missing dividers need geometry.
 fn group_details(anchor: &Anchor) -> Vec<Map<String, Value>> {
     let mut groups = Vec::new();
-    for group in anchor.own("cohort").into_iter().flat_map(group_rows) {
+    let rows = anchor.own("cohort").into_iter().flat_map(|cell| {
+        let rows = group_rows(cell);
+        let split = rows.len() > 1;
+        rows.into_iter().map(move |row| (row, split))
+    });
+    for (group, split) in rows {
         let label = clean_text(&group.text);
-        if ![&*GROUP_FULL_RE, &*LETTER_GROUP_RE, &*PAIRED_GROUP_RE, &*HALF_GROUP_RE]
+        if ![&*GROUP_FULL_RE, &*LETTER_GROUP_RE, &*PAIRED_GROUP_RE, &*HALF_GROUP_RE, &*HALF_NUMBERED_GROUP_RE]
             .iter()
             .any(|pattern| pattern.is_match(&label))
         {
@@ -668,7 +746,21 @@ fn group_details(anchor: &Anchor) -> Vec<Map<String, Value>> {
         for role in ["start", "end", "location", "speakers"] {
             let cells: Vec<&Cell> = anchor.own(role).into_iter().filter(|cell| faces(cell)).collect();
             let [cell] = cells[..] else { continue };
-            if role == "speakers" {
+            // A cell shared with the next group only because a divider is
+            // missing: the printed lines facing this group are its own.
+            let beyond = cell.bbox[1] < group.bbox[1] - 2.0 || cell.bbox[3] > group.bbox[3] + 2.0;
+            let facing: Vec<&TextLine> = cell
+                .lines
+                .iter()
+                .filter(|line| line.bbox[1] >= group.bbox[1] && line.bbox[3] <= group.bbox[3])
+                .collect();
+            if role == "speakers" && split && HALF_NUMBERED_GROUP_RE.is_match(&label) && beyond && cell.lines.len() > 1
+            {
+                let speakers = parse_speakers(facing.iter().map(|line| line.text.as_str()));
+                if !speakers.is_empty() {
+                    fields.insert(role.to_owned(), json!(speakers.join(SPEAKER_SEPARATOR)));
+                }
+            } else if role == "speakers" {
                 // Several speakers in one group: kept apart, not glued.
                 let speakers = if cell.lines.is_empty() {
                     parse_speakers(text::splitlines(&cell.text))
@@ -679,18 +771,13 @@ fn group_details(anchor: &Anchor) -> Vec<Map<String, Value>> {
                     fields.insert(role.to_owned(), json!(speakers.join(SPEAKER_SEPARATOR)));
                 }
             } else if role == "location"
-                && PAIRED_GROUP_RE.is_match(&label)
-                && (cell.bbox[1] < group.bbox[1] - 2.0 || cell.bbox[3] > group.bbox[3] + 2.0)
+                && (PAIRED_GROUP_RE.is_match(&label) || split && HALF_NUMBERED_GROUP_RE.is_match(&label))
+                && beyond
                 && cell.lines.len() > 1
             {
                 // Two rooms in a cell with no divider: use the printed line
-                // facing this pair, never their list position.
-                let lines: Vec<_> = cell
-                    .lines
-                    .iter()
-                    .filter(|line| line.bbox[1] >= group.bbox[1] && line.bbox[3] <= group.bbox[3])
-                    .collect();
-                if let [line] = lines[..] {
+                // facing this group, never their list position.
+                if let [line] = facing[..] {
                     fields.insert(role.to_owned(), json!(clean_text(&line.text)));
                 }
             } else {
@@ -973,7 +1060,7 @@ pub fn build(document: &Document, grid: &Grid) -> Result<Vec<Event>, EdtError> {
         };
         let block = unscheduled.as_deref().and_then(half_day);
         let (mut starts, mut ends) = (Vec::new(), Vec::new());
-        let (start, end) = if until.is_some() {
+        let (start, mut end) = if until.is_some() {
             (None, None)
         } else if let Some(label) = &unscheduled {
             match block {
@@ -996,6 +1083,10 @@ pub fn build(document: &Document, grid: &Grid) -> Result<Vec<Event>, EdtError> {
         }
 
         let (title, description, prefix_tokens) = title_and_description(&anchor);
+        let day_end = start.is_some() && end.is_none() && block.is_none() && runs_to_day_end(&title);
+        if day_end {
+            end = Some(DAY_END);
+        }
         let (cohort_tokens, mut label) = cohorts(&anchor, &prefix_tokens);
         if label.is_none() && !prefix_tokens.is_empty() {
             label = Some(prefix_tokens.join("-"));
@@ -1051,7 +1142,7 @@ pub fn build(document: &Document, grid: &Grid) -> Result<Vec<Event>, EdtError> {
         sources.extend(extra_cells.iter().map(|(_, cell)| ("note", *cell)));
 
         let mut raw = Map::new();
-        let heading = paragraphs(theme).into_iter().next().filter(|heading| half_promotion_label(heading).is_some());
+        let heading = half_promotion_heading(theme);
         let module_cell = anchor.own("module").first().map(|cell| (cell.page, cell.bbox.map(f64::to_bits)));
         sections.push((module_cell, heading.clone()));
         let half = heading
@@ -1067,7 +1158,7 @@ pub fn build(document: &Document, grid: &Grid) -> Result<Vec<Event>, EdtError> {
         if let Some(until) = until.filter(|until| *until > day) {
             raw.insert("until".to_owned(), json!(until.iso()));
         }
-        if block.is_some() {
+        if block.is_some() || day_end {
             raw.insert("default_times".to_owned(), json!(true));
         }
         if unscheduled.is_some() && block.is_none() && start.is_some() {
@@ -1384,6 +1475,53 @@ mod tests {
             assert_eq!(events[1].title, "Mises en situation");
             assert!(events[1].raw.get("half_promotion").is_none());
         }
+    }
+
+    #[test]
+    fn a_demi_promo_heading_may_name_its_cohorts_or_share_the_title() {
+        // 16–20 November 2026.
+        for (heading, half) in [
+            ("CIL Demi-promo A", "A"),
+            ("FI-OFF Demi-promo B", "B"),
+            ("FI-OFF 2026-2028 Demi-promo A", "A"),
+            ("FI-OFF\n2026-28\nDemi-promo B", "B"),
+            ("1/2 promo B", "B"),
+        ] {
+            assert_eq!(half_promotion_label(heading).as_deref(), Some(half), "{heading}");
+        }
+        for other in ["Parcours Demi-promo A", "Demi-promo A Etude de crise", "½ promo B - Note"] {
+            assert!(half_promotion_label(other).is_none(), "{other}");
+        }
+        assert_eq!(
+            leading_half_promotion("½ promo B - FI-CIL-OFF : Note d’analyse collective"),
+            Some(("½ promo B".to_owned(), "FI-CIL-OFF : Note d'analyse collective".to_owned()))
+        );
+        assert!(leading_half_promotion("1/2 promo B").is_none());
+        assert!(leading_half_promotion("Note d'analyse collective").is_none());
+    }
+
+    #[test]
+    fn wrapped_demi_promo_groups_without_a_rule_are_split() {
+        // `1/2 Promo A -` / `Groupe 1` over two lines, groups 1 and 2 sharing
+        // one cell because the export drew no rule between them.
+        let shared = cell(0.0, 0.0, 90.0, 60.0, "1/2 Promo A -\nGroupe 1\n1/2 Promo A -\nGroupe 2");
+        let rows = group_rows(&shared);
+        assert_eq!(
+            rows.iter().map(|row| clean_text(&row.text)).collect::<Vec<_>>(),
+            ["1/2 Promo A - Groupe 1", "1/2 Promo A - Groupe 2"]
+        );
+        assert!(rows[0].bbox[3] <= rows[1].bbox[1] + f64::EPSILON);
+        // A label left incomplete keeps the cell whole.
+        assert_eq!(group_rows(&cell(0.0, 0.0, 90.0, 60.0, "1/2 Promo A -\nGroupe 1\n1/2 Promo A -")).len(), 1);
+        assert_eq!(group_rows(&cell(0.0, 0.0, 90.0, 40.0, "1/2 Promo A -\nGroupe 1")).len(), 1);
+    }
+
+    #[test]
+    fn only_the_promotion_vote_runs_to_the_end_of_its_day() {
+        assert!(runs_to_day_end("Choix du nom de promotion"));
+        assert!(runs_to_day_end("CHOIX DU NOM DE PROMOTION"));
+        assert!(!runs_to_day_end("APSA"));
+        assert!(!runs_to_day_end("Conférence"));
     }
 
     #[test]

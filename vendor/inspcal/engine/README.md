@@ -18,7 +18,10 @@ uv run python tools/build_rust_bundle.py
 ## Proof-read a week
 
 An explicit `Demi-promo A/B` heading in Thème (or `½ promo A/B` in Cohorte)
-is retained as `raw.half_promotion`. Review offers one A/B choice per week,
+is retained as `raw.half_promotion`. The heading may name its cohorts first
+(`CIL Demi-promo A`, `FI-OFF 2026-2028 Demi-promo B`), or share its paragraph
+with the cohorts and title (`½ promo B - FI-CIL-OFF : Note d'analyse
+collective`); both forms appear in the 16–20 November 2026 export. Review offers one A/B choice per week,
 filtering only labelled sessions and keeping common sessions. Numbered and
 lettered workshop groups remain separate choices within the chosen half;
 their membership is never inferred across modules. One exception within a module:

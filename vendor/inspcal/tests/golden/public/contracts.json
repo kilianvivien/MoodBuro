@@ -557,6 +557,68 @@
         ],
         "calendar_sha256": "7bb87d4940e8026530e237ee900f6d88dce0972dcab4918ad70048ca9a74343a"
       }
+    },
+    "Edt du 16.11.2026 au 20.11.2026.pdf": {
+      "ALL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-3ba598d5550bf02e",
+          "edt-insp-4a5a38c279608644",
+          "edt-insp-3c319825bd377fd4",
+          "edt-insp-65c1e169758c197c",
+          "edt-insp-2a7426bf6eafb8b7",
+          "edt-insp-8fe0df2b485583d9",
+          "edt-insp-4b349f60e02b8280",
+          "edt-insp-f0527f08850e1383",
+          "edt-insp-77acf5ad0ce1d7c5",
+          "edt-insp-b3e0eca696af4e86",
+          "edt-insp-b44f43153f1be444"
+        ],
+        "calendar_sha256": "1bb8ed427fc1cf673f880a1987961e519fbe5a75837fcc1383deaee39bb5cd23"
+      },
+      "FI": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-3ba598d5550bf02e",
+          "edt-insp-4a5a38c279608644",
+          "edt-insp-3c319825bd377fd4",
+          "edt-insp-65c1e169758c197c",
+          "edt-insp-2a7426bf6eafb8b7",
+          "edt-insp-4b349f60e02b8280",
+          "edt-insp-f0527f08850e1383",
+          "edt-insp-77acf5ad0ce1d7c5",
+          "edt-insp-b44f43153f1be444"
+        ],
+        "calendar_sha256": "6f503d9196ee04face0f59dfb33c71f3a4897e48cb99e1fa20fa08583e5e0f73"
+      },
+      "CIL": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-3ba598d5550bf02e",
+          "edt-insp-4a5a38c279608644",
+          "edt-insp-3c319825bd377fd4",
+          "edt-insp-65c1e169758c197c",
+          "edt-insp-2a7426bf6eafb8b7",
+          "edt-insp-8fe0df2b485583d9",
+          "edt-insp-b3e0eca696af4e86"
+        ],
+        "calendar_sha256": "9243e4633f1c77777bca3a3f68bb4a5051a848919cae1087772b40afac47457a"
+      },
+      "OFF": {
+        "status": 200,
+        "event_uids": [
+          "edt-insp-3ba598d5550bf02e",
+          "edt-insp-4a5a38c279608644",
+          "edt-insp-3c319825bd377fd4",
+          "edt-insp-65c1e169758c197c",
+          "edt-insp-2a7426bf6eafb8b7",
+          "edt-insp-4b349f60e02b8280",
+          "edt-insp-f0527f08850e1383",
+          "edt-insp-77acf5ad0ce1d7c5",
+          "edt-insp-b44f43153f1be444"
+        ],
+        "calendar_sha256": "6f503d9196ee04face0f59dfb33c71f3a4897e48cb99e1fa20fa08583e5e0f73"
+      }
     }
   }
 }
