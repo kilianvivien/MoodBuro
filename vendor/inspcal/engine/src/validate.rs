@@ -105,7 +105,10 @@ pub fn validate(timetable: &mut Timetable) {
             ),
             _ => {}
         }
-        if let (Some(start), Some(end)) = (event.start, event.end) {
+        // A default we set ourselves (DEFAULT_SCHEDULE above) is already
+        // flagged; only printed times are judged for plausibility.
+        let guessed = truthy(event.raw.get("default_times")) && !truthy(event.raw.get("user_times"));
+        if let (Some(start), Some(end), false) = (event.start, event.end, guessed) {
             if start < PLAUSIBLE_DAY_START || end > PLAUSIBLE_DAY_END {
                 warn(
                     warning::IMPLAUSIBLE_TIME,

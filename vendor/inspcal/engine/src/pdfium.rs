@@ -220,12 +220,15 @@ unsafe fn read_chars(
     let count = bindings.FPDFText_CountChars(text_page).max(0);
     let mut chars: Vec<Char> = Vec::with_capacity(count as usize);
     let mut fonts: HashMap<usize, Option<FontFacts>> = HashMap::new();
+    // Generated spaces waiting for the glyph after them.
+    let mut generated: Vec<usize> = Vec::new();
     for index in 0..count {
         let unicode = bindings.FPDFText_GetUnicode(text_page, index);
         if bindings.FPDFText_IsGenerated(text_page, index) == 1 {
             // Line breaks carry no position; a space stands where a word ends.
             if unicode == 0x20 {
                 if let Some(previous) = chars.last().cloned() {
+                    generated.push(chars.len());
                     chars.push(Char { text: ' ', x0: previous.x1, ..previous });
                 }
             }
@@ -281,11 +284,24 @@ unsafe fn read_chars(
         let color = (bindings.FPDFText_GetFillColor(text_page, index, &mut r, &mut g, &mut b, &mut a) != 0)
             .then(|| rgb(r, g, b));
 
+        let top = page_height - y1;
+        // Slanted glyphs overlap: the previous one's right edge can lie past
+        // this one's left edge (16 November 2026, italic links). A space
+        // generated between them must not sort after this glyph, or the word
+        // break moves one letter on (« ordinateure t »).
+        for space in generated.drain(..) {
+            let glyph_start = chars[space - 1].x0;
+            let gap = &mut chars[space];
+            // Only when this glyph starts inside the previous one's box.
+            if (gap.top - top).abs() <= gap.size / 2.0 && glyph_start < x0 && x0 < gap.x0 {
+                (gap.x0, gap.x1) = (x0, x0);
+            }
+        }
         chars.push(Char {
             text,
             x0,
             x1,
-            top: page_height - y1,
+            top,
             bottom: page_height - y0,
             size: y1 - y0,
             fontname: facts.name.clone(),
