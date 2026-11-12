@@ -6,6 +6,7 @@ import {
   type AssistantViewProps,
 } from "../components/AssistantPanel";
 import { contextFrom, withoutMarkers } from "../lib/assistant";
+import type { AssistantEntry, AssistantSource } from "../ipc";
 import { clampWidth } from "../stores/assistant";
 
 const props: AssistantViewProps = {
@@ -217,6 +218,94 @@ it("maps explicit context and hides complete and partial source markers", () => 
   expect(contextFrom("course:42")).toEqual({ kind: "course", courseId: 42 });
   expect(withoutMarkers("Answer [course:42]. [activity:1")).toBe("Answer.");
   expect(withoutMarkers("Keep [ordinary text]")).toBe("Keep [ordinary text]");
+  expect(withoutMarkers("At 09:00 [session:3], then [sess")).toBe(
+    "At 09:00, then",
+  );
+});
+
+describe("timetable session cards", () => {
+  const session = (
+    id: number,
+    change: Partial<NonNullable<AssistantSource["session"]>> = {},
+  ): AssistantSource => ({
+    kind: "session",
+    id,
+    page: "calendar-day",
+    value: null,
+    label: id === 1 ? "Droit public" : `Session ${id}`,
+    key: `edt-${id}`,
+    session: {
+      date: "2026-11-16",
+      lastDate: "2026-11-16",
+      start: "09:00",
+      end: "12:30",
+      location: "Amphi A",
+      allDay: false,
+      tentative: false,
+      remote: false,
+      ...change,
+    },
+  });
+  const answer = (sources: AssistantSource[]): AssistantEntry => ({
+    role: "assistant",
+    text: "Your classes.",
+    context: null,
+    sources,
+    notes: [{ code: "timetable", label: null, age: null, stale: false }],
+  });
+  it("shows each cited session as a card with its Paris day, times and room", () => {
+    const html = render({ entries: [answer([session(1)])] });
+    expect(html).toContain('class="assistant-sessions"');
+    expect(html).toContain('aria-label="Timetable sessions"');
+    expect(html).toContain("Mon 16 Nov · 09:00–12:30");
+    expect(html).toContain(">Droit public<");
+    expect(html).toContain(">Amphi A<");
+    expect(html).toContain("Show in Timetable: Droit public");
+    expect(html).toContain("Checked the timetable weeks saved on this Mac");
+    // Sessions are cards, not chips, and never hide behind "more".
+    expect(html).not.toContain('class="assistant-sources"');
+  });
+  it("marks tentative, remote, all-day and multi-day sessions in French", () => {
+    const html = render(
+      {
+        entries: [
+          answer([
+            session(2, { tentative: true, remote: true, location: null }),
+            session(3, {
+              allDay: true,
+              start: null,
+              end: null,
+              lastDate: "2026-11-18",
+            }),
+          ]),
+        ],
+      },
+      "fr",
+    );
+    expect(html).toContain('data-tentative="true"');
+    expect(html).toContain("À distance · Provisoire");
+    expect(html).toContain("lun. 16 nov. – mer. 18 nov. · Toute la journée");
+    expect(html).toContain("Afficher dans l’emploi du temps");
+  });
+  it("keeps other sources as chips beside the cards", () => {
+    const html = render({
+      entries: [
+        answer([
+          session(1),
+          {
+            kind: "course",
+            id: 4,
+            page: "course",
+            value: 4,
+            label: "Institutions",
+          },
+        ]),
+      ],
+    });
+    expect(html).toContain('class="assistant-sessions"');
+    expect(html).toContain('class="assistant-sources"');
+    expect(html).toContain("Open in Moodle: Institutions");
+  });
 });
 
 it("clamps separator geometry including non-finite values", () => {

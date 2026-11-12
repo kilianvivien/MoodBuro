@@ -2096,6 +2096,69 @@ div.assistant-text {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Timetable sessions an answer relied on: small cards, like the week grid's. */
+.assistant-sessions {
+  /* The week grid's event tint, built from the same tokens. */
+  --week-event:
+    linear-gradient(var(--accent-tint), var(--accent-tint)), var(--elevated);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+}
+.assistant-session {
+  display: grid;
+  gap: 1px;
+  width: 100%;
+  padding: 5px 8px 6px 10px;
+  border: 0;
+  border-radius: var(--radius-m);
+  box-shadow: inset 3px 0 0 var(--accent);
+  background: var(--week-event);
+  color: var(--label);
+  font: inherit;
+  font-size: var(--text-small);
+  line-height: 1.3;
+  text-align: left;
+  transition:
+    background var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
+}
+.assistant-session:hover {
+  background: linear-gradient(var(--fill), var(--fill)), var(--week-event);
+}
+.assistant-session:active {
+  transform: scale(0.98);
+}
+.assistant-session:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+.assistant-session[data-tentative] {
+  background: var(--elevated);
+  box-shadow:
+    inset 3px 0 0 var(--accent),
+    inset 0 0 0 1px var(--accent-tint);
+}
+.assistant-session[data-tentative] .assistant-session-title {
+  font-style: italic;
+}
+.assistant-session-when,
+.assistant-session-place {
+  font-size: var(--text-caption);
+  color: var(--label-2);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.assistant-session-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
 .assistant-status {
   display: flex;
   align-items: center;
@@ -2883,6 +2946,7 @@ div.assistant-text {
   .tag,
   .row-icon,
   .assistant-source,
+  .assistant-session,
   .assistant-suggestion,
   .empty-icon {
     box-shadow: inset 0 0 0 1px var(--control-border);

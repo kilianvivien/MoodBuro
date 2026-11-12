@@ -28,6 +28,12 @@ pub enum Call {
     ListCourseFiles {
         course_id: i64,
     },
+    /// Saved timetable sessions between two Europe/Paris dates (`YYYY-MM-DD`,
+    /// inclusive). Missing bounds are resolved by the caller, which has a clock.
+    ListTimetableSessions {
+        from: Option<String>,
+        to: Option<String>,
+    },
     Open(Target),
     // The actions below change something: each is confirmed by the user before it runs.
     MarkNotificationRead {
@@ -118,6 +124,14 @@ struct CourseFiles {
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+struct Timetable {
+    #[serde(default)]
+    from: Option<String>,
+    #[serde(default)]
+    to: Option<String>,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct SaveFile {
     file_id: i64,
 }
@@ -141,6 +155,27 @@ fn arguments<T: serde::de::DeserializeOwned>(raw: &str) -> Result<T, Error> {
 }
 fn positive(id: Option<i64>) -> Result<i64, Error> {
     id.filter(|id| *id > 0).ok_or(Error::Arguments)
+}
+/// A plausible `YYYY-MM-DD`: shape and ranges only. The caller checks it is a
+/// real calendar day and bounds the span.
+fn day(value: Option<String>) -> Result<Option<String>, Error> {
+    let Some(value) = value else {
+        return Ok(None);
+    };
+    let bytes = value.as_bytes();
+    let digits = |range: std::ops::Range<usize>| {
+        bytes[range.clone()].iter().all(u8::is_ascii_digit)
+            && value[range].parse::<u32>().ok().is_some()
+    };
+    let valid = bytes.len() == 10
+        && bytes[4] == b'-'
+        && bytes[7] == b'-'
+        && digits(0..4)
+        && digits(5..7)
+        && digits(8..10)
+        && (1..=12).contains(&value[5..7].parse::<u32>().unwrap_or(0))
+        && (1..=31).contains(&value[8..10].parse::<u32>().unwrap_or(0));
+    valid.then_some(Some(value)).ok_or(Error::Arguments)
 }
 
 pub fn parse(name: &str, raw: &str) -> Result<Call, Error> {
@@ -186,6 +221,13 @@ pub fn parse(name: &str, raw: &str) -> Result<Call, Error> {
         "mark_notification_read" => Call::MarkNotificationRead {
             id: positive(Some(arguments::<Identifier>(raw)?.id))?,
         },
+        "list_timetable_sessions" => {
+            let range: Timetable = arguments(raw)?;
+            Call::ListTimetableSessions {
+                from: day(range.from)?,
+                to: day(range.to)?,
+            }
+        }
         "list_course_files" => Call::ListCourseFiles {
             course_id: positive(Some(arguments::<CourseFiles>(raw)?.course_id))?,
         },
@@ -217,9 +259,10 @@ fn tool(name: &str, description: &str, properties: Value, required: &[&str]) -> 
         },
     })
 }
-/// OpenAI-style tool definitions accepted by both providers.
-pub fn definitions() -> Value {
-    json!([
+/// OpenAI-style tool definitions accepted by both providers. The timetable
+/// tool is offered only for organisations whose timetables MoodBuro can read.
+pub fn definitions(timetable: bool) -> Value {
+    let mut tools = json!([
         tool(
             "list_courses",
             "List the user's Moodle courses in the attached organisation.",
@@ -283,7 +326,21 @@ pub fn definitions() -> Value {
             }),
             &["id"]
         ),
-    ])
+    ]);
+    if timetable {
+        if let Some(list) = tools.as_array_mut() {
+            list.insert(4, tool(
+                "list_timetable_sessions",
+                "List the classes and other sessions of the timetable weeks the user saved in MoodBuro: title, module, room, speakers and Europe/Paris times. Dates are Europe/Paris days, YYYY-MM-DD, at most 31 days apart. Default: today through the next 7 days.",
+                json!({
+                    "from": {"type": "string", "description": "First day, YYYY-MM-DD. Default today."},
+                    "to": {"type": "string", "description": "Last day included, YYYY-MM-DD. Default 7 days after from."},
+                }),
+                &[]
+            ));
+        }
+    }
+    tools
 }
 
 #[cfg(test)]
@@ -291,14 +348,17 @@ mod tests {
     use super::*;
     #[test]
     fn every_defined_tool_parses_and_nothing_else_does() {
-        let definitions = definitions();
+        let definitions = definitions(true);
         let names: Vec<&str> = definitions
             .as_array()
             .unwrap()
             .iter()
             .map(|t| t["function"]["name"].as_str().unwrap())
             .collect();
-        assert_eq!(names.len(), 9);
+        assert_eq!(names.len(), 10);
+        let without = definitions_names(false);
+        assert_eq!(without.len(), 9);
+        assert!(!without.contains(&"list_timetable_sessions".to_owned()));
         for name in &names {
             assert_ne!(parse(name, "not json"), Err(Error::Unknown));
         }
@@ -362,6 +422,34 @@ mod tests {
         assert!(remind.is_write());
         assert_eq!(Before::Hour.seconds(), 3600);
         assert!(!Call::ListCourses.is_write());
+        assert_eq!(
+            parse("list_timetable_sessions", ""),
+            Ok(Call::ListTimetableSessions {
+                from: None,
+                to: None
+            })
+        );
+        let range = parse(
+            "list_timetable_sessions",
+            r#"{"from":"2026-11-16","to":"2026-11-20"}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            range,
+            Call::ListTimetableSessions {
+                from: Some("2026-11-16".into()),
+                to: Some("2026-11-20".into())
+            }
+        );
+        assert!(!range.is_write());
+    }
+    fn definitions_names(timetable: bool) -> Vec<String> {
+        definitions(timetable)
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|t| t["function"]["name"].as_str().unwrap().to_owned())
+            .collect()
     }
     #[test]
     fn unknown_fields_urls_and_out_of_range_values_are_rejected() {
@@ -398,6 +486,24 @@ mod tests {
             ("mark_notification_read", r#"{"id":null}"#),
             ("mark_notification_read", r#"{"id":1,"all":true}"#),
             ("mark_notification_read", r#"[1]"#),
+            ("list_timetable_sessions", r#"{"from":"today"}"#),
+            ("list_timetable_sessions", r#"{"from":"2026-11-1"}"#),
+            ("list_timetable_sessions", r#"{"from":"2026/11/16"}"#),
+            ("list_timetable_sessions", r#"{"from":"2026-13-01"}"#),
+            ("list_timetable_sessions", r#"{"to":"2026-11-00"}"#),
+            ("list_timetable_sessions", r#"{"to":"+026-11-16"}"#),
+            ("list_timetable_sessions", r#"{"from":"２０２６-11-16"}"#),
+            ("list_timetable_sessions", r#"{"from":20261116}"#),
+            ("list_timetable_sessions", r#"{"days":7}"#),
+            (
+                "list_timetable_sessions",
+                r#"{"from":"2026-11-16","site":"x"}"#,
+            ),
+            (
+                "list_timetable_sessions",
+                r#"{"week":"2026-11-16' OR 1=1"}"#,
+            ),
+            ("list_timetable_sessions", r#"["2026-11-16"]"#),
         ] {
             assert_eq!(parse(name, raw), Err(Error::Arguments), "{name} {raw}");
         }

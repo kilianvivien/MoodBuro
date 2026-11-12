@@ -12,6 +12,7 @@ import {
   Bell,
   BookOpen,
   CalendarClock,
+  CalendarDays,
   ChevronsUpDown,
   CircleAlert,
   File,
@@ -59,9 +60,62 @@ const sourceIcons = {
   deadline: CalendarClock,
   notification: Bell,
   file: File,
+  session: CalendarDays,
 } as const;
 /** Arrow keys move the separator by this many points. */
 const STEP = 16;
+
+/** A saved timetable session an answer relied on: opens its week in Agenda. */
+function SessionCard({
+  source,
+  onOpen,
+}: {
+  source: AssistantSource;
+  onOpen: () => void;
+}) {
+  const { t, date } = useI18n();
+  const card = source.session!;
+  // Wall dates: format them as written, whatever the Mac's time zone.
+  const day = (iso: string) =>
+    date(new Date(`${iso}T00:00:00Z`), {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    });
+  const days =
+    card.lastDate && card.lastDate !== card.date
+      ? `${day(card.date)} – ${day(card.lastDate)}`
+      : day(card.date);
+  const hours =
+    card.allDay || !card.start
+      ? t.timetable.allDay
+      : card.end
+        ? `${card.start}–${card.end}`
+        : card.start;
+  const when = `${days} · ${hours}`;
+  const details = [
+    card.location,
+    card.remote && t.timetable.session.remote,
+    card.tentative && t.timetable.tentative,
+  ].filter(Boolean) as string[];
+  const action = t.assistant.openSession(source.label);
+  return (
+    <button
+      className="assistant-session"
+      data-tentative={card.tentative || undefined}
+      title={action}
+      aria-label={[action, when, ...details].join(", ")}
+      onClick={onOpen}
+    >
+      <span className="assistant-session-when">{when}</span>
+      <span className="assistant-session-title">{source.label}</span>
+      {details.length > 0 && (
+        <span className="assistant-session-place">{details.join(" · ")}</span>
+      )}
+    </button>
+  );
+}
 
 function Message({
   entry,
@@ -72,12 +126,14 @@ function Message({
 }) {
   const { t, locale } = useI18n();
   const user = entry.role === "user";
+  // Timetable sessions get cards of their own; everything else is a chip.
+  const sessions = entry.sources.filter((source) => source.session);
+  const chips = entry.sources.filter((source) => !source.session);
   // A long list of sources stays out of the way until asked for.
   const [all, setAll] = useState(false);
-  const more = entry.sources.length - SOURCES_SHOWN;
+  const more = chips.length - SOURCES_SHOWN;
   // One hidden chip is not worth a control of the same size.
-  const sources =
-    all || more < 2 ? entry.sources : entry.sources.slice(0, SOURCES_SHOWN);
+  const sources = all || more < 2 ? chips : chips.slice(0, SOURCES_SHOWN);
   return (
     <li className="assistant-message" data-role={entry.role}>
       <span className="visually-hidden">
@@ -104,7 +160,20 @@ function Message({
           ))}
         </ul>
       )}
-      {entry.sources.length > 0 && (
+      {sessions.length > 0 && (
+        <ul
+          className="assistant-sessions"
+          role="list"
+          aria-label={t.assistant.sessionCards}
+        >
+          {sessions.map((source) => (
+            <li key={`session:${source.id}`}>
+              <SessionCard source={source} onOpen={() => onSource(source)} />
+            </li>
+          ))}
+        </ul>
+      )}
+      {chips.length > 0 && (
         <div className="assistant-sources">
           <span className="assistant-meta">{t.assistant.sources}</span>
           <ul role="list">
@@ -528,13 +597,17 @@ export function AssistantView(props: AssistantViewProps) {
 function Conversation({
   site,
   focus,
+  timetable,
   onOpenPage,
+  onTimetable,
   onSettings,
   onClose,
 }: {
   site: Site | undefined;
   focus: number;
+  timetable: boolean;
   onOpenPage: (source: AssistantSource, siteId: string) => void;
+  onTimetable?: (siteId: string, date: string, uid: string | null) => void;
   onSettings: () => void;
   onClose: () => void;
 }) {
@@ -748,7 +821,7 @@ function Conversation({
         site && consent
           ? [
               t.assistant.suggest.due,
-              t.assistant.suggest.news,
+              timetable ? t.assistant.suggest.today : t.assistant.suggest.news,
               attached.startsWith("course:")
                 ? t.assistant.suggest.files
                 : t.assistant.suggest.courses,
@@ -778,6 +851,9 @@ function Conversation({
       onClear={() => void clear()}
       onSource={(source) => {
         if (!siteId) return;
+        // A timetable session opens its saved week in Agenda, on this Mac.
+        if (source.session)
+          return onTimetable?.(siteId, source.session.date, source.key ?? null);
         if (
           source.kind !== "file" ||
           source.course === undefined ||
@@ -808,13 +884,18 @@ export function AssistantPanel({
   focus,
   closing = false,
   onClosed,
+  timetable = false,
   onOpenPage,
+  onTimetable,
   onSettings,
   onClose,
 }: {
   site: Site | undefined;
   /** Bumped each time the panel is asked to take keyboard focus. */
   focus: number;
+  /** The organisation has saved timetables the assistant can read. */
+  timetable?: boolean;
+  onTimetable?: (siteId: string, date: string, uid: string | null) => void;
   /** The panel is leaving: it plays its exit, then calls `onClosed` once. */
   closing?: boolean;
   onClosed?: () => void;
@@ -904,7 +985,9 @@ export function AssistantPanel({
         key={site ? `${site.id}:${site.userId}` : "general"}
         site={site}
         focus={focus}
+        timetable={timetable}
         onOpenPage={onOpenPage}
+        onTimetable={onTimetable}
         onSettings={onSettings}
         onClose={onClose}
       />

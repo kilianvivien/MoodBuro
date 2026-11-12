@@ -7,11 +7,18 @@ MoodBuro hosts the **real Moodle site** in a macOS application, keeping your org
 
 ## Download and install
 
-**[Download MoodBuro 0.3.1 for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
+**[Download MoodBuro 0.3.2 for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
 
 The universal DMG includes **Apple Silicon and Intel** binaries, with macOS 12 as the configured minimum. Download the DMG and `SHA256SUMS.txt`, verify the checksum, then drag MoodBuro into Applications. Quit the app before replacing it during an upgrade.
 
-Version 0.3.1 is **ad-hoc signed and not notarized**. macOS may require first-launch approval in System Settings → Privacy & Security. From version 0.2.0, check for the update in Settings → General. For a first installation or an earlier version, install the DMG manually.
+Version 0.3.2 is **ad-hoc signed and not notarized**. macOS may require first-launch approval in System Settings → Privacy & Security. From version 0.2.0, check for the update in Settings → General. For a first installation or an earlier version, install the DMG manually.
+
+## What’s new in 0.3.2
+
+- **The AI assistant reads your timetable**: ask questions such as “What are my classes today, and where?”. It answers from the weeks saved in MoodBuro, with Paris times, rooms and speakers. Access is read-only, and the assistant only offers it for organisations with InspCal timetables when Moodle context is attached.
+- **Session cards in answers**: each cited session appears under the answer with its day, times, room, and whether it is remote or tentative. Choosing a card opens that week in Agenda › Timetable.
+- With Moodle context sharing on, the sessions the assistant looks up (title, times, room and speakers) are sent to the AI provider along with the rest of the context.
+- Timetable reading: support for the 16–20 November week (half-cohort headings, groups that wrap across lines, the vote end-time rule).
 
 ## Fixes in 0.3.1
 
@@ -45,7 +52,7 @@ If a session disappeared from a week saved with 0.3.0, reopen its choices and sa
 | Document readers | View supported PDF and Office documents in native reader windows. |
 | Optional AI assistant | Use Albert API or Mistral AI with your own key, attach Moodle context explicitly, follow sources and confirm proposed actions. |
 
-The assistant can find courses, activities, notifications, files and deadlines. Actions that change data or save a file require confirmation. Conversations stay in memory until quit.
+The assistant can find courses, activities, notifications, files and deadlines, as well as sessions from saved timetable weeks. Actions that change data or save a file require confirmation. Conversations stay in memory until quit.
 
 ## Useful shortcuts
 

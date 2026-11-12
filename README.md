@@ -5,7 +5,7 @@
 <p align="center"><strong>Votre Moodle, à sa place sur votre Mac.</strong><br/>Une application de bureau légère pour retrouver le Moodle de votre organisation.</p>
 <p align="center">
   <a href="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml"><img src="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
-  <img src="https://img.shields.io/badge/version-0.3.1-blue" alt="Version 0.3.1" />
+  <img src="https://img.shields.io/badge/version-0.3.2-blue" alt="Version 0.3.2" />
   <img src="https://img.shields.io/badge/Tauri-2-24c8db" alt="Tauri 2" />
   <img src="https://img.shields.io/badge/interface-FR%20%2F%20EN-007aff" alt="Interface français et anglais" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-green" alt="Licence MIT" /></a>
@@ -16,11 +16,18 @@ MoodBuro affiche **le vrai site Moodle** dans une application macOS, avec vos or
 
 ## Télécharger et installer
 
-**[Télécharger MoodBuro 0.3.1 pour macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
+**[Télécharger MoodBuro 0.3.2 pour macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
 
 Le DMG universel contient les versions **Apple Silicon et Intel**, avec macOS 12 comme version minimale configurée. Téléchargez le DMG et `SHA256SUMS.txt`, vérifiez la somme de contrôle, puis glissez MoodBuro dans Applications. Pour une mise à jour, quittez d’abord l’application.
 
-La version 0.3.1 utilise une **signature ad hoc et n’est pas notariée**. macOS peut demander d’autoriser sa première ouverture dans Réglages Système → Confidentialité et sécurité. Depuis la version 0.2.0, recherchez la mise à jour dans Réglages → Général. Pour une première installation ou depuis une version antérieure, installez le DMG manuellement.
+La version 0.3.2 utilise une **signature ad hoc et n’est pas notariée**. macOS peut demander d’autoriser sa première ouverture dans Réglages Système → Confidentialité et sécurité. Depuis la version 0.2.0, recherchez la mise à jour dans Réglages → Général. Pour une première installation ou depuis une version antérieure, installez le DMG manuellement.
+
+## Nouveautés de la version 0.3.2
+
+- **L’assistant IA consulte votre emploi du temps** : posez des questions comme « Quels sont mes cours aujourd’hui, et où ? ». Il répond à partir des semaines enregistrées dans MoodBuro, avec les horaires de Paris, les salles et les intervenants. L’accès est en lecture seule, et l’assistant ne propose cette fonction que pour les organisations dotées d’emplois du temps InspCal, lorsque le contexte Moodle est joint.
+- **Des cartes de séances dans les réponses** : chaque séance citée apparaît sous la réponse avec son jour, ses horaires et sa salle. Elle indique aussi si la séance est à distance ou provisoire, et ouvre la semaine dans Agenda › Emploi du temps.
+- Lorsque le partage du contexte Moodle est activé, les séances consultées par l’assistant (intitulé, horaires, salle et intervenants) sont envoyées au fournisseur d’IA, comme le reste du contexte.
+- Lecture des emplois du temps : prise en charge de la semaine du 16 au 20 novembre (en-têtes de demi-promotion, groupes sur plusieurs lignes, fin des votes).
 
 ## Correctifs de la version 0.3.1
 
@@ -54,7 +61,7 @@ Si une séance a disparu d’une semaine enregistrée avec la version 0.3.0, rou
 | Lecture de documents | Consulter les PDF et documents Office pris en charge dans des fenêtres de lecture natives. |
 | Assistant IA facultatif | Utiliser Albert API ou Mistral AI avec votre propre clé, joindre explicitement un contexte Moodle, consulter les sources et confirmer les actions proposées. |
 
-L’assistant peut notamment retrouver des cours, activités, notifications, fichiers et échéances. Les actions qui modifient des données ou enregistrent un fichier demandent une confirmation. Les conversations restent en mémoire jusqu’à la fermeture de l’application.
+L’assistant peut notamment retrouver des cours, activités, notifications, fichiers et échéances, ainsi que les séances des semaines d’emploi du temps enregistrées. Les actions qui modifient des données ou enregistrent un fichier demandent une confirmation. Les conversations restent en mémoire jusqu’à la fermeture de l’application.
 
 ## Raccourcis utiles
 

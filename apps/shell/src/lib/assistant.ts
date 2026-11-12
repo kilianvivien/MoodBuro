@@ -18,10 +18,10 @@ export const providers: readonly AssistantProvider[] = ["albert", "mistral"];
 export function withoutMarkers(text: string) {
   return text
     .replace(
-      / ?\[(?:course|activity|deadline|notification|file):\s*\d+\]/gu,
+      / ?\[(?:course|activity|deadline|notification|file|session):\s*\d+\]/gu,
       "",
     )
-    .replace(/ ?\[(?:c|a|d|n|f)[a-z]*(?::\s*\d*)?$/u, "");
+    .replace(/ ?\[(?:c|a|d|n|f|s)[a-z]*(?::\s*\d*)?$/u, "");
 }
 
 /** The context pop-up's value: nothing, the organisation, or one of its courses. */
@@ -95,6 +95,8 @@ export function noteText(
       return t.declined(label);
     case "write-failed":
       return t.writeFailed(label);
+    case "timetable":
+      return t.timetable;
     case "refused":
       return t.refused;
     case "stopped":

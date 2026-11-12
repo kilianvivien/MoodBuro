@@ -38,12 +38,16 @@ import {
   SessionDetails,
 } from "../components/timetable/SessionDetails";
 
-/** A timetable to read, from a Moodle link, a download or a course file. */
-export interface TimetableRequest {
+/**
+ * A timetable to read (from a Moodle link, a download or a course file), or a
+ * saved week to show with one session selected (from an assistant answer).
+ */
+export type TimetableTarget =
+  { source: TimetableSource } | { show: { date: string; uid: string | null } };
+export type TimetableRequest = {
   revision: number;
   siteId: string;
-  source: TimetableSource;
-}
+} & TimetableTarget;
 
 /** The preview on screen when Agenda was left, to show again on return. */
 let resumable: WeekView | null = null;
@@ -223,6 +227,16 @@ export function Timetable({
     // The native link token is single-use. Clear it in App as soon as the
     // request starts, so returning to Agenda cannot replay it after a remount.
     onRequestHandled?.(request);
+    if ("show" in request) {
+      // An unsaved preview on screen stays; it is never discarded from here.
+      if (draft) return;
+      setError(null);
+      setNotice(null);
+      setSiteId(target.id);
+      setMonday(mondayOf(request.show.date));
+      setSelected(request.show.uid);
+      return;
+    }
     void prepare(request.source, target);
   }, [request, sites]);
 

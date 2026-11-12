@@ -493,7 +493,7 @@ mod tests {
             ]),
         )
         .await;
-        let tools = tools::definitions();
+        let tools = tools::definitions(false);
         let reply = client
             .chat(
                 KEY,

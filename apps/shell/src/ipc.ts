@@ -290,14 +290,30 @@ export interface AssistantStatus {
 }
 /** A Moodle item an answer relied on; opened through `openPage`. */
 export interface AssistantSource {
-  kind: "course" | "activity" | "deadline" | "notification" | "file";
+  kind:
+    "course" | "activity" | "deadline" | "notification" | "file" | "session";
   id: number;
   page: MoodlePage;
   value: number | null;
   label: string;
   /** A course file: its course and resource key, to find the copy saved on this Mac. */
   course?: number;
+  /** A file's resource key, or a timetable session's UID. */
   key?: string;
+  /** A saved timetable session, shown as a card; times are Paris wall time. */
+  session?: AssistantSessionCard;
+}
+export interface AssistantSessionCard {
+  /** `YYYY-MM-DD`, inclusive. */
+  date: string;
+  lastDate: string;
+  /** `HH:MM`, Europe/Paris; absent for all-day sessions. */
+  start?: string | null;
+  end?: string | null;
+  location?: string | null;
+  allDay: boolean;
+  tentative: boolean;
+  remote: boolean;
 }
 export type AssistantNoteCode =
   | "courses"
@@ -305,6 +321,7 @@ export type AssistantNoteCode =
   | "agenda"
   | "notifications"
   | "files"
+  | "timetable"
   | "saved"
   | "save-failed"
   | "save-declined"
@@ -357,6 +374,7 @@ export type AssistantStep =
   | "agenda"
   | "notifications"
   | "files"
+  | "timetable"
   | "open"
   | "save"
   | "confirm";
@@ -622,6 +640,68 @@ const demoChat = (siteId: string | null) => {
   if (!demoChats.has(key)) demoChats.set(key, []);
   return demoChats.get(key)!;
 };
+/** A sample schedule answer: sessions from the demo week Agenda shows. */
+function demoTimetableAnswer(): AssistantEntry {
+  const now = new Date();
+  const monday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - ((now.getDay() + 6) % 7),
+  );
+  const date = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+  const session = (
+    id: number,
+    uid: string,
+    label: string,
+    start: string,
+    end: string,
+    location: string,
+    tentative = false,
+  ): AssistantSource => ({
+    kind: "session",
+    id,
+    page: "calendar-day",
+    value: null,
+    label,
+    key: uid,
+    session: {
+      date,
+      lastDate: date,
+      start,
+      end,
+      location,
+      allDay: false,
+      tentative,
+      remote: false,
+    },
+  });
+  return {
+    role: "assistant",
+    text: "Sample answer from the browser preview. On Monday you have the **opening lecture** from 09:00 to 10:30 in Amphi 1, then a workshop from 10:00. Lunch is free until the **sample coffee** at 13:00, which is still tentative.",
+    context: null,
+    sources: [
+      session(
+        1,
+        "demo-1",
+        "Conférence d’ouverture",
+        "09:00",
+        "10:30",
+        "Amphi 1",
+      ),
+      session(2, "demo-2", "Atelier en parallèle", "10:00", "12:00", "C101"),
+      session(
+        3,
+        "demo-10",
+        "Café exemple",
+        "13:00",
+        "13:45",
+        "Salle de réception",
+        true,
+      ),
+    ],
+    notes: [{ code: "timetable", label: null, age: null, stale: false }],
+  };
+}
 const assistantWidth = (width: number) =>
   Number.isFinite(width)
     ? Math.min(ASSISTANT_WIDTH.max, Math.max(ASSISTANT_WIDTH.min, width))
@@ -847,6 +927,15 @@ export const ipc = {
         notes: [],
       });
     await pause(900);
+    // The sample timetable organisation answers schedule questions with cards.
+    if (
+      prompt.context &&
+      prompt.siteId === "demo-2" &&
+      /class|cours|timetable|emploi|today|aujourd/iu.test(prompt.text ?? "")
+    ) {
+      chat.push(demoTimetableAnswer());
+      return [...chat];
+    }
     chat.push(
       prompt.context && course
         ? {

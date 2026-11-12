@@ -785,6 +785,7 @@ const en = {
       agenda: "Checking your agenda…",
       notifications: "Checking your notifications…",
       files: "Listing the course files…",
+      timetable: "Checking your timetable…",
       open: "Opening in Moodle…",
       save: "Saving the file…",
       confirm: "Waiting for your confirmation…",
@@ -803,12 +804,15 @@ const en = {
     openSource: (label: string) => `Open in Moodle: ${label}`,
     openFile: (label: string) =>
       `Show the copy saved on this Mac, or open in Moodle: ${label}`,
+    sessionCards: "Timetable sessions",
+    openSession: (label: string) => `Show in Timetable: ${label}`,
     suggestions: "Suggested questions",
     suggest: {
       due: "What is due this week?",
       news: "What is new in my notifications?",
       files: "Which files does this course have?",
       courses: "What are my courses?",
+      today: "What are my classes today, and where?",
     },
     setupTitle: "Set up the assistant",
     setupHint:
@@ -849,6 +853,7 @@ const en = {
       agenda: "Checked your agenda",
       notifications: "Checked notification subjects saved on this Mac",
       files: "Listed the course’s file names",
+      timetable: "Checked the timetable weeks saved on this Mac",
       saved: (label: string) => `Saved to your Moodle folder: ${label}`,
       saveFailed: (label: string) => `Could not save “${label}”.`,
       saveDeclined: (label: string) => `Not saved: ${label}`,
@@ -918,7 +923,7 @@ const en = {
         `Connected. ${formatNumber("en", count)} chat ${plural("en", count) === "one" ? "model is" : "models are"} available.`,
       consent: "Share Moodle context",
       consentHint: (provider: string) =>
-        `Turning this off stops the current answer and clears conversations. Off: the assistant only sees what you type. On: when you attach an organisation or a course to a message, MoodBuro also sends ${provider} the organisation name and the course names, saved activity names, course file names with their section and size, upcoming deadlines and notification subjects the assistant looks up. Sign-in tokens, cookies, API keys, your name, site addresses and file contents are never sent.`,
+        `Turning this off stops the current answer and clears conversations. Off: the assistant only sees what you type. On: when you attach an organisation or a course to a message, MoodBuro also sends ${provider} the organisation name and the course names, saved activity names, course file names with their section and size, upcoming deadlines, notification subjects and saved timetable sessions (title, times, room and speakers) the assistant looks up. Sign-in tokens, cookies, API keys, your name, site addresses and file contents are never sent.`,
       history: "Conversations",
       historyHint:
         "Kept in memory only, separately for each organisation account, until you quit MoodBuro. Nothing is written to disk.",
@@ -1767,6 +1772,7 @@ const fr: Messages = {
       agenda: "Consultation de votre agenda…",
       notifications: "Consultation de vos notifications…",
       files: "Consultation des fichiers du cours…",
+      timetable: "Consultation de votre emploi du temps…",
       open: "Ouverture dans Moodle…",
       save: "Enregistrement du fichier…",
       confirm: "En attente de votre confirmation…",
@@ -1786,12 +1792,16 @@ const fr: Messages = {
     openSource: (label: string) => `Ouvrir dans Moodle\u00a0: ${label}`,
     openFile: (label: string) =>
       `Afficher la copie enregistrée sur ce Mac, ou ouvrir dans Moodle\u00a0: ${label}`,
+    sessionCards: "Séances de l’emploi du temps",
+    openSession: (label: string) =>
+      `Afficher dans l’emploi du temps\u00a0: ${label}`,
     suggestions: "Questions suggérées",
     suggest: {
       due: "Qu’ai-je à rendre cette semaine\u00a0?",
       news: "Quoi de neuf dans mes notifications\u00a0?",
       files: "Quels fichiers contient ce cours\u00a0?",
       courses: "Quels sont mes cours\u00a0?",
+      today: "Quels sont mes cours aujourd’hui, et où\u00a0?",
     },
     setupTitle: "Configurer l’assistant",
     setupHint:
@@ -1833,6 +1843,8 @@ const fr: Messages = {
       notifications:
         "Objets des notifications enregistrés sur ce Mac consultés",
       files: "Noms des fichiers du cours consultés",
+      timetable:
+        "Semaines d’emploi du temps enregistrées sur ce Mac consultées",
       saved: (label: string) =>
         `Enregistré dans votre dossier Moodle\u00a0: ${label}`,
       saveFailed: (label: string) =>
@@ -1909,7 +1921,7 @@ const fr: Messages = {
         `Connexion établie. ${formatNumber("fr", count)} ${plural("fr", count) === "one" ? "modèle de discussion disponible" : "modèles de discussion disponibles"}.`,
       consent: "Partager le contexte Moodle",
       consentHint: (provider: string) =>
-        `Désactiver le partage arrête la réponse en cours et efface les conversations. Désactivé\u00a0: l’assistant ne voit que ce que vous saisissez. Activé\u00a0: lorsque vous joignez une organisation ou un cours à un message, MoodBuro envoie aussi à ${provider} le nom de l’organisation ainsi que les noms de cours, les noms d’activités enregistrées, les noms des fichiers de cours avec leur section et leur taille, les échéances à venir et les objets de notifications que l’assistant consulte. Les jetons de connexion, les cookies, les clés d’API, votre nom, les adresses des sites et le contenu des fichiers ne sont jamais envoyés.`,
+        `Désactiver le partage arrête la réponse en cours et efface les conversations. Désactivé\u00a0: l’assistant ne voit que ce que vous saisissez. Activé\u00a0: lorsque vous joignez une organisation ou un cours à un message, MoodBuro envoie aussi à ${provider} le nom de l’organisation ainsi que les noms de cours, les noms d’activités enregistrées, les noms des fichiers de cours avec leur section et leur taille, les échéances à venir, les objets de notifications et les séances d’emploi du temps enregistrées (intitulé, horaires, salle et intervenants) que l’assistant consulte. Les jetons de connexion, les cookies, les clés d’API, votre nom, les adresses des sites et le contenu des fichiers ne sont jamais envoyés.`,
       history: "Conversations",
       historyHint:
         "Conservées en mémoire uniquement, séparément pour chaque compte d’organisation, jusqu’à ce que vous quittiez MoodBuro. Rien n’est écrit sur le disque.",

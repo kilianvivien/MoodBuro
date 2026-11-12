@@ -36,8 +36,12 @@ import { QuickOpen, type QuickTarget } from "./components/QuickOpen";
 import { Inbox } from "./views/Inbox";
 import { Courses } from "./views/Courses";
 import { Agenda } from "./views/Agenda";
-import type { TimetableRequest } from "./views/Timetable";
-import { timetable, type TimetableStatus } from "./lib/timetable";
+import type { TimetableRequest, TimetableTarget } from "./views/Timetable";
+import {
+  timetable,
+  type TimetableSource,
+  type TimetableStatus,
+} from "./lib/timetable";
 import { TimetableSettings } from "./views/TimetableSettings";
 import { Toolbar } from "./components/Toolbar";
 import { Uploads } from "./views/Uploads";
@@ -111,11 +115,16 @@ export default function App() {
   }, [sites]);
   /** Read a timetable in Agenda › Week, from any entry point. */
   const openTimetable = useEffectEvent(
-    (siteId: string, source: TimetableRequest["source"]) => {
+    (siteId: string, source: TimetableSource) =>
+      showTimetable(siteId, { source }),
+  );
+  /** Agenda › Week for a timetable to read, or a saved week to show. */
+  const showTimetable = useEffectEvent(
+    (siteId: string, target: TimetableTarget) => {
       setTimetableRequest((previous) => ({
-        revision: (previous?.revision ?? 0) + 1,
+        ...target,
         siteId,
-        source,
+        revision: (previous?.revision ?? 0) + 1,
       }));
       void showLocal("agenda");
     },
@@ -832,8 +841,12 @@ export default function App() {
             focus={assistantFocus}
             closing={assistantClosing}
             onClosed={() => void closeAssistant()}
+            timetable={!!site && timetableIds.includes(site.id)}
             onOpenPage={(source, siteId) =>
               void openPage(siteId, source.page, source.value ?? undefined)
+            }
+            onTimetable={(siteId, date, uid) =>
+              showTimetable(siteId, { show: { date, uid } })
             }
             onSettings={() => void showSettings("assistant")}
             onClose={() => void toggleAssistant()}

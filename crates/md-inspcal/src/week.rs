@@ -164,6 +164,17 @@ pub fn paris_noon(date: &str) -> Option<i64> {
     paris_instant(day, Time::new(12, 0)?)
 }
 
+/// The Europe/Paris wall date (`YYYY-MM-DD`) at an instant, under the same EU
+/// rule as `paris_instant`: what "today" means for the school's timetable.
+pub fn paris_date(instant: i64) -> String {
+    let year = Date::from_days(instant.div_euclid(86_400)).year;
+    let summer = year >= 1996
+        && instant >= last_sunday(year, 3) * 86_400 + 3_600
+        && instant < last_sunday(year, 10) * 86_400 + 3_600;
+    let offset = if summer { 7_200 } else { 3_600 };
+    Date::from_days((instant + offset).div_euclid(86_400)).iso()
+}
+
 /// Last Sunday of a month, as days since 1970-01-01.
 fn last_sunday(year: i32, month: u32) -> i64 {
     let last =
@@ -298,6 +309,27 @@ mod tests {
             at(2026, 10, 25, 3, 0).unwrap() - at(2026, 10, 25, 1, 59).unwrap(),
             2 * 3_600 + 60
         );
+    }
+
+    #[test]
+    fn paris_dates_switch_at_local_midnight_across_daylight_saving() {
+        // Winter: 23:00 UTC is already the next day in Paris (UTC+1).
+        assert_eq!(paris_date(at(2026, 11, 10, 0, 0).unwrap()), "2026-11-10");
+        assert_eq!(
+            paris_date(at(2026, 11, 10, 0, 0).unwrap() - 1),
+            "2026-11-09"
+        );
+        assert_eq!(paris_date(1_794_265_200), "2026-11-10"); // 2026-11-09T23:00Z
+                                                             // Summer: 22:00 UTC is already the next day (UTC+2).
+        assert_eq!(paris_date(1_782_943_200), "2026-07-02"); // 2026-07-01T22:00Z
+        assert_eq!(paris_date(1_782_943_199), "2026-07-01");
+        // Both changeover days, before and after the switch.
+        assert_eq!(paris_date(at(2026, 3, 29, 1, 59).unwrap()), "2026-03-29");
+        assert_eq!(paris_date(at(2026, 3, 29, 3, 0).unwrap()), "2026-03-29");
+        assert_eq!(paris_date(at(2026, 10, 25, 3, 0).unwrap()), "2026-10-25");
+        assert_eq!(paris_date(at(2026, 10, 25, 23, 59).unwrap()), "2026-10-25");
+        // New Year in Paris happens at 23:00 UTC.
+        assert_eq!(paris_date(1_798_758_000), "2027-01-01"); // 2026-12-31T23:00Z
     }
 
     #[test]
