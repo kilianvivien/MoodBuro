@@ -131,9 +131,14 @@ pub fn arm(app: &AppHandle, id: &str, destination: Option<Url>) {
 }
 
 #[cfg(target_os = "macos")]
-pub fn arm_after_view_rebuild(app: &AppHandle, id: &str) {
+pub fn arm_after_view_rebuild(app: &AppHandle, id: &str, destination: Option<Url>) {
     cancel(app, id);
-    arm_with_delay(app, id, None, rebuild_delay(last_mint(app, id), now()));
+    arm_with_delay(
+        app,
+        id,
+        destination,
+        rebuild_delay(last_mint(app, id), now()),
+    );
 }
 
 #[cfg(any(target_os = "macos", test))]

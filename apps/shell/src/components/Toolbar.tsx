@@ -96,27 +96,29 @@ export function Toolbar({
       </button>
     </div>
   );
+  const sessionMessage =
+    recovery &&
+    (recovery.phase === "waiting"
+      ? t.toolbar.sessionWaiting(
+          i18n.date(recovery.retryAt * 1000, {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        )
+      : recovery.phase === "retrying"
+        ? t.toolbar.sessionRetrying
+        : t.toolbar.sessionFailed);
   const session = !alert && recovery && (
     <div
       className="toolbar-alert session-recovery"
       role="status"
-      title={t.toolbar.sessionHelp}
+      // The pill truncates in narrow windows; the tooltip keeps the full message.
+      title={`${sessionMessage}\n\n${t.toolbar.sessionHelp}`}
     >
       {recovery.phase !== "failed" && (
         <LoaderCircle className="spin" {...icon} />
       )}
-      <span>
-        {recovery.phase === "waiting"
-          ? t.toolbar.sessionWaiting(
-              i18n.date(recovery.retryAt * 1000, {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-            )
-          : recovery.phase === "retrying"
-            ? t.toolbar.sessionRetrying
-            : t.toolbar.sessionFailed}
-      </span>
+      <span>{sessionMessage}</span>
     </div>
   );
   const feedback = !alert && !session && downloadFeedback && (

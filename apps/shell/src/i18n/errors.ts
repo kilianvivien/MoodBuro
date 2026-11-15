@@ -321,6 +321,8 @@ const french: Record<string, string> = {
     "Impossible de redimensionner la vue Moodle.",
   "Could not show the Moodle view.": "Impossible d’afficher la vue Moodle.",
   "Could not renew the Moodle view.": "Impossible de renouveler la vue Moodle.",
+  "Moodle is still unreachable. Reload the page once you are back online.":
+    "Moodle reste injoignable. Rechargez la page une fois la connexion rétablie.",
   "Could not close the Moodle view.": "Impossible de fermer la vue Moodle.",
   "Could not switch sites.": "Impossible de changer de site.",
   "Could not access the site’s browser data.":

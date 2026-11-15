@@ -92,10 +92,12 @@ define_class!(
                                 &ivars.app, &ivars.site, &ivars.base, url,
                             );
                         }
-                        let eligible = !action.shouldPerformDownload()
-                            && method.as_deref() == Some("GET")
-                            && url.is_some_and(|url| view_recovery::browse_page(&ivars.base, &url));
-                        recovery.policy(eligible);
+                        let target = url.filter(|url| {
+                            !action.shouldPerformDownload()
+                                && method.as_deref() == Some("GET")
+                                && view_recovery::browse_page(&ivars.base, url)
+                        });
+                        recovery.policy(target);
                     }
                 }
                 // A missing target frame means a new window; that stays with the popup policy.
@@ -382,7 +384,7 @@ pub fn remove(app: &tauri::AppHandle, label: &str) {
         GUARDS.with(|guards| {
             if let Some(guard) = guards.borrow_mut().remove(&label) {
                 if let Some(recovery) = &guard.ivars().recovery {
-                    recovery.policy(false);
+                    recovery.policy(None);
                 }
             }
         });

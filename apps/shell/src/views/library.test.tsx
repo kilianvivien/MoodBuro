@@ -535,8 +535,8 @@ describe("Moodle session recovery notice", () => {
         expect(html).toContain(
           phase === "waiting"
             ? locale === "en"
-              ? "retry at"
-              : "nouvel essai à"
+              ? "or wait until"
+              : "ou patientez jusqu’à"
             : phase === "retrying"
               ? locale === "en"
                 ? "Restoring"

@@ -551,12 +551,11 @@ const en = {
     uploads: "Assignment Draft",
     quickOpen: "Quick Open (⌘K)",
     sessionWaiting: (time: string) =>
-      `Enter your password on Moodle now, or wait for the retry at ${time}.`,
+      `Enter your password on Moodle, or wait until ${time}.`,
     sessionRetrying: "Restoring your Moodle session…",
-    sessionFailed:
-      "Automatic sign-in failed. Enter your password on the Moodle page or reconnect in Settings.",
+    sessionFailed: "Sign-in failed. Enter your password on Moodle.",
     sessionHelp:
-      "Moodle temporarily limits automatic sign-in after a recent login (normally about six minutes; your site may use a longer delay). Your credentials are still saved. MoodBuro retries once at the displayed time while running; you can also sign in manually.",
+      "Moodle temporarily limits automatic sign-in after a recent login (normally about six minutes; your site may use a longer delay). Your credentials are still saved. MoodBuro retries once at the displayed time while running. You can also enter your password on the Moodle page, or reconnect in Settings.",
     home: "Moodle Home",
     backToMoodle: "Back to Moodle",
     popup: "Moodle window",
@@ -1529,12 +1528,12 @@ const fr: Messages = {
     uploads: "Brouillon de devoir",
     quickOpen: "Ouverture rapide (⌘K)",
     sessionWaiting: (time: string) =>
-      `Saisissez votre mot de passe sur Moodle ou attendez le nouvel essai à ${time}.`,
+      `Saisissez votre mot de passe ou patientez jusqu’à ${time}.`,
     sessionRetrying: "Restauration de votre session Moodle…",
     sessionFailed:
-      "Échec de la connexion automatique. Saisissez votre mot de passe sur Moodle ou reconnectez-vous dans les réglages.",
+      "Échec de la connexion. Saisissez votre mot de passe sur Moodle.",
     sessionHelp:
-      "Moodle limite temporairement la connexion automatique après une connexion récente (normalement environ six minutes\u00a0; votre site peut imposer un délai plus long). Vos identifiants sont conservés. MoodBuro réessaie une fois à l’heure indiquée tant que l’application reste ouverte. Vous pouvez aussi vous connecter manuellement.",
+      "Moodle limite temporairement la connexion automatique après une connexion récente (normalement environ six minutes\u00a0; votre site peut imposer un délai plus long). Vos identifiants sont conservés. MoodBuro réessaie une fois à l’heure indiquée tant que l’application reste ouverte. Vous pouvez aussi saisir votre mot de passe sur la page Moodle ou vous reconnecter dans les réglages.",
     home: "Accueil Moodle",
     backToMoodle: "Retour à Moodle",
     popup: "Fenêtre Moodle",

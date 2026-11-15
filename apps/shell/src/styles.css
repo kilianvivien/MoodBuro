@@ -518,7 +518,8 @@ ol {
 /* Title above subtitle, as an NSWindow title/subtitle pair. */
 .toolbar-title {
   flex: 1;
-  min-width: 0;
+  /* Keep a readable site name; a toolbar alert truncates first. */
+  min-width: 88px;
   display: flex;
   flex-direction: column;
   justify-content: center;
