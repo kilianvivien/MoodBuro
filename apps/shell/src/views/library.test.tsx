@@ -507,7 +507,7 @@ describe("calendar export date selection", () => {
 });
 
 describe("Moodle session recovery notice", () => {
-  it("explains the wait in both languages and shows retry and failure states", () => {
+  it("prompts for the Moodle password during cooldown in both languages", () => {
     for (const locale of ["en", "fr"] as const) {
       for (const phase of ["waiting", "retrying", "failed"] as const) {
         const html = inLocale(
@@ -524,12 +524,19 @@ describe("Moodle session recovery notice", () => {
           />,
         );
         expect(html).toContain('role="status"');
-        expect(html).toContain(locale === "en" ? "six minutes" : "six minutes");
+        expect(html).toContain("six minutes");
+        if (phase !== "retrying") {
+          expect(html).toContain(
+            locale === "en"
+              ? "Enter your password"
+              : "Saisissez votre mot de passe",
+          );
+        }
         expect(html).toContain(
           phase === "waiting"
             ? locale === "en"
-              ? "Retrying at"
-              : "Nouvel essai à"
+              ? "retry at"
+              : "nouvel essai à"
             : phase === "retrying"
               ? locale === "en"
                 ? "Restoring"

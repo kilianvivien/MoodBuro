@@ -13,6 +13,10 @@ pub enum Event {
     RetryFinished,
     PrivateTokenPresent,
     PrivateTokenAbsent,
+    #[cfg(target_os = "macos")]
+    ViewRecoveryStarted,
+    #[cfg(target_os = "macos")]
+    ViewRebuilt,
 }
 pub fn record(event: Event) {
     #[cfg(debug_assertions)]
@@ -33,6 +37,10 @@ pub fn record(event: Event) {
             Event::SessionRestored => "one-use autologin navigation started",
             Event::BrowserSessionFallback =>
                 "autologin unavailable; using retained browser session",
+            #[cfg(target_os = "macos")]
+            Event::ViewRecoveryStarted => "checking the Moodle session before rebuilding its view",
+            #[cfg(target_os = "macos")]
+            Event::ViewRebuilt => "rebuilt the Moodle browser view",
         }
     );
     #[cfg(not(debug_assertions))]

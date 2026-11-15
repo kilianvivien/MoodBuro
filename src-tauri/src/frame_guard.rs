@@ -9,16 +9,23 @@
 //! the file Save to Downloads asked for again. With the default preferences every
 //! response is forwarded untouched. WebKit then hands the
 //! transfer to Wry's download delegate, so it follows the one managed download path.
+//! On the main site view it also observes WebKit failures for browser recovery.
 //! This compatibility adapter requires regression checks across macOS releases.
+use crate::view_recovery::{self, Recovery};
 use objc2::{
     define_class, msg_send,
     rc::Retained,
     runtime::{AnyObject, NSObject, ProtocolObject, Sel},
-    DefinedClass, MainThreadOnly,
+    sel, DefinedClass, MainThreadOnly,
 };
-use objc2_foundation::{MainThreadMarker, NSHTTPURLResponse, NSObjectProtocol, NSString};
+use objc2_foundation::{
+    MainThreadMarker, NSError, NSHTTPURLResponse, NSObjectProtocol, NSString,
+    NSURLErrorCannotConnectToHost, NSURLErrorCannotFindHost, NSURLErrorDNSLookupFailed,
+    NSURLErrorDomain, NSURLErrorNetworkConnectionLost, NSURLErrorNotConnectedToInternet,
+    NSURLErrorTimedOut,
+};
 use objc2_web_kit::{
-    WKDownload, WKNavigationAction, WKNavigationActionPolicy, WKNavigationDelegate,
+    WKDownload, WKNavigation, WKNavigationAction, WKNavigationActionPolicy, WKNavigationDelegate,
     WKNavigationResponse, WKNavigationResponsePolicy, WKWebView,
 };
 use std::{
@@ -33,6 +40,7 @@ struct Ivars {
     app: AppHandle,
     site: String,
     base: url::Url,
+    recovery: Option<Recovery>,
     /// Set by Save to Downloads; the next top-level response is saved, once.
     save_next: Cell<Option<Instant>>,
 }
@@ -69,10 +77,29 @@ define_class!(
             handler: &block2::DynBlock<dyn Fn(WKNavigationActionPolicy)>,
         ) {
             unsafe {
+                let target_frame = action.targetFrame();
+                if let Some(recovery) = self.ivars().recovery.as_ref() {
+                    if target_frame.as_ref().is_some_and(|frame| frame.isMainFrame()) {
+                        let ivars = self.ivars();
+                        let request = action.request();
+                        let method = request.HTTPMethod().map(|method| method.to_string());
+                        let url = request
+                            .URL()
+                            .and_then(|url| url.absoluteString())
+                            .and_then(|url| url::Url::parse(&url.to_string()).ok());
+                        if let Some(url) = url.as_ref().filter(|_| method.as_deref() == Some("POST")) {
+                            crate::session_restore::login_submitted(
+                                &ivars.app, &ivars.site, &ivars.base, url,
+                            );
+                        }
+                        let eligible = !action.shouldPerformDownload()
+                            && method.as_deref() == Some("GET")
+                            && url.is_some_and(|url| view_recovery::browse_page(&ivars.base, &url));
+                        recovery.policy(eligible);
+                    }
+                }
                 // A missing target frame means a new window; that stays with the popup policy.
-                let embedded = action
-                    .targetFrame()
-                    .is_some_and(|frame| !frame.isMainFrame());
+                let embedded = target_frame.is_some_and(|frame| !frame.isMainFrame());
                 if embedded && !action.shouldPerformDownload() {
                     let target = action
                         .request()
@@ -110,6 +137,67 @@ define_class!(
                     );
             }
         }
+        #[unsafe(method(webView:didStartProvisionalNavigation:))]
+        fn started(&self, view: &WKWebView, navigation: Option<&WKNavigation>) {
+            let ivars = self.ivars();
+            if let (Some(recovery), Some(navigation)) = (&ivars.recovery, navigation) {
+                recovery.started(std::ptr::from_ref(navigation) as usize);
+            }
+            if ivars.original.respondsToSelector(sel!(webView:didStartProvisionalNavigation:)) {
+                unsafe { ivars.original.webView_didStartProvisionalNavigation(view, navigation) };
+            }
+        }
+        #[unsafe(method(webView:didCommitNavigation:))]
+        fn committed(&self, view: &WKWebView, navigation: Option<&WKNavigation>) {
+            let ivars = self.ivars();
+            if let (Some(recovery), Some(navigation)) = (&ivars.recovery, navigation) {
+                recovery.committed(std::ptr::from_ref(navigation) as usize);
+            }
+            unsafe { ivars.original.webView_didCommitNavigation(view, navigation) };
+        }
+        #[unsafe(method(webView:didFinishNavigation:))]
+        fn finished(&self, view: &WKWebView, navigation: Option<&WKNavigation>) {
+            if let (Some(recovery), Some(navigation)) = (&self.ivars().recovery, navigation) {
+                recovery.ended(std::ptr::from_ref(navigation) as usize, false);
+            }
+            unsafe { self.ivars().original.webView_didFinishNavigation(view, navigation) };
+        }
+        #[unsafe(method(webView:didFailProvisionalNavigation:withError:))]
+        fn provisional_failure(
+            &self,
+            view: &WKWebView,
+            navigation: Option<&WKNavigation>,
+            error: &NSError,
+        ) {
+            self.failed(navigation, error);
+            let original = &self.ivars().original;
+            if original.respondsToSelector(sel!(webView:didFailProvisionalNavigation:withError:)) {
+                unsafe {
+                    original.webView_didFailProvisionalNavigation_withError(view, navigation, error)
+                };
+            }
+        }
+        #[unsafe(method(webView:didFailNavigation:withError:))]
+        fn committed_failure(
+            &self,
+            view: &WKWebView,
+            navigation: Option<&WKNavigation>,
+            error: &NSError,
+        ) {
+            self.failed(navigation, error);
+            let original = &self.ivars().original;
+            if original.respondsToSelector(sel!(webView:didFailNavigation:withError:)) {
+                unsafe { original.webView_didFailNavigation_withError(view, navigation, error) };
+            }
+        }
+        #[unsafe(method(webViewWebContentProcessDidTerminate:))]
+        fn process_terminated(&self, view: &WKWebView) {
+            let ivars = self.ivars();
+            if let Some(recovery) = &ivars.recovery {
+                recovery.terminated();
+            }
+            unsafe { ivars.original.webViewWebContentProcessDidTerminate(view) };
+        }
     }
     impl FrameGuard {
         #[unsafe(method(forwardingTargetForSelector:))]
@@ -119,6 +207,14 @@ define_class!(
     }
 );
 impl FrameGuard {
+    fn failed(&self, navigation: Option<&WKNavigation>, error: &NSError) {
+        if let (Some(recovery), Some(navigation)) = (&self.ivars().recovery, navigation) {
+            let connection_failed = &*error.domain() == unsafe { NSURLErrorDomain }
+                && is_connection_failure(error.code());
+            recovery.ended(std::ptr::from_ref(navigation) as usize, connection_failed);
+        }
+    }
+
     /// Whether this top-level response goes to managed downloads instead of the page.
     fn captures(&self, response: &WKNavigationResponse) -> bool {
         let ivars = self.ivars();
@@ -190,6 +286,29 @@ impl FrameGuard {
 }
 thread_local! { static GUARDS: RefCell<HashMap<String, Retained<FrameGuard>>> = RefCell::new(HashMap::new()); }
 
+fn is_connection_failure(code: isize) -> bool {
+    [
+        NSURLErrorTimedOut,
+        NSURLErrorCannotFindHost,
+        NSURLErrorCannotConnectToHost,
+        NSURLErrorNetworkConnectionLost,
+        NSURLErrorDNSLookupFailed,
+        NSURLErrorNotConnectedToInternet,
+    ]
+    .contains(&code)
+}
+
+/// Must run on the main thread, where the native delegates are installed.
+pub fn is_current_recovery(site: &str, recovery: &Recovery) -> bool {
+    GUARDS.with(|guards| {
+        guards
+            .borrow()
+            .get(&format!("site-{site}"))
+            .and_then(|guard| guard.ivars().recovery.as_ref())
+            .is_some_and(|current| recovery.same_view(current))
+    })
+}
+
 pub fn install(
     app: &AppHandle,
     view: &tauri::Webview,
@@ -222,6 +341,8 @@ pub fn install(
                     .alloc::<FrameGuard>()
                     .set_ivars(Ivars {
                         original,
+                        recovery: (label == format!("site-{site}"))
+                            .then(|| Recovery::new(app.clone(), site.clone())),
                         app,
                         site,
                         base,
@@ -259,7 +380,25 @@ pub fn remove(app: &tauri::AppHandle, label: &str) {
     let label = label.to_owned();
     let _ = app.run_on_main_thread(move || {
         GUARDS.with(|guards| {
-            guards.borrow_mut().remove(&label);
+            if let Some(guard) = guards.borrow_mut().remove(&label) {
+                if let Some(recovery) = &guard.ivars().recovery {
+                    recovery.policy(false);
+                }
+            }
         });
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use objc2_foundation::{NSURLErrorCancelled, NSURLErrorServerCertificateUntrusted};
+
+    #[test]
+    fn navigation_cancellation_and_certificate_errors_do_not_trigger_recovery() {
+        assert!(is_connection_failure(NSURLErrorNetworkConnectionLost));
+        assert!(is_connection_failure(NSURLErrorNotConnectedToInternet));
+        assert!(!is_connection_failure(NSURLErrorCancelled));
+        assert!(!is_connection_failure(NSURLErrorServerCertificateUntrusted));
+    }
 }

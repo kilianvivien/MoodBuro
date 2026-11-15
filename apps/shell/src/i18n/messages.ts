@@ -551,10 +551,10 @@ const en = {
     uploads: "Assignment Draft",
     quickOpen: "Quick Open (⌘K)",
     sessionWaiting: (time: string) =>
-      `Moodle limits automatic sign-in. Retrying at ${time}.`,
+      `Enter your password on Moodle now, or wait for the retry at ${time}.`,
     sessionRetrying: "Restoring your Moodle session…",
     sessionFailed:
-      "Automatic sign-in failed. Sign in to Moodle or reconnect in Settings.",
+      "Automatic sign-in failed. Enter your password on the Moodle page or reconnect in Settings.",
     sessionHelp:
       "Moodle temporarily limits automatic sign-in after a recent login (normally about six minutes; your site may use a longer delay). Your credentials are still saved. MoodBuro retries once at the displayed time while running; you can also sign in manually.",
     home: "Moodle Home",
@@ -1529,10 +1529,10 @@ const fr: Messages = {
     uploads: "Brouillon de devoir",
     quickOpen: "Ouverture rapide (⌘K)",
     sessionWaiting: (time: string) =>
-      `Moodle limite la connexion automatique. Nouvel essai à ${time}.`,
+      `Saisissez votre mot de passe sur Moodle ou attendez le nouvel essai à ${time}.`,
     sessionRetrying: "Restauration de votre session Moodle…",
     sessionFailed:
-      "Échec de la connexion automatique. Connectez-vous à Moodle ou via les Réglages.",
+      "Échec de la connexion automatique. Saisissez votre mot de passe sur Moodle ou reconnectez-vous dans les réglages.",
     sessionHelp:
       "Moodle limite temporairement la connexion automatique après une connexion récente (normalement environ six minutes\u00a0; votre site peut imposer un délai plus long). Vos identifiants sont conservés. MoodBuro réessaie une fois à l’heure indiquée tant que l’application reste ouverte. Vous pouvez aussi vous connecter manuellement.",
     home: "Accueil Moodle",

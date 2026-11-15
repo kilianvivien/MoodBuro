@@ -135,6 +135,8 @@ pub fn switch_at(app: &AppHandle, id: &str, target: Option<url::Url>) -> Result<
         .find(|s| s.id == id)
         .ok_or("Unknown site.")?;
     let label = format!("site-{id}");
+    #[cfg(target_os = "macos")]
+    let mut initial_target = None;
     if let Some(view) = app.get_webview(&label) {
         if let Some(target) = target {
             view.navigate(target).map_err(|_| "Navigation failed.")?;
@@ -151,44 +153,49 @@ pub fn switch_at(app: &AppHandle, id: &str, target: Option<url::Url>) -> Result<
         let download_user = site.user_id;
         let popup_app = app.clone();
         let popup_site = site.clone();
-        let builder = WebviewBuilder::new(
-            &label,
-            WebviewUrl::External(
-                target.unwrap_or(base.join("my/").map_err(|_| "Invalid site URL.")?),
-            ),
-        )
-        .on_page_load(move |view, payload| {
-            if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished) {
-                crate::session_restore::loaded(
-                    view.app_handle(),
-                    &load_site,
-                    &load_base,
-                    payload.url(),
-                );
-            }
-        })
-        .on_navigation(move |target| {
-            crate::session_restore::navigation(&handle, &navigation_site, &policy_base, target);
-            match navigation(&policy_base, target) {
-                Navigation::Allow => true,
-                Navigation::External => {
-                    if md_moodle::shareable_url(target) {
-                        let _ = handle.opener().open_url(target.as_str(), None::<&str>);
-                    }
-                    false
+        let url = target.unwrap_or(base.join("my/").map_err(|_| "Invalid site URL.")?);
+        #[cfg(target_os = "macos")]
+        let url = {
+            // Observe the first Moodle load as well. Install the native delegate
+            // before navigating away from the empty bootstrap view.
+            initial_target = Some(url);
+            url::Url::parse("about:blank").expect("blank URL")
+        };
+        let builder = WebviewBuilder::new(&label, WebviewUrl::External(url))
+            .on_page_load(move |view, payload| {
+                if matches!(payload.event(), tauri::webview::PageLoadEvent::Finished)
+                    && payload.url().origin() == load_base.origin()
+                {
+                    crate::session_restore::loaded(
+                        view.app_handle(),
+                        &load_site,
+                        &load_base,
+                        payload.url(),
+                    );
                 }
-                Navigation::Block => false,
-            }
-        })
-        .on_download(move |_, event| {
-            crate::downloads::handle_for_user(
-                &download_app,
-                &download_site,
-                event,
-                Some(download_user),
-            )
-        })
-        .on_new_window(move |url, features| popup(&popup_app, &popup_site, url, features));
+            })
+            .on_navigation(move |target| {
+                crate::session_restore::navigation(&handle, &navigation_site, &policy_base, target);
+                match navigation(&policy_base, target) {
+                    Navigation::Allow => true,
+                    Navigation::External => {
+                        if md_moodle::shareable_url(target) {
+                            let _ = handle.opener().open_url(target.as_str(), None::<&str>);
+                        }
+                        false
+                    }
+                    Navigation::Block => false,
+                }
+            })
+            .on_download(move |_, event| {
+                crate::downloads::handle_for_user(
+                    &download_app,
+                    &download_site,
+                    event,
+                    Some(download_user),
+                )
+            })
+            .on_new_window(move |url, features| popup(&popup_app, &popup_site, url, features));
         let builder = profile(builder, id)?;
         app.get_window("main")
             .ok_or("Main window missing.")?
@@ -213,14 +220,31 @@ pub fn switch_at(app: &AppHandle, id: &str, target: Option<url::Url>) -> Result<
     }
     resize(app).map_err(|_| "Could not resize the Moodle view.")?;
     hide_sites(app).map_err(|_| "Could not switch sites.")?;
-    app.get_webview(&label)
-        .ok_or("Moodle view missing.")?
-        .show()
-        .map_err(|_| "Could not show the Moodle view.")?;
+    let view = app.get_webview(&label).ok_or("Moodle view missing.")?;
+    view.show().map_err(|_| "Could not show the Moodle view.")?;
     *app.state::<AppState>()
         .active
         .lock()
         .map_err(|_| "Site state unavailable.")? = Some(id.to_owned());
+    #[cfg(target_os = "macos")]
+    if let Some(target) = initial_target {
+        view.navigate(target).map_err(|_| "Navigation failed.")?;
+    }
+    Ok(())
+}
+
+/// Close the site view and its native delegates, keeping its browser profile.
+pub fn close_site_view(app: &AppHandle, id: &str) -> tauri::Result<()> {
+    let label = format!("site-{id}");
+    if let Some(view) = app.get_webview(&label) {
+        view.close()?;
+        #[cfg(target_os = "macos")]
+        {
+            crate::pdf_save::remove(app, &label);
+            crate::timetable_menu::remove(app, &label);
+            crate::frame_guard::remove(app, &label);
+        }
+    }
     Ok(())
 }
 
@@ -615,6 +639,10 @@ pub async fn history_state(view: &tauri::Webview, base: url::Url) -> Result<(boo
 /// Raise the trusted shell over sibling Moodle views without unloading/hiding them.
 /// CSS makes only the content area transparent while the palette is open.
 pub fn quick_open(app: &AppHandle, open: bool) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    app.state::<AppState>()
+        .quick_open_visible
+        .store(open, std::sync::atomic::Ordering::Relaxed);
     let label = if open {
         Some("shell".to_owned())
     } else {

@@ -127,14 +127,37 @@ pub fn minted(app: &AppHandle, id: &str) {
 }
 
 pub fn arm(app: &AppHandle, id: &str, destination: Option<Url>) {
-    let state = app.state::<AppState>();
-    let last = state
+    arm_with_delay(app, id, destination, retry_delay(last_mint(app, id), now()));
+}
+
+#[cfg(target_os = "macos")]
+pub fn arm_after_view_rebuild(app: &AppHandle, id: &str) {
+    cancel(app, id);
+    arm_with_delay(app, id, None, rebuild_delay(last_mint(app, id), now()));
+}
+
+#[cfg(any(target_os = "macos", test))]
+fn rebuild_delay(last: Option<i64>, now: i64) -> Duration {
+    let wait = LOCKOUT + MARGIN as i64;
+    last.map(|last| now.saturating_sub(last))
+        .filter(|elapsed| (0..wait).contains(elapsed))
+        .map_or(Duration::ZERO, |elapsed| {
+            Duration::from_secs((wait - elapsed) as u64)
+        })
+}
+
+fn last_mint(app: &AppHandle, id: &str) -> Option<i64> {
+    app.state::<AppState>()
         .store
         .lock()
         .ok()
-        .and_then(|s| s.last_autologin_mint(id).ok().flatten());
+        .and_then(|store| store.last_autologin_mint(id).ok().flatten())
+}
+
+fn arm_with_delay(app: &AppHandle, id: &str, destination: Option<Url>, delay: Duration) {
+    let state = app.state::<AppState>();
     if let Ok(mut restores) = state.restores.lock() {
-        restores.arm(id, destination, retry_delay(last, now()));
+        restores.arm(id, destination, delay);
     };
 }
 
@@ -150,6 +173,13 @@ fn login_page(base: &Url, url: &Url) -> bool {
         && ["login/", "login/index.php"]
             .iter()
             .any(|path| base.join(path).is_ok_and(|u| u.path() == url.path()))
+}
+
+#[cfg(target_os = "macos")]
+pub fn login_submitted(app: &AppHandle, id: &str, base: &Url, url: &Url) {
+    if login_page(base, url) {
+        cancel(app, id);
+    }
 }
 
 pub fn navigation(app: &AppHandle, id: &str, base: &Url, url: &Url) {
@@ -300,6 +330,14 @@ mod tests {
         assert_eq!(retry_delay(Some(0), 1000).as_secs(), 365);
         assert_eq!(retry_delay(Some(2000), 1000).as_secs(), 365);
         assert_eq!(retry_delay(Some(i64::MIN), i64::MAX).as_secs(), 365);
+    }
+    #[test]
+    fn rebuilt_view_only_waits_for_a_known_cooldown() {
+        assert_eq!(rebuild_delay(Some(900), 1000).as_secs(), 265);
+        assert_eq!(rebuild_delay(None, 1000), Duration::ZERO);
+        assert_eq!(rebuild_delay(Some(640), 1000).as_secs(), 5);
+        assert_eq!(rebuild_delay(Some(635), 1000), Duration::ZERO);
+        assert_eq!(rebuild_delay(Some(2000), 1000), Duration::ZERO);
     }
     #[test]
     fn login_detection_respects_origin_and_installation_path() {

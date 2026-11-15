@@ -35,6 +35,8 @@ mod timetable_review;
 mod tray;
 mod updates;
 mod uploads;
+#[cfg(target_os = "macos")]
+mod view_recovery;
 mod window_state;
 mod windows;
 use std::sync::Mutex;
@@ -52,6 +54,10 @@ pub struct AppState {
     pending: Mutex<Option<String>>,
     switching: tauri::async_runtime::Mutex<()>,
     restores: Mutex<session_restore::Restores>,
+    #[cfg(target_os = "macos")]
+    view_rebuilds: Mutex<view_recovery::Rebuilds>,
+    #[cfg(target_os = "macos")]
+    quick_open_visible: std::sync::atomic::AtomicBool,
     /// Organisations whose next download was started by the "save and open" preference.
     open_next: Mutex<std::collections::HashMap<String, std::time::Instant>>,
     /// The saved global shortcut could not be registered at launch.
@@ -134,6 +140,10 @@ pub fn run() {
                 pending: Mutex::new(None),
                 switching: tauri::async_runtime::Mutex::new(()),
                 restores: Mutex::new(Default::default()),
+                #[cfg(target_os = "macos")]
+                view_rebuilds: Mutex::new(Default::default()),
+                #[cfg(target_os = "macos")]
+                quick_open_visible: Default::default(),
                 open_next: Mutex::new(Default::default()),
                 shortcut_unavailable: Default::default(),
             });
