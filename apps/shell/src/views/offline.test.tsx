@@ -75,6 +75,44 @@ describe("offline course files", () => {
     expect(html).toContain('aria-label="Refresh offline copy of notes.pdf"');
     expect(html).not.toContain('disabled=""');
   });
+  it("offers Open as Timetable only for timetable PDFs on supported sites", () => {
+    const timetable = { ...copy, filename: "EDT semaine du 16 novembre.pdf" };
+    const offered = render(
+      <SavedFiles
+        items={[timetable, copy]}
+        busy={false}
+        onOpen={vi.fn()}
+        onRefresh={vi.fn()}
+        onRemove={vi.fn()}
+        onTimetable={vi.fn()}
+      />,
+    );
+    expect(offered).toContain(
+      'aria-label="Open EDT semaine du 16 novembre.pdf as a timetable"',
+    );
+    expect(offered).not.toContain('aria-label="Open notes.pdf as a timetable"');
+    const elsewhere = render(
+      <SavedFiles
+        items={[timetable]}
+        busy={false}
+        onOpen={vi.fn()}
+        onRefresh={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    );
+    expect(elsewhere).not.toContain("as a timetable");
+    const missing = render(
+      <SavedFiles
+        items={[{ ...timetable, available: false }]}
+        busy={false}
+        onOpen={vi.fn()}
+        onRefresh={vi.fn()}
+        onRemove={vi.fn()}
+        onTimetable={vi.fn()}
+      />,
+    );
+    expect(missing.match(/disabled=""/g)).toHaveLength(3);
+  });
   it("keeps missing copies listed while allowing a fresh copy to be requested", () => {
     const html = render(
       <SavedFiles

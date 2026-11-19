@@ -1,8 +1,10 @@
 import { Confirmation } from "./Downloads";
+import { looksLikeTimetable } from "../lib/timetable";
 import { useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import {
   ArrowLeft,
+  CalendarDays,
   FolderOpen,
   HardDriveDownload,
   LoaderCircle,
@@ -151,6 +153,7 @@ export function SavedFiles({
   onOpen,
   onRefresh,
   onRemove,
+  onTimetable,
   failedKeys = [],
 }: {
   items: OfflineCopy[];
@@ -158,6 +161,8 @@ export function SavedFiles({
   onOpen: (copy: OfflineCopy, reveal: boolean) => void;
   onRefresh: (key: string) => void;
   onRemove: (copy: OfflineCopy) => void;
+  /** Read a saved timetable PDF in Agenda › Timetable (supported sites only). */
+  onTimetable?: (copy: OfflineCopy) => void;
   failedKeys?: readonly string[];
 }) {
   const { t, date } = useI18n();
@@ -222,6 +227,17 @@ export function SavedFiles({
             >
               <FolderOpen size={13} strokeWidth={2} aria-hidden="true" />
             </button>
+            {onTimetable && looksLikeTimetable(item.filename) && (
+              <button
+                className="button small icon"
+                disabled={busy || !item.available}
+                title={t.timetable.openAsTimetable}
+                aria-label={t.timetable.openAsTimetableLabel(item.filename)}
+                onClick={() => onTimetable(item)}
+              >
+                <CalendarDays size={13} strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
             <button
               className="button small icon"
               disabled={busy}
@@ -355,12 +371,15 @@ export function CourseFiles({
   userId,
   onBack,
   onOpen,
+  onTimetable,
 }: {
   course: Course;
   siteName: string;
   userId: number;
   onBack: () => void;
   onOpen: () => void;
+  /** Present only when the course's organisation has timetables. */
+  onTimetable?: (copy: OfflineCopy) => void;
 }) {
   const { t, locale } = useI18n();
   const [sync, setSync] = useState<CourseSync | null>(null);
@@ -699,6 +718,7 @@ export function CourseFiles({
               setRemovalResult(null);
               setRemoving(copy);
             }}
+            onTimetable={onTimetable}
             failedKeys={failedKeys}
           />
         )}

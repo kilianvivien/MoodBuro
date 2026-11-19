@@ -3,6 +3,7 @@ import { useState } from "react";
 import { BookOpen, CircleAlert, Pin, SearchX } from "lucide-react";
 import { ipc, message, type Course, type Site } from "../ipc";
 import { useI18n } from "../i18n/context";
+import type { TimetableSource } from "../lib/timetable";
 import { ErrorText } from "../i18n/ErrorText";
 import { search } from "../lib/search";
 import { initials } from "../lib/site";
@@ -168,9 +169,14 @@ export function CourseList({
 export function Courses({
   sites,
   onOpenCourse,
+  timetableSites = [],
+  onTimetable,
 }: {
   sites: Site[];
   onOpenCourse: (siteId: string, courseId: number) => void;
+  /** Organisations with timetables (the INSP Moodle). */
+  timetableSites?: readonly string[];
+  onTimetable?: (siteId: string, source: TimetableSource) => void;
 }) {
   const { t } = useI18n();
   const listing = useListing(sites, ipc.courses, ipc.refreshCourses);
@@ -220,6 +226,16 @@ export function Courses({
           userId={site.userId}
           onBack={() => setSelectedCourse(null)}
           onOpen={() => onOpenCourse(site.id, selectedCourse.id)}
+          onTimetable={
+            onTimetable && timetableSites.includes(site.id)
+              ? (copy) =>
+                  onTimetable(site.id, {
+                    kind: "offlineCopy",
+                    courseId: copy.courseId,
+                    copyId: copy.id,
+                  })
+              : undefined
+          }
         />
       );
   }

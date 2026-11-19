@@ -1374,7 +1374,7 @@ const fr: Messages = {
       unanswered: "Sans réponse",
       halfPromotion: "Votre demi-promotion",
       applyGroup: (group: string, count: number, others: boolean) =>
-        `Appliquer « ${group} » ${
+        `Appliquer «\u00a0${group}\u00a0» ${
           others
             ? count === 1
               ? "à l’autre séance"
