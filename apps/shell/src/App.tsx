@@ -712,6 +712,8 @@ export default function App() {
               key={listRevision}
               sites={sites}
               onOpenCourse={(id, course) => void openPage(id, "course", course)}
+              timetableSites={timetableIds}
+              onTimetable={(id, source) => openTimetable(id, source)}
             />
           )}
           {ready && view === "uploads" && (

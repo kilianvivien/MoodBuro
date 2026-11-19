@@ -300,6 +300,16 @@ const demoAll = (): Session[] => [
       locationNote: "Selon le groupe",
     },
   ),
+  // The same course again later in the week: its group answer can be shared.
+  demoSession("demo-15", 3, "14:00", "17:00", "Études de cas (suite)", {
+    location: null,
+    locationNote: "Selon le groupe",
+    cohortLabel: "Groupe A / Groupe B",
+  }),
+];
+const demoGroupOptions = [
+  { label: "Groupe A", location: "C201", start: "14:00", end: "17:00" },
+  { label: "Groupe B", location: "C202", start: "14:00", end: "17:00" },
 ];
 const demoQuestions = (): Questions => ({
   groups: [
@@ -312,10 +322,20 @@ const demoQuestions = (): Questions => ({
       location: null,
       cohortLabel: "Groupe A / Groupe B",
       module: "Parcours exemple",
-      options: [
-        { label: "Groupe A", location: "C201", start: "14:00", end: "17:00" },
-        { label: "Groupe B", location: "C202", start: "14:00", end: "17:00" },
-      ],
+      options: demoGroupOptions,
+      repeatKey: "demo-cases",
+    },
+    {
+      uid: "demo-15",
+      title: "Études de cas (suite)",
+      date: demoAll()[14].date,
+      start: "14:00",
+      end: "17:00",
+      location: null,
+      cohortLabel: "Groupe A / Groupe B",
+      module: "Parcours exemple",
+      options: demoGroupOptions,
+      repeatKey: "demo-cases",
     },
   ],
   participation: [
@@ -340,10 +360,10 @@ function demoApply(choices: TimetableChoices): Session[] {
   return demoAll()
     .filter((s) => choices.groups[s.uid] !== "__exclude__")
     .map((s) => {
-      const group = demoQuestions().groups[0].options?.find(
+      const group = demoGroupOptions.find(
         (o) => o.label === choices.groups[s.uid],
       );
-      if (s.uid === "demo-3" && group)
+      if ((s.uid === "demo-3" || s.uid === "demo-15") && group)
         return {
           ...s,
           location: group.location,
@@ -356,7 +376,9 @@ function demoApply(choices: TimetableChoices): Session[] {
     });
 }
 function demoPending(choices: TimetableChoices) {
-  return ["demo-3", "demo-6"].filter((uid) => !(uid in choices.groups)).length;
+  return ["demo-3", "demo-15", "demo-6"].filter(
+    (uid) => !(uid in choices.groups),
+  ).length;
 }
 const demoKey = () => `v1|${iso(monday())}`;
 let demoSaved: WeekView | null = null;
