@@ -3353,6 +3353,12 @@ div.assistant-text {
   max-width: 100%;
   text-overflow: ellipsis;
 }
+.session-choice-apply {
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 .settings-prefix {
   width: 12em;
 }

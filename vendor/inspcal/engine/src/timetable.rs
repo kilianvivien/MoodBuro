@@ -67,6 +67,16 @@ pub struct Link {
     pub column: Option<String>,
 }
 
+impl Link {
+    fn is_legacy_speaker_resource(&self) -> bool {
+        self.column.as_deref() == Some("speakers")
+            && self.url.split_once("://").and_then(|(_, rest)| rest.split_once('/')).is_some_and(|(host, path)| {
+                host.eq_ignore_ascii_case("moodle.ena.fr")
+                    && path.split(['?', '#']).next() == Some("mod/resource/view.php")
+            })
+    }
+}
+
 /// Sub-group information: flagged, not split.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Groups {
@@ -228,6 +238,11 @@ pub struct Timetable {
 impl Timetable {
     /// Events are put in the day's order, not the grid's, and identified.
     pub fn new(source: Source, mut events: Vec<Event>, warnings: Vec<Warning>) -> Self {
+        // Old ENA Moodle resource pages still appear in some speaker cells.
+        // Direct biography files also use that host and belong in the export.
+        for event in &mut events {
+            event.links.retain(|link| !link.is_legacy_speaker_resource());
+        }
         events.sort_by_key(|event| (event.date, event.sort_time()));
         let mut timetable = Self { source, events, warnings, revised_at: None };
         timetable.assign_identities();
@@ -535,6 +550,31 @@ mod tests {
         assert_eq!(timetable.events[0].last_date(), Date::new(2026, 9, 10).unwrap());
         let restored = Timetable::from_json(&timetable.to_json()).unwrap();
         assert_eq!(restored, timetable);
+    }
+
+    #[test]
+    fn restored_weeks_drop_legacy_resource_pages_for_speakers_only() {
+        let mut stored = Timetable::new(week(), vec![event(8, "Atelier")], Vec::new()).to_json();
+        let direct_bio = json!({"url": "https://moodle.ena.fr/pluginfile.php/1/bio.pdf", "column": "speakers"});
+        let current_bio =
+            json!({"url": "https://moodle.insp.gouv.fr/mod/resource/view.php?id=1", "column": "speakers"});
+        let preparation = json!({"url": "https://moodle.ena.fr/mod/resource/view.php?id=2", "column": "preparation"});
+        stored["events"][0]["links"] = json!([
+            {"url": "https://moodle.ena.fr/mod/resource/view.php?id=1", "column": "speakers"},
+            direct_bio,
+            current_bio,
+            preparation,
+        ]);
+        let review = Timetable::from_json(&stored).unwrap();
+        let links = &review.events[0].links;
+        assert_eq!(
+            links.iter().map(|link| link.url.as_str()).collect::<Vec<_>>(),
+            [
+                direct_bio["url"].as_str().unwrap(),
+                current_bio["url"].as_str().unwrap(),
+                preparation["url"].as_str().unwrap(),
+            ]
+        );
     }
 
     #[test]

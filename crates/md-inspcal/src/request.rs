@@ -348,6 +348,50 @@ fn briefs(list: &Value) -> Vec<Value> {
     list.as_array().into_iter().flatten().map(brief).collect()
 }
 
+fn normalised(value: &Value) -> String {
+    value
+        .as_str()
+        .unwrap_or_default()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+}
+
+/// Sessions of the same course that offer exactly the same groups share
+/// this key, so one answer can be applied to all of them (as InspCal's
+/// review does). Group labels are local to a course, so the key holds the
+/// course, cohort and half-promotion as well as the set of labels; rooms and
+/// times may differ. Rotation workshops already share one choice: no key.
+pub fn repeat_key(event: &Value) -> Option<String> {
+    let raw = &event["raw"];
+    if raw.get("rotation").is_some_and(|r| !r.is_null()) {
+        return None;
+    }
+    let details = raw["group_details"].as_array()?;
+    let mut labels: Vec<&str> = details
+        .iter()
+        .filter(|group| text(&group["start"]).is_some() && text(&group["end"]).is_some())
+        .filter_map(|group| group["label"].as_str().filter(|label| !label.is_empty()))
+        .collect();
+    labels.sort_unstable();
+    labels.dedup();
+    let title = normalised(&event["title"]);
+    if labels.is_empty() || labels.len() != details.len() || title.is_empty() {
+        return None;
+    }
+    Some(
+        json!([
+            title,
+            normalised(&event["module"]),
+            event["cohort_label"],
+            raw["half_promotion"],
+            labels
+        ])
+        .to_string(),
+    )
+}
+
 /// Review questions for the shell. Group options carry label, room and
 /// times; links are reduced to their labels.
 pub fn review_questions(answer: &Answer) -> Value {
@@ -365,6 +409,7 @@ pub fn review_questions(answer: &Answer) -> Value {
                 .flatten()
                 .map(|group| json!({"label": text(&group["label"]), "location": text(&group["location"]), "start": text(&group["start"]), "end": text(&group["end"])}))
                 .collect();
+            item["repeatKey"] = json!(repeat_key(event));
             item
         })
         .collect();
@@ -537,5 +582,64 @@ mod tests {
                 .code,
             "ENGINE_INTERNAL"
         );
+    }
+
+    #[test]
+    fn sessions_offering_the_same_groups_share_a_repeat_key() {
+        let session = |title: &str, half: Value, groups: &[(&str, &str)]| {
+            json!({
+                "title": title,
+                "module": "Parcours  public",
+                "cohort_label": "Groupes 1-2",
+                "raw": {
+                    "half_promotion": half,
+                    "group_details": groups
+                        .iter()
+                        .map(|(label, room)| json!({"label": label, "location": room, "start": "09:00", "end": "12:00"}))
+                        .collect::<Vec<_>>(),
+                },
+            })
+        };
+        let monday = session(
+            "Atelier",
+            json!("A"),
+            &[("Groupe 1", "C101"), ("Groupe 2", "C102")],
+        );
+        let key = repeat_key(&monday).expect("a plain group session has a key");
+        // Rooms, order, case and spacing do not matter.
+        let thursday = session(
+            "atelier ",
+            json!("A"),
+            &[("Groupe 2", "B201"), ("Groupe 1", "B202")],
+        );
+        assert_eq!(repeat_key(&thursday).as_deref(), Some(key.as_str()));
+        // Another half-promotion, course or set of groups does not match.
+        let other_half = session(
+            "Atelier",
+            json!("B"),
+            &[("Groupe 1", "C101"), ("Groupe 2", "C102")],
+        );
+        assert_ne!(repeat_key(&other_half).as_deref(), Some(key.as_str()));
+        let other_course = session(
+            "Séminaire",
+            json!("A"),
+            &[("Groupe 1", "C101"), ("Groupe 2", "C102")],
+        );
+        assert_ne!(repeat_key(&other_course).as_deref(), Some(key.as_str()));
+        let fewer = session("Atelier", json!("A"), &[("Groupe 1", "C101")]);
+        assert_ne!(repeat_key(&fewer).as_deref(), Some(key.as_str()));
+        // Unusable or ambiguous group lists, and rotations, get no key.
+        let duplicate = session(
+            "Atelier",
+            json!("A"),
+            &[("Groupe 1", "C101"), ("Groupe 1", "C102")],
+        );
+        assert_eq!(repeat_key(&duplicate), None);
+        let mut untimed = monday.clone();
+        untimed["raw"]["group_details"][1]["end"] = Value::Null;
+        assert_eq!(repeat_key(&untimed), None);
+        let mut rotation = monday.clone();
+        rotation["raw"]["rotation"] = json!("Ateliers du vendredi");
+        assert_eq!(repeat_key(&rotation), None);
     }
 }

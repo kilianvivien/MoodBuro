@@ -400,6 +400,16 @@ const en = {
       decline: "Not Attending",
       unanswered: "Not answered",
       halfPromotion: "Your half-promotion",
+      applyGroup: (group: string, count: number, others: boolean) =>
+        `Apply “${group}” to ${
+          others
+            ? count === 1
+              ? "the Other Session"
+              : `the ${count} Other Sessions`
+            : count === 1
+              ? "This Session"
+              : `${count} Sessions`
+        }`,
       excluded: "Not in your week",
       include: "Include",
     },
@@ -1363,6 +1373,16 @@ const fr: Messages = {
       decline: "Je n’y participe pas",
       unanswered: "Sans réponse",
       halfPromotion: "Votre demi-promotion",
+      applyGroup: (group: string, count: number, others: boolean) =>
+        `Appliquer « ${group} » ${
+          others
+            ? count === 1
+              ? "à l’autre séance"
+              : `aux ${count} autres séances`
+            : count === 1
+              ? "à cette séance"
+              : `à ${count} séances`
+        }`,
       excluded: "Hors de votre semaine",
       include: "Inclure",
     },
