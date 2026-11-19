@@ -385,6 +385,82 @@ mod native {
     }
 
     #[test]
+    fn rotation_workshops_share_one_choice_without_a_repeat_key() {
+        use md_inspcal::request::{Choices, Options};
+        let _serial = serial();
+        let keyed = |name: &str| {
+            let answer = typed(&Options::default(), &Choices::default(), None, Some(name));
+            let questions = md_inspcal::request::review_questions(&answer);
+            questions["groups"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|group| group["repeatKey"].is_string())
+                .collect::<Vec<_>>()
+        };
+        let rotation = keyed("Edt du 26.10.2026 au 30.10.2026 rotation.pdf");
+        assert_eq!(rotation.len(), 4);
+        assert!(rotation.iter().all(|keyed| !keyed));
+        let ordinary = keyed("Edt du 26.10.2026 au 30.10.2026.pdf");
+        assert!(!ordinary.is_empty() && ordinary.iter().all(|keyed| *keyed));
+    }
+
+    #[test]
+    fn a_repeated_group_session_shares_its_key_and_one_answer_selects_both() {
+        use md_inspcal::request::{Choices, Options};
+        use md_inspcal::week::sessions;
+        let _serial = serial();
+        let options = Options::default();
+        let first = typed(
+            &options,
+            &Choices::default(),
+            None,
+            Some("Edt du 07.09.2026 au 11.09.2026.pdf"),
+        );
+        // Repeat the workshop on the next day, as a real week does.
+        let mut parsed = first.parsed.clone();
+        let events = parsed[0]["timetable"]["events"].as_array_mut().unwrap();
+        let workshop = events
+            .iter()
+            .find(|event| event["title"] == "Atelier collectif")
+            .unwrap()
+            .clone();
+        let mut repeat = workshop.clone();
+        repeat["date"] = json!("2026-09-08");
+        repeat.as_object_mut().unwrap().remove("uid");
+        events.push(repeat);
+        let answer = typed(&options, &Choices::default(), Some(&parsed), None);
+        let questions = md_inspcal::request::review_questions(&answer);
+        let workshops: Vec<_> = questions["groups"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|group| group["title"] == "Atelier collectif")
+            .collect();
+        assert_eq!(workshops.len(), 2);
+        assert_ne!(workshops[0]["uid"], workshops[1]["uid"]);
+        assert!(workshops[0]["repeatKey"].is_string());
+        assert_eq!(workshops[0]["repeatKey"], workshops[1]["repeatKey"]);
+
+        // The shell writes the same label for both UIDs.
+        let label = workshops[0]["options"][0]["label"].as_str().unwrap();
+        let mut choices = Choices::default();
+        for workshop in &workshops {
+            let uid = workshop["uid"].as_str().unwrap().to_owned();
+            choices.groups.insert(uid, label.to_owned());
+        }
+        let chosen = typed(&options, &choices, Some(&parsed), None);
+        let chosen = sessions(&chosen.selected, chosen.calendar.as_deref()).unwrap();
+        let picked: Vec<_> = chosen
+            .iter()
+            .filter(|s| s.title.starts_with("Atelier collectif"))
+            .collect();
+        assert_eq!(picked.len(), 2, "{picked:?}");
+        assert!(picked.iter().all(|s| !s.tentative));
+        assert_ne!(picked[0].date, picked[1].date);
+    }
+
+    #[test]
     fn exports_keep_uids_and_cancel_what_a_correction_removed() {
         use md_inspcal::request::{Choices, Options};
         let _serial = serial();

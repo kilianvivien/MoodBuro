@@ -56,6 +56,8 @@ export interface QuestionSession {
     start: string | null;
     end: string | null;
   }[];
+  /** Group sessions of the same course offering the same groups share it. */
+  repeatKey?: string | null;
 }
 export interface Questions {
   groups: QuestionSession[];

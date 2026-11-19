@@ -7,11 +7,16 @@ MoodBuro hosts the **real Moodle site** in a macOS application, keeping your org
 
 ## Download and install
 
-**[Download MoodBuro 0.3.2 for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
+**[Download MoodBuro 0.3.4 for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
 
 The universal DMG includes **Apple Silicon and Intel** binaries, with macOS 12 as the configured minimum. Download the DMG and `SHA256SUMS.txt`, verify the checksum, then drag MoodBuro into Applications. Quit the app before replacing it during an upgrade.
 
-Version 0.3.2 is **ad-hoc signed and not notarized**. macOS may require first-launch approval in System Settings → Privacy & Security. From version 0.2.0, check for the update in Settings → General. For a first installation or an earlier version, install the DMG manually.
+Version 0.3.4 is **ad-hoc signed and not notarized**. macOS may require first-launch approval in System Settings → Privacy & Security. From version 0.2.0, check for the update in Settings → General. For a first installation or an earlier version, install the DMG manually.
+
+## What’s new in 0.3.4
+
+- **One group choice for repeated sessions**: when several sessions of the same course offer the same groups in a week, the session panel offers to apply your group to the others (“Apply “Groupe 2” to the 2 Other Sessions”). Answers you already gave are never changed, and Friday rotation workshops keep their single shared choice.
+- Timetable reading follows InspCal 2.3: in weeks read or edited from now on, outdated links to the former ENA Moodle’s resource pages are no longer listed under speakers. Direct biography files are kept. Saving an earlier week again may show those sessions as changed once.
 
 ## What’s new in 0.3.2
 

@@ -7,6 +7,7 @@ import type {
   TimetableChoices,
 } from "../../lib/timetable";
 import { PopupButton, Segmented } from "../ui";
+import { mondayOf } from "./WeekCalendar";
 
 /** Which review questions concern a session. */
 export function questionsFor(questions: Questions | null, uid: string) {
@@ -42,6 +43,52 @@ export function pendingUids(
   return pending;
 }
 
+/** One group answer that can be applied to the other sessions of the same
+ *  course offering the same groups in the same week (as in InspCal 2.3).
+ *  With an answer, it goes to the matching sessions still unanswered;
+ *  without one, it is the single answer already given to the matching
+ *  sessions, offered for this session and the other unanswered ones.
+ *  Existing answers are never overwritten. */
+export function sharedGroupChoice(
+  questions: Questions | null,
+  choices: TimetableChoices,
+  uid: string,
+): { group: string; targets: string[]; others: boolean } | null {
+  const session = questions?.groups.find((q) => q.uid === uid);
+  if (!questions || !session?.repeatKey || !session.date) return null;
+  const optional = new Set(questions.participation.map((q) => q.uid));
+  if (optional.has(uid)) return null;
+  const week = mondayOf(session.date);
+  const labels = (session.options ?? []).flatMap((o) =>
+    o.label ? [o.label] : [],
+  );
+  const matches = questions.groups.filter(
+    (other) =>
+      other.uid !== uid &&
+      other.repeatKey === session.repeatKey &&
+      !!other.date &&
+      mondayOf(other.date) === week &&
+      !optional.has(other.uid),
+  );
+  const targets = matches
+    .filter((other) => !(other.uid in choices.groups))
+    .map((other) => other.uid);
+  const answered = uid in choices.groups;
+  let group = choices.groups[uid];
+  if (!answered) {
+    const answers = new Set(
+      matches
+        .map((other) => choices.groups[other.uid])
+        .filter((answer) => labels.includes(answer)),
+    );
+    if (answers.size !== 1) return null;
+    [group] = answers;
+    targets.push(uid);
+  }
+  if (!labels.includes(group) || targets.length === 0) return null;
+  return { group, targets, others: answered };
+}
+
 export function SessionDetails({
   session,
   question,
@@ -73,6 +120,7 @@ export function SessionDetails({
   const start = session?.start ?? question?.start;
   const end = session?.end ?? question?.end;
   const asked = questionsFor(questions, uid);
+  const shared = editable ? sharedGroupChoice(questions, choices, uid) : null;
   const day = date
     ? new Intl.DateTimeFormat(locale, {
         weekday: "long",
@@ -183,6 +231,29 @@ export function SessionDetails({
               </option>
             ))}
           </PopupButton>
+          {shared && (
+            <button
+              className="button small session-choice-apply"
+              disabled={busy}
+              title={s.applyGroup(
+                shared.group,
+                shared.targets.length,
+                shared.others,
+              )}
+              onClick={() =>
+                set({
+                  groups: {
+                    ...choices.groups,
+                    ...Object.fromEntries(
+                      shared.targets.map((target) => [target, shared.group]),
+                    ),
+                  },
+                })
+              }
+            >
+              {s.applyGroup(shared.group, shared.targets.length, shared.others)}
+            </button>
+          )}
         </div>
       )}
       {editable && asked.participation && (
