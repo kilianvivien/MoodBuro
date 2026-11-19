@@ -26,6 +26,7 @@ La version 0.3.4 utilise une **signature ad hoc et n’est pas notariée**. macO
 
 - **Un seul choix de groupe pour les séances répétées** : quand plusieurs séances d’un même cours proposent les mêmes groupes dans la semaine, le panneau de la séance propose d’appliquer votre groupe aux autres (« Appliquer « Groupe 2 » aux 2 autres séances »). Les réponses déjà données ne sont jamais modifiées, et les ateliers en rotation du vendredi gardent leur choix commun.
 - La lecture des emplois du temps suit InspCal 2.3 : dans les semaines lues ou modifiées désormais, les liens périmés vers les pages de ressources de l’ancien Moodle de l’ENA ne sont plus affichés parmi les intervenants. Les fichiers de biographie directs sont conservés. Réenregistrer une semaine antérieure peut indiquer une fois ces séances comme modifiées.
+- **Ouvrir comme emploi du temps depuis les fichiers enregistrés d’un cours** : la copie enregistrée d’un PDF d’emploi du temps s’ouvre directement dans Agenda › Emploi du temps, comme depuis Téléchargements.
 
 ## Nouveautés de la version 0.3.2
 

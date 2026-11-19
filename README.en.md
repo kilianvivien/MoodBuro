@@ -17,6 +17,7 @@ Version 0.3.4 is **ad-hoc signed and not notarized**. macOS may require first-la
 
 - **One group choice for repeated sessions**: when several sessions of the same course offer the same groups in a week, the session panel offers to apply your group to the others (“Apply “Groupe 2” to the 2 Other Sessions”). Answers you already gave are never changed, and Friday rotation workshops keep their single shared choice.
 - Timetable reading follows InspCal 2.3: in weeks read or edited from now on, outdated links to the former ENA Moodle’s resource pages are no longer listed under speakers. Direct biography files are kept. Saving an earlier week again may show those sessions as changed once.
+- **Open as Timetable on saved course files**: a saved copy of a timetable PDF in a course’s files opens straight into Agenda › Timetable, as in Downloads.
 
 ## What’s new in 0.3.2
 
