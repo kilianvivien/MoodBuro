@@ -5,7 +5,7 @@
 <p align="center"><strong>Votre Moodle, à sa place sur votre Mac.</strong><br/>Une application de bureau légère pour retrouver le Moodle de votre organisation.</p>
 <p align="center">
   <a href="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml"><img src="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
-  <img src="https://img.shields.io/badge/version-0.3.2-blue" alt="Version 0.3.2" />
+  <img src="https://img.shields.io/github/v/release/kilianvivien/MoodBuro" alt="Dernière version stable de MoodBuro" />
   <img src="https://img.shields.io/badge/Tauri-2-24c8db" alt="Tauri 2" />
   <img src="https://img.shields.io/badge/interface-FR%20%2F%20EN-007aff" alt="Interface français et anglais" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/licence-MIT-green" alt="Licence MIT" /></a>
@@ -16,11 +16,16 @@ MoodBuro affiche **le vrai site Moodle** dans une application macOS, avec vos or
 
 ## Télécharger et installer
 
-**[Télécharger MoodBuro 0.3.4 pour macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
+**[Télécharger la dernière version de MoodBuro pour macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
 
 Le DMG universel contient les versions **Apple Silicon et Intel**, avec macOS 12 comme version minimale configurée. Téléchargez le DMG et `SHA256SUMS.txt`, vérifiez la somme de contrôle, puis glissez MoodBuro dans Applications. Pour une mise à jour, quittez d’abord l’application.
 
-La version 0.3.4 utilise une **signature ad hoc et n’est pas notariée**. macOS peut demander d’autoriser sa première ouverture dans Réglages Système → Confidentialité et sécurité. Depuis la version 0.2.0, recherchez la mise à jour dans Réglages → Général. Pour une première installation ou depuis une version antérieure, installez le DMG manuellement.
+MoodBuro utilise une **signature ad hoc et n’est pas notarié**. macOS peut demander d’autoriser sa première ouverture dans Réglages Système → Confidentialité et sécurité. Depuis la version 0.2.0, recherchez la mise à jour dans Réglages → Général. Pour une première installation ou depuis une version antérieure, installez le DMG manuellement.
+
+## Correctifs de la version 0.3.5
+
+- Les ateliers qui réunissent deux sous-groupes, par exemple `Groupe 1A & 1B`, proposent un choix commun et affichent la salle et l’intervenant indiqués pour ce binôme.
+- Quand l’atelier et le tronc commun en autonomie alternent sur deux créneaux, le choix du groupe d’atelier conserve le créneau d’autonomie attribué à votre groupe.
 
 ## Nouveautés de la version 0.3.4
 

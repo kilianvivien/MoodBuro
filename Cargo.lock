@@ -2584,7 +2584,7 @@ checksum = "4facc753ae494aeb6e3c22f839b158aebd4f9270f55cd3c79906c45476c47ab4"
 
 [[package]]
 name = "md-assistant"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "reqwest 0.12.28",
  "serde",
@@ -2597,7 +2597,7 @@ dependencies = [
 
 [[package]]
 name = "md-inspcal"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "base64 0.22.1",
  "inspcal-engine",
@@ -2610,7 +2610,7 @@ dependencies = [
 
 [[package]]
 name = "md-moodle"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "base64 0.22.1",
  "md5",
@@ -2626,14 +2626,14 @@ dependencies = [
 
 [[package]]
 name = "md-notifier"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "md-moodle",
 ]
 
 [[package]]
 name = "md-os"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "libc",
  "sha2 0.10.9",
@@ -2641,7 +2641,7 @@ dependencies = [
 
 [[package]]
 name = "md-secrets"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "keyring",
  "serde",
@@ -2651,7 +2651,7 @@ dependencies = [
 
 [[package]]
 name = "md-store"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "rusqlite",
  "serde",
@@ -2734,7 +2734,7 @@ dependencies = [
 
 [[package]]
 name = "moodburo"
-version = "0.3.4"
+version = "0.3.5"
 dependencies = [
  "block2",
  "chrono",
