@@ -7,11 +7,16 @@ MoodBuro hosts the **real Moodle site** in a macOS application, keeping your org
 
 ## Download and install
 
-**[Download MoodBuro 0.3.4 for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
+**[Download the latest MoodBuro release for macOS](https://github.com/kilianvivien/MoodBuro/releases/latest)**
 
 The universal DMG includes **Apple Silicon and Intel** binaries, with macOS 12 as the configured minimum. Download the DMG and `SHA256SUMS.txt`, verify the checksum, then drag MoodBuro into Applications. Quit the app before replacing it during an upgrade.
 
-Version 0.3.4 is **ad-hoc signed and not notarized**. macOS may require first-launch approval in System Settings → Privacy & Security. From version 0.2.0, check for the update in Settings → General. For a first installation or an earlier version, install the DMG manually.
+MoodBuro uses **ad hoc signing**. Because the app lacks notarization, macOS may require first-launch approval in System Settings → Privacy & Security. From version 0.2.0, check for the update in Settings → General. For a first installation or an earlier version, install the DMG manually.
+
+## Fixes in 0.3.5
+
+- Workshops with paired subgroups, such as `Groupe 1A & 1B`, offer one choice per pair and show the room and instructor printed for that pair.
+- When a workshop and independent study run in complementary time slots, choosing your workshop group keeps the independent-study slot assigned to that group.
 
 ## What’s new in 0.3.4
 
