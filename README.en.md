@@ -112,6 +112,8 @@ python3 scripts/check-security.py
 
 Version 0.1.0 passed **109 frontend and 112 Rust tests**, plus formatting, builds, Clippy and IPC permission checks. Automated tests and synthetic HTTP contracts do not replace real-account and platform qualification.
 
+GitHub runs CI automatically for pull requests. After pushing a commit directly to a branch, you can run CI from the Actions tab.
+
 ## Architecture
 
 `apps/shell` contains React, TypeScript, Vite and Zustand. `src-tauri` owns native windows, menus and IPC. The Rust crates cover Moodle protocol/HTTP (`md-moodle`), OS credentials (`md-secrets`), SQLite metadata (`md-store`), AI providers and controlled tools (`md-assistant`), native InspCal/PDFium timetable reading (`md-inspcal`), polling decisions (`md-notifier`) and system/file operations (`md-os`).

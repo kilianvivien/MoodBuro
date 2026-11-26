@@ -4,7 +4,7 @@
 <h1 align="center">MoodBuro</h1>
 <p align="center"><strong>Votre Moodle, à sa place sur votre Mac.</strong><br/>Une application de bureau légère pour retrouver le Moodle de votre organisation.</p>
 <p align="center">
-  <a href="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml"><img src="https://github.com/kilianvivien/MoodBuro/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
+  <a href="https://github.com/kilianvivien/MoodBuro/actions/workflows/package-macos.yml"><img src="https://github.com/kilianvivien/MoodBuro/actions/workflows/package-macos.yml/badge.svg?event=push" alt="Build de publication macOS" /></a>
   <img src="https://img.shields.io/github/v/release/kilianvivien/MoodBuro" alt="Dernière version stable de MoodBuro" />
   <img src="https://img.shields.io/badge/Tauri-2-24c8db" alt="Tauri 2" />
   <img src="https://img.shields.io/badge/interface-FR%20%2F%20EN-007aff" alt="Interface français et anglais" />
@@ -120,6 +120,8 @@ python3 scripts/check-security.py
 ```
 
 La version 0.1.0 a passé **109 tests d’interface et 112 tests Rust**, ainsi que les vérifications de format, de compilation, Clippy et de permissions IPC. Les tests automatisés et les contrats HTTP simulés ne remplacent pas la qualification sur des comptes et environnements réels.
+
+Sur GitHub, le workflow CI se lance automatiquement pour les pull requests. Après un commit intégré directement à une branche, vous pouvez le lancer depuis l’onglet Actions.
 
 ## Architecture
 
