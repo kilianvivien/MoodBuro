@@ -826,6 +826,55 @@ mod tests {
     }
 
     #[test]
+    fn workshop_choice_keeps_the_complementary_autonomy_slot() {
+        let early = "FI-OFF Groupes 3 et 4 : Tronc commun en autonomie";
+        let late = "FI-OFF Groupes 1 et 2 : Tronc commun en autonomie";
+        let mut reader = |_: &[u8], file: &str| {
+            let rows: [&[&str]; 5] = [
+                &["10/09", "13h00", "17h15", "Ateliers de contentieux", "", "FI-OFF", "", "", "Droit"],
+                &["10/09", "13h00", "15h00", early, "", "", "", "", "Tronc commun"],
+                &["10/09", "15h15", "17h15", late, "", "", "", "", "Tronc commun"],
+                &["10/09", "13h00", "15h00", "Travail en autonomie", "", "FI", "", "", ""],
+                &["11/09", "13h00", "15h00", early, "", "", "", "", "Tronc commun"],
+            ];
+            Ok(document_of(file, vec![page_of(&HEADERS, &rows)]))
+        };
+        let first: Value = serde_json::from_str(&convert("{}", &[pdf(WEEK)], &mut reader, 1_788_000_000)).unwrap();
+        assert_eq!(first["status"], 200);
+        let mut parsed = first["body"]["parsed"].clone();
+        let events = parsed[0]["timetable"]["events"].as_array_mut().unwrap();
+        let workshop = events.iter_mut().find(|event| event["title"] == "Ateliers de contentieux").unwrap();
+        workshop["raw"]["group_details"] = json!([
+            {"label": "Groupe 1", "start": "13h00", "end": "15h00", "location": "C101"},
+            {"label": "Groupe 2", "start": "13h00", "end": "15h00", "location": "C102"},
+            {"label": "Groupe 3", "start": "15h15", "end": "17h15", "location": "C101"},
+            {"label": "Groupe 4", "start": "15h15", "end": "17h15", "location": "C102"},
+        ]);
+        let uid = workshop["uid"].as_str().unwrap().to_owned();
+        let (_, before) = run(json!({"timetables": parsed.to_string()}), &[]);
+        assert_eq!(before["timetable"]["events"].as_array().unwrap().len(), 5);
+        let exported = json!([before["exportable"][0]["timetable"]]).to_string();
+        for (choice, kept, dropped) in
+            [("Groupe 1", late, early), ("Groupe 2", late, early), ("Groupe 3", early, late), ("Groupe 4", early, late)]
+        {
+            let fields = json!({
+                "timetables": parsed.to_string(), "group_choices": json!({&uid: choice}).to_string(), "exported": exported,
+            });
+            let (status, body) = run(fields, &[]);
+            assert_eq!(status, 200);
+            let events = body["timetable"]["events"].as_array().unwrap();
+            assert_eq!(events.len(), 4);
+            assert!(events.iter().any(|event| event["date"] == "2026-09-10" && event["title"] == kept));
+            assert!(events.iter().any(|event| event["date"] == "2026-09-11" && event["title"] == early));
+            assert!(events.iter().any(|event| event["title"] == "Travail en autonomie"));
+            let cancelled = body["exportable"][0]["cancelled"].as_array().unwrap();
+            assert_eq!(cancelled.len(), 1);
+            assert_eq!(cancelled[0]["title"], dropped);
+            assert_eq!(cancelled[0]["date"], "2026-09-10");
+        }
+    }
+
+    #[test]
     fn fitness_groups_are_one_sport_choice_with_the_printed_hours() {
         let mut reader = |_: &[u8], file: &str| {
             let rows: [&[&str]; 2] = [

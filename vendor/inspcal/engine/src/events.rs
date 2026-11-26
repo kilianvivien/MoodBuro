@@ -51,6 +51,9 @@ static GROUP_FULL_RE: LazyLock<Regex> = LazyLock::new(|| text::full(GROUP));
 static LETTER_GROUP_RE: LazyLock<Regex> =
     LazyLock::new(|| text::full(r"(?i)\bGroupes?\s*(?P<first>[A-Z])(?:\s*[-–à]\s*(?P<last>[A-Z]))?\b"));
 static PAIRED_GROUP_RE: LazyLock<Regex> = LazyLock::new(|| text::full(r"(?i)Groupes\s+\d+\s+et\s+\d+"));
+/// One workshop row shared by two subgroups (`Groupe 1A & 1B`).
+static PAIRED_SUBGROUP_RE: LazyLock<Regex> =
+    LazyLock::new(|| text::full(r"(?i)Groupes?\s+\d+[A-Z]\s*(?:&|et)\s*\d+[A-Z]"));
 /// `Groupe B3`: a numbered group within a demi-promo (from 9 November 2026).
 static HALF_GROUP_RE: LazyLock<Regex> = LazyLock::new(|| text::full(r"(?i)Groupe\s*[A-Z]\s*\d+"));
 /// `1/2 Promo A - Groupe 1`: the same, spelt out (16 November 2026).
@@ -735,9 +738,16 @@ fn group_details(anchor: &Anchor) -> Vec<Map<String, Value>> {
     });
     for (group, split) in rows {
         let label = clean_text(&group.text);
-        if ![&*GROUP_FULL_RE, &*LETTER_GROUP_RE, &*PAIRED_GROUP_RE, &*HALF_GROUP_RE, &*HALF_NUMBERED_GROUP_RE]
-            .iter()
-            .any(|pattern| pattern.is_match(&label))
+        if ![
+            &*GROUP_FULL_RE,
+            &*LETTER_GROUP_RE,
+            &*PAIRED_GROUP_RE,
+            &*PAIRED_SUBGROUP_RE,
+            &*HALF_GROUP_RE,
+            &*HALF_NUMBERED_GROUP_RE,
+        ]
+        .iter()
+        .any(|pattern| pattern.is_match(&label))
         {
             continue;
         }
@@ -1435,6 +1445,35 @@ mod tests {
             ]
         );
         assert!(!HALF_GROUP_RE.is_match("Groupe B") && !HALF_GROUP_RE.is_match("Groupe 12"));
+    }
+
+    #[test]
+    fn paired_subgroups_share_one_workshop_choice() {
+        let mut page = page_of(&HEADERS, &[]);
+        for (column, content) in [(0, "07/09"), (1, "15h40"), (2, "16h30"), (3, "Ateliers de déontologie")] {
+            let x0 = 20.0 + 90.0 * column as f64;
+            page.cells.push(cell(x0, 60.0, x0 + 90.0, 140.0, content));
+        }
+        for (row, (speaker, group, room)) in
+            [("M. Paul LEROY", "Groupe 1A & 1B", "C102-C103"), ("Mme Anne PETIT", "Groupe 2A & 2B", "C104-C105")]
+                .into_iter()
+                .enumerate()
+        {
+            let top = 60.0 + 40.0 * row as f64;
+            page.cells.push(cell(380.0, top, 470.0, top + 40.0, speaker));
+            page.cells.push(cell(470.0, top, 560.0, top + 40.0, group));
+            page.cells.push(cell(560.0, top, 650.0, top + 40.0, room));
+        }
+        let document = document_of("Edt du 07.09.2026 au 11.09.2026.pdf", vec![page]);
+        let events = build(&document, &crate::grid::build(&document).unwrap()).unwrap();
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0].raw["group_details"],
+            json!([
+                {"label": "Groupe 1A & 1B", "start": "15h40", "end": "16h30", "speakers": "M. Paul LEROY", "location": "C102-C103"},
+                {"label": "Groupe 2A & 2B", "start": "15h40", "end": "16h30", "speakers": "Mme Anne PETIT", "location": "C104-C105"}
+            ])
+        );
     }
 
     #[test]

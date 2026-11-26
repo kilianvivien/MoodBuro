@@ -110,6 +110,90 @@ fn label(event: &Event) -> Option<&str> {
     text_of(&event.raw, "schedule_label")
 }
 
+struct AutonomySlot<'a> {
+    event: &'a Event,
+    audience: &'a str,
+    groups: [u32; 2],
+}
+
+impl<'a> AutonomySlot<'a> {
+    fn from_event(event: &'a Event) -> Option<Self> {
+        static TITLE: LazyLock<Regex> = LazyLock::new(|| {
+            text::full(
+                r"(?i)((?:FI|CIL|OFF)(?:-(?:FI|CIL|OFF))*)\s+Groupes\s+(\d+)\s+et\s+(\d+)\s*:\s*Tronc commun en autonomie",
+            )
+        });
+        let found = TITLE.captures(&event.title)?;
+        let groups = [found[2].parse().ok()?, found[3].parse().ok()?];
+        (groups[0] != groups[1] && event.start? < event.end?).then_some(Self {
+            event,
+            audience: found.get(1)?.as_str(),
+            groups,
+        })
+    }
+
+    fn complements(&self, other: &Self) -> bool {
+        self.audience == other.audience
+            && self.event.date == other.event.date
+            && self.event.raw.get("page") == other.event.raw.get("page")
+            && self.event.raw.get("half_promotion") == other.event.raw.get("half_promotion")
+            && self.event.description == other.event.description
+            && self.event.end <= other.event.start
+            && self.groups.iter().all(|group| !other.groups.contains(group))
+    }
+
+    fn matches_workshop(&self, other: &Self, workshop: &Event) -> bool {
+        if workshop.date != self.event.date
+            || workshop.raw.get("page").is_none()
+            || workshop.raw.get("page") != self.event.raw.get("page")
+            || workshop.raw.get("half_promotion") != self.event.raw.get("half_promotion")
+        {
+            return false;
+        }
+        let Some(details) = workshop.raw.get("group_details").and_then(Value::as_array) else { return false };
+        let scheduled_in = |groups: [u32; 2], slot: &Event| {
+            groups.into_iter().all(|number| {
+                let label = format!("Groupe {number}");
+                details.iter().filter_map(Value::as_object).any(|group| {
+                    text_of(group, "label") == Some(label.as_str())
+                        && text_of(group, "start").and_then(|time| dates::parse_time(time).ok()) == slot.start
+                        && text_of(group, "end").and_then(|time| dates::parse_time(time).ok()) == slot.end
+                })
+            })
+        };
+        details.len() == 4 && scheduled_in(self.groups, other.event) && scheduled_in(other.groups, self.event)
+    }
+}
+
+/// The PDF can print two autonomy blocks underneath a workshop, with the
+/// same four groups assigned to opposite slots. Require both assignments
+/// and a unique matching workshop before using its group choice.
+fn excluded_autonomy(events: &[Event], choices: &Choices) -> Vec<String> {
+    if choices.groups.is_empty() {
+        return Vec::new();
+    }
+    let slots: Vec<_> = events.iter().filter_map(AutonomySlot::from_event).collect();
+    let mut excluded = Vec::new();
+    for first in &slots {
+        let later: Vec<_> = slots.iter().filter(|slot| first.complements(slot)).collect();
+        let [second] = later[..] else { continue };
+        let workshops: Vec<_> = events
+            .iter()
+            .filter(|event| keeps_half_promotion(event, choices) && first.matches_workshop(second, event))
+            .collect();
+        let [workshop] = workshops[..] else { continue };
+        let uid = workshop.uid();
+        let selected = text_of(&choices.groups, &uid).and_then(|choice| choice.strip_prefix("Groupe "));
+        let Some(number) = selected.and_then(|number| number.parse().ok()) else { continue };
+        if first.groups.contains(&number) {
+            excluded.push(second.event.uid());
+        } else if second.groups.contains(&number) {
+            excluded.push(first.event.uid());
+        }
+    }
+    excluded
+}
+
 /// A copy of `timetables` with the reviewer's choices written in.
 ///
 /// Choosing a group changes an event's title and cohort, and therefore its
@@ -140,6 +224,7 @@ pub fn select_groups(timetables: &[Timetable], choices: &Choices, now: i64) -> R
     for table in &mut result {
         let mut kept = Vec::new();
         let mut touched = false;
+        let excluded_autonomy = excluded_autonomy(&table.events, choices);
         let picked_sport = table.events.iter().any(|event| choices.sport.contains_key(&event.uid()));
         let kept_sport: Vec<String> = table
             .events
@@ -151,11 +236,11 @@ pub fn select_groups(timetables: &[Timetable], choices: &Choices, now: i64) -> R
             return Err("Choisissez une seule séance de sport par semaine.".to_owned());
         }
         for mut event in std::mem::take(&mut table.events) {
-            if !keeps_half_promotion(&event, choices) {
+            let uid = event.uid();
+            if !keeps_half_promotion(&event, choices) || excluded_autonomy.contains(&uid) {
                 touched = true;
                 continue;
             }
-            let uid = event.uid();
             let choice = text_of(&choices.groups, &uid);
             touched = touched
                 || choices.groups.contains_key(&uid)
